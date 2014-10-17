@@ -23,20 +23,11 @@
 #include  "c_ui.h"
 #include  "d_lcd.h"
 
-#if       (HARDWARE != SIMULATION)
-
 #include  <stdio.h>
 #include  <string.h>
 #include  <math.h>
 #include  <fcntl.h>
 #include  <unistd.h>
-
-#endif
-
-
-
-#ifndef   Linux_X86
-
 
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -47,15 +38,22 @@
 #include <endian.h>
 #include <linux/fb.h>
 
+#define RED_LEGO	0	
+#define GREEN_LEGO	255	
+#define BLUE_LEGO	0	
 
-#define FBCTL(cmd, arg)                 \
-        if(ioctl(UiInstance.DispFile, cmd, arg) == -1) { \
-                LogErrorNumber(LCD_DEVICE_FILE_NOT_FOUND); }
+static const unsigned char color0 = (RED_LEGO & 0xF8) | ((GREEN_LEGO & 0xE0) >> 5);
+static const unsigned char color1 = ((GREEN_LEGO & 0x1C) << 3) | ((BLUE_LEGO & 0xF8) >> 3);
 
-struct fb_var_screeninfo var;
-struct fb_fix_screeninfo fix;
-int dll, fll;
-unsigned char *dbuf=NULL;
+
+int dll = 60;
+int fll = 22 + 1;
+unsigned char vmem[7680];
+unsigned char *dbuf = vmem;
+unsigned char *fbp = NULL;
+
+
+
 
 
 UBYTE     PixelTab[] =
@@ -69,6 +67,43 @@ UBYTE     PixelTab[] =
     0x1F, // 110 00011111
     0xFF  // 111 11111111
 };
+
+void update_to_fb(void)
+{
+	unsigned long x, y, location, offset, mask;
+
+	for(y = 0; y < 128; y++)
+	{
+		for(x = 0; x < 178; x++)
+		{
+			location = (x + y * 220) * 2;
+			offset = x % 3;
+			if(offset)
+			{
+				mask = (offset >> 1) ? 0x1 : 0x8;
+			}
+			else
+			{
+				mask = 0x80;
+			}
+
+			if(vmem[x / 3 + y * 60] & mask)
+			{
+				*(fbp + location++) = color0;
+				*(fbp + location) = color1;
+			}
+			else
+			{
+				*(fbp + location++) = 0x0;
+				*(fbp + location) = 0x0;
+			}
+		}
+	}
+
+
+	
+}
+
 
 
 void      dLcdExec(LCD *pDisp)
@@ -142,6 +177,8 @@ void      dLcdExec(LCD *pDisp)
 
       LCDCopy(&UiInstance.LcdBuffer,&VMInstance.LcdBuffer,sizeof(LCD));
       VMInstance.LcdUpdated  =  1;
+
+      update_to_fb();
     }
   }
 }
@@ -178,21 +215,53 @@ void      dLcdUpdate(LCD *pDisp)
 
 void      dLcdInit(UBYTE *pImage)
 {
+	int x, y, location;
   UiInstance.DispFile = open(LCD_DEVICE_NAME, O_RDWR);
-  if (UiInstance.DispFile < 0) LogErrorNumber(LCD_DEVICE_FILE_NOT_FOUND);
+//  if (UiInstance.DispFile < 0) LogErrorNumber(LCD_DEVICE_FILE_NOT_FOUND);
 
-  ioctl(UiInstance.DispFile, _IOW('S',0, int), NULL);
+  //ioctl(UiInstance.DispFile, _IOW('S',0, int), NULL);
 
-  FBCTL(FBIOGET_VSCREENINFO, &var);
-  FBCTL(FBIOGET_FSCREENINFO, &fix);
+  //FBCTL(FBIOGET_VSCREENINFO, &var);
+  //FBCTL(FBIOGET_FSCREENINFO, &fix);
 
   /* Display line length in bytes */
-  dll = fix.line_length;
+  //dll = fix.line_length;
   /* Image file line length in bytes */
-  fll = (var.xres >> 3) + 1;
+  //fll = (var.xres >> 3) + 1;
 
-  dbuf = (unsigned char *)mmap(0, var.yres * dll, PROT_WRITE | PROT_READ, MAP_SHARED, UiInstance.DispFile, 0);
-  if (dbuf == MAP_FAILED) LogErrorNumber(LCD_DEVICE_FILE_NOT_FOUND);
+  fbp = (unsigned char *)mmap(0, 220 * 176 * 2, PROT_WRITE | PROT_READ, MAP_SHARED, UiInstance.DispFile, 0);
+//  if (fbp == MAP_FAILED) LogErrorNumber(LCD_DEVICE_FILE_NOT_FOUND);
+
+
+	for(y = 0; y <= 127 + 1; y++)
+	{
+		for(x = 0; x <= 177 + 1; x++)
+		{
+			location = (x + y * 220) * 2;
+			*(fbp + location++) = 0x0;
+			*(fbp + location) = 0x0;
+		}
+	}
+
+	y = 128;
+	for(x = 0; x < 178 + 1; x++)
+	{
+		location = (x + y * 220) *2;
+		*(fbp + location++) = color0;
+		*(fbp + location) = color1;
+	}
+	
+	x = 178;
+	for(y = 0; y < 128 + 1; y++)
+	{
+		location = (x + y * 220) *2;
+		*(fbp + location++) = color0;
+		*(fbp + location) = color1;
+	}
+
+
+
+
 }
 
 
@@ -211,312 +280,39 @@ void      dLcdExit(void)
 }
 
 
-#else
-
-#include  <X11/Xlib.h>
-#include  <X11/X.h>
-#include  <X11/Xutil.h>
-#include  <time.h>
-#include  <unistd.h>
-#include  <stdio.h>
-#include  <X11/xpm.h>
-
-#define   DISPLAY_LEFT    10
-#define   DISPLAY_TOP     100
-#define   DISPLAY_WIDTH   366
-#define   DISPLAY_HEIGHT  557
-
-#define   LCD_LEFT        93
-#define   LCD_TOP         65
-
-enum      UiButPins
-{
-  BUT0,     // UP
-  BUT1,     // ENTER
-  BUT2,     // DOWN
-  BUT3,     // RIGHT
-  BUT4,     // LEFT
-  BUT5,     // BACK
-  BUT_PINS
-};
-
-
-Display   *pDisplay;
-Window    hWindow;
-GC        hGC;
-int       Background;
-int       Foreground;
-XEvent    Event;
-Colormap  CM;
-XColor    colour_bk;
-
-XImage  *pImg,*pClp;
-
-Pixmap    hLcd;
-
-XImage    Image;
-
-
-void      dLcdExec(LCD *pDisp)
-{
-  if (memcmp((const void*)pDisp,(const void*)&VMInstance.LcdBuffer,sizeof(LCD)) != 0)
-  {
-    XPutImage(pDisplay,hWindow,hGC,&Image,0,0,LCD_LEFT,LCD_TOP,LCD_WIDTH,LCD_HEIGHT);
-    XFlush(pDisplay);
-    usleep(25);
-
-    LCDCopy(&UiInstance.LcdBuffer,&VMInstance.LcdBuffer,sizeof(LCD));
-    VMInstance.LcdUpdated  =  1;
-  }
-}
-
-
-#ifdef MAX_FRAMES_PER_SEC
-void      dLcdAutoUpdate(void)
-{
-  if (UiInstance.AllowUpdate)
-  {
-    if (UiInstance.DisplayUpdate)
-    {
-      dLcdExec(&UiInstance.LcdBuffer);
-      UiInstance.DisplayUpdate  =  0;
-      UiInstance.DisplayTimer   =  0;
-      UiInstance.AllowUpdate    =  0;
-    }
-  }
-}
-#endif
-
-
-void      dLcdUpdate(LCD *pDisp)
-{
-#ifdef MAX_FRAMES_PER_SEC
-    LCDCopy(pDisp,&UiInstance.LcdBuffer,sizeof(LCD));
-    UiInstance.DisplayUpdate  =  1;
-    dLcdAutoUpdate();
-#else
-    dLcdExec(pDisp);
-#endif
-}
-
-
-void      dLcdInit(UBYTE *pImage)
-{
-  XSetWindowAttributes WindowAttributes;
-  unsigned long WindowMask;
-  int     Depth;
-  char    Buffer[255];
-  int     ScreenNo;
-
-  pDisplay      =  XOpenDisplay(NULL);
-  if (pDisplay != NULL)
-  {
-    Background  =  BlackPixel(pDisplay,DefaultScreen(pDisplay));
-    Foreground  =  WhitePixel(pDisplay,DefaultScreen(pDisplay));
-
-    Depth             =  DefaultDepth(pDisplay,DefaultScreen(pDisplay));
-    ScreenNo          =  DefaultScreen(pDisplay);
-    CM                =  XDefaultColormap(pDisplay,ScreenNo);
-    colour_bk.flags   =  DoRed|DoGreen|DoBlue;
-    colour_bk.red     =  32512;
-    colour_bk.green   =  34304;
-    colour_bk.blue    =  34560;
-
-    WindowAttributes.border_pixel            =  Background;
-    WindowAttributes.background_pixel        =  Foreground;
-    WindowAttributes.override_redirect       =  1;
-    WindowMask = CWBackPixel|CWBorderPixel|CWOverrideRedirect;
-    hWindow = XCreateWindow(pDisplay,RootWindow(pDisplay,ScreenNo),DISPLAY_LEFT,DISPLAY_TOP,DISPLAY_WIDTH,DISPLAY_HEIGHT,0,Depth,InputOutput,CopyFromParent,WindowMask,&WindowAttributes);
 
 
 
-    if (XAllocColor(pDisplay,CM,&colour_bk) == 0)
-    {
-      printf("XAllocColor failure.\n");
-    }
-    if (XSetWindowBackground(pDisplay,hWindow, colour_bk.pixel) == BadGC)
-    {
-      printf("XSetBackground failure.\n");
-    }
-
-    snprintf(Buffer,255,"%s V%4.2f",PROJECT,VERS);
-    XSetStandardProperties(pDisplay,hWindow,Buffer,Buffer,None,NULL,0,NULL);
-
-    XSelectInput(pDisplay,hWindow,StructureNotifyMask);
-    XMapWindow(pDisplay,hWindow);
-
-    hGC         =  XCreateGC(pDisplay,hWindow,0,NULL);
-    XSetForeground(pDisplay,hGC,Background);
-    XSetBackground(pDisplay,hGC,colour_bk.pixel);
-    XFlush(pDisplay);
-
-    do
-    {
-      XNextEvent(pDisplay,&Event);
-    }
-    while (Event.type != MapNotify);
-
-    hLcd   =  XCreatePixmap(pDisplay,hWindow,LCD_WIDTH,LCD_HEIGHT,Depth);
-
-    // Load body bitmap
-    if (XpmReadFileToImage(pDisplay,"body.xpm",&pImg,&pClp,NULL) == 0)
-    {
-      XPutImage(pDisplay,hWindow,hGC,pImg,0,0,0,0,DISPLAY_WIDTH,DISPLAY_HEIGHT);
-    }
-    XFlush(pDisplay);
-
-    XSetForeground(pDisplay,hGC,Background);
-    XSetBackground(pDisplay,hGC,colour_bk.pixel);
-
-    XCopyArea(pDisplay,hLcd,hWindow,hGC,0,0,LCD_WIDTH,LCD_HEIGHT,LCD_LEFT,LCD_TOP);
-    XFlush(pDisplay);
-
-    Image.width             =  LCD_WIDTH;
-    Image.height            =  LCD_HEIGHT;
-    Image.xoffset           =  0;
-    Image.format            =  XYBitmap;
-    Image.data              =  (char*)pImage;
-    Image.byte_order        =  LSBFirst;
-    Image.bitmap_unit       =  8;
-    Image.bitmap_bit_order  =  LSBFirst;
-    Image.bitmap_pad        =  8;
-    Image.depth             =  1;
-    Image.bytes_per_line    =  (LCD_WIDTH + 7) / 8;
-    Image.bits_per_pixel    =  1;
-
-    XInitImage(&Image);
-
-    LCDClear(pImage);
-
-    XSelectInput(pDisplay,hWindow,ExposureMask | ButtonPressMask | ButtonReleaseMask);
-  }
-}
 
 
-UBYTE     dLcdRead(void)
-{
-  UBYTE   Result = 0;
-  int     X,Y;
-
-  if (XCheckMaskEvent(pDisplay,ExposureMask | ButtonPressMask | ButtonReleaseMask,&Event))
-  {
-    //printf("%d %d\r\n",Event.type,Event.xbutton.button);
-
-    switch (Event.type)
-    {
-      case ButtonPress :
-      {
-        X  =  Event.xbutton.x;
-        Y  =  Event.xbutton.y;
-
-        switch (Event.xbutton.button)
-        {
-          case Button1 :
-          {
-            //printf("%4d %4d\r\n",X,Y);
-
-            if ((X >= 162) && (X <= 205) && (Y >= 288) && (Y <= 327))
-            {
-              UiInstance.ButtonState[BUT0]           |=  BUTTON_ACTIVE;
-            }
-            if ((X >= 162) && (X <= 205) && (Y >= 382) && (Y <= 421))
-            {
-              UiInstance.ButtonState[BUT2]           |=  BUTTON_ACTIVE;
-            }
-            if ((X >= 230) && (X <= 264) && (Y >= 338) && (Y <= 371))
-            {
-              UiInstance.ButtonState[BUT3]           |=  BUTTON_ACTIVE;
-            }
-            if ((X >= 98) && (X <= 137) && (Y >= 337) && (Y <= 370))
-            {
-              UiInstance.ButtonState[BUT4]           |=  BUTTON_ACTIVE;
-            }
-            if ((X >= 162) && (X <= 202) && (Y >= 333) && (Y <= 375))
-            {
-              UiInstance.ButtonState[BUT1]           |=  BUTTON_ACTIVE;
-            }
-            if ((X >= 51) && (X <= 120) && (Y >= 258) && (Y <= 295))
-            {
-              UiInstance.ButtonState[BUT5]           |=  BUTTON_ACTIVE;
-            }
-          }
-          break;
-
-          case Button3 :
-          {
-//            UiInstance.Event  =  vmEVENT_BT_PIN;
-//            UiInstance.Event  =  vmEVENT_BT_REQ_CONF;
-//            SetUiUpdate();
-//            UiInstance.Warning |=  WARNING_TEMP;
-
-            // printf("%4d %4d\r\n",X,Y);
-          }
-          break;
-
-        }
-      }
-      break;
-
-      case ButtonRelease :
-      {
-        X  =  Event.xbutton.x;
-        Y  =  Event.xbutton.y;
-
-        switch (Event.xbutton.button)
-        {
-          case Button1 :
-          {
-            //printf("%4d %4d\r\n",X,Y);
-
-            if ((X >= 162) && (X <= 205) && (Y >= 288) && (Y <= 327))
-            {
-              UiInstance.ButtonState[BUT0]         &= ~BUTTON_ACTIVE;
-            }
-            if ((X >= 162) && (X <= 205) && (Y >= 382) && (Y <= 421))
-            {
-              UiInstance.ButtonState[BUT2]         &= ~BUTTON_ACTIVE;
-            }
-            if ((X >= 230) && (X <= 264) && (Y >= 338) && (Y <= 371))
-            {
-              UiInstance.ButtonState[BUT3]         &= ~BUTTON_ACTIVE;
-            }
-            if ((X >= 98) && (X <= 137) && (Y >= 337) && (Y <= 370))
-            {
-              UiInstance.ButtonState[BUT4]         &= ~BUTTON_ACTIVE;
-            }
-            if ((X >= 162) && (X <= 202) && (Y >= 333) && (Y <= 375))
-            {
-              UiInstance.ButtonState[BUT1]         &= ~BUTTON_ACTIVE;
-            }
-            if ((X >= 51) && (X <= 120) && (Y >= 258) && (Y <= 295))
-            {
-              UiInstance.ButtonState[BUT5]         &= ~BUTTON_ACTIVE;
-            }
-          }
-          break;
-
-        }
-      }
-      break;
-
-    }
-  }
-
-  return (Result);
-}
 
 
-void      dLcdExit(void)
-{
-  if (pDisplay)
-  {
-    XFreePixmap(pDisplay,hLcd);
-    XFreeGC(pDisplay,hGC);
-    XCloseDisplay(pDisplay);
-  }
-}
 
-#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void      dLcdScroll(UBYTE *pImage,DATA16 Y0)

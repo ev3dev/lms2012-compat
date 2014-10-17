@@ -7,9 +7,9 @@ BMP_TO_XBM = convert
 TASM = ../adk/tasm
 TASM_DEPS = ../adk/lmststasm/bytecodes.h ../adk/lmststasm/lmstypes.h
 
-INSTALL_TO ?= AM1808 X86
+INSTALL_TO ?= AM335x X86
 
-INSTALL_DIR_AM1808 = ../../lms2012/Linux_AM1808/$(APP_PATH)/$(APP)
+INSTALL_DIR_AM335x = ../../lms2012/Linux_AM335x/$(APP_PATH)/$(APP)
 INSTALL_DIR_X86 = ../../lms2012/Linux_X86/$(APP_PATH)/$(APP)
 INSTALL_DIR_source = ../../$(APP)/source
 

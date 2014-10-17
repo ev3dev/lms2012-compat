@@ -67,6 +67,9 @@
 #include  <errno.h>
 
 #include  <sys/ioctl.h>
+//added for EVB
+#include <linux/i2c.h>
+
 #include  <linux/i2c-dev.h>
 #include  <pthread.h>
 

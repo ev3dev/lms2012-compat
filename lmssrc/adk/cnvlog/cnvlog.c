@@ -33,10 +33,7 @@ int       main(int argc,char *argv[])
           {
             case 0 :
             {
-              if (Byte != 0xFF)
-              {
-                fwrite(&Byte,1,1,pFileOut);
-              }
+              fwrite(&Byte,1,1,pFileOut);
               if (Byte == '\n')
               {
                 Datas  =  0;
@@ -47,10 +44,7 @@ int       main(int argc,char *argv[])
             
             case 1 :
             {
-              if (Byte != 0xFF)
-              {
-                fwrite(&Byte,1,1,pFileOut);
-              }
+              fwrite(&Byte,1,1,pFileOut);
               if (Byte == '\t')
               {
                 Datas++;

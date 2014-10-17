@@ -1,21 +1,25 @@
-ARCH = AM1808
+ARCH = AM335x
 
 BASE = ..
 
-KERNEL = $(BASE)/../extra/linux-03.20.00.13
-UBOOT = $(BASE)/../extra/uboot-03.20.00.13
+KERNEL = $(BASE)/../../board-support/linux-3.12.10-ti2013.12.01
+UBOOT = $(BASE)/../../board-support/u-boot-2013.10-ti2013.12.01
 
-KERNEL_CONF = LEGOBoard.config
+
+KERNEL_CONF = lego.config
 
 default: help
 
 include rules.mk
 
+
+
+
 #
 # lms2012 program.
 #
 
-LIBS = c_com c_input c_memory c_output c_sound c_ui c_dynload 
+LIBS = c_com c_input c_memory c_output c_sound c_ui c_dynload
 
 almostall: lms2012 programs kernel modules
 
@@ -29,6 +33,9 @@ $(LIBS:%=%.clean): %.clean:
 	$(MAKE) -C $(BASE)/$*/Linuxlib_$(ARCH) clean uninstall
 
 .PHONY: lms2012 lms2012.clean $(LIBS:%=%.clean)
+
+
+
 
 #
 # lms2012 modules.
@@ -49,21 +56,26 @@ $(MODULES:%=%.clean): %.clean:
 
 .PHONY: modules $(MODULES) modules.clean $(MODULES:%=%.clean)
 
+
+
 #
 # Programs.
 #
 
-programs:
-	$(MAKE) -C $(BASE)/lmssrc
+#programs:
+#	$(MAKE) -C $(BASE)/lmssrc
 
-programs.clean:
-	$(MAKE) -C $(BASE)/lmssrc clean uninstall
+#programs.clean:
+#	$(MAKE) -C $(BASE)/lmssrc clean uninstall
+
+
+
 
 #
 # Kernel.
 #
 
-kernel: uImage
+kernel: zImage
 
 $(KERNEL)/.config: $(KERNEL_CONF)
 	cp $< $@
@@ -72,53 +84,44 @@ kernel.prepare: $(KERNEL)/include/generated/bounds.h
 $(KERNEL)/include/generated/bounds.h: $(KERNEL)/.config
 	$(MAKE) -C $(KERNEL) ARCH=arm CROSS_COMPILE=$(CROSS_COMPILE) oldconfig modules_prepare
 
-$(KERNEL)/arch/arm/boot/uImage: kernel.prepare | $(MKIMAGE_CHECK)
-	$(MAKE) -C $(KERNEL) ARCH=arm CROSS_COMPILE=$(CROSS_COMPILE) uImage
+$(KERNEL)/arch/arm/boot/zImage: kernel.prepare | $(MKIMAGE_CHECK)
+	$(MAKE) -C $(KERNEL) ARCH=arm CROSS_COMPILE=$(CROSS_COMPILE) zImage
 
-uImage: $(KERNEL)/arch/arm/boot/uImage
+zImage: $(KERNEL)/arch/arm/boot/zImage
 	cp $< $@
 
 kernel.clean:
-	$(MAKE) -C $(KERNEL) ARCH=arm CROSS_COMPILE=$(CROSS_COMPILE) clean
+	$(MAKE) -C $(KERNEL) ARCH=arm CROSS_COMPILE=$(CROSS_COMPILE) distclean
 
 .PHONY: kernel kernel.prepare kernel.clean
+
+
+
 
 #
 # U-Boot.
 #
 
-u-boot: uBoot
+u-boot: u-boot.img
 
-$(UBOOT)/u-boot.bin:
-	$(MAKE) -C $(UBOOT) CROSS_COMPILE=$(CROSS_COMPILE) da850_omapl138_evm_config
-	$(MAKE) -C $(UBOOT) CROSS_COMPILE=$(CROSS_COMPILE) all
+$(UBOOT)/am335x_evm/MLO:
+	$(MAKE) -C $(UBOOT) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=arm O=am335x_evm am335x_evm
+#	$(MAKE) -C $(UBOOT) CROSS_COMPILE=$(CROSS_COMPILE) all
 
-uBoot: $(UBOOT)/u-boot.bin
+u-boot.img: MLO
+	cp $(UBOOT)/am335x_evm/u-boot.img $@
+
+MLO: $(UBOOT)/am335x_evm/MLO
 	cp $< $@
 
 u-boot.clean:
-	$(MAKE) -C $(UBOOT) CROSS_COMPILE=$(CROSS_COMPILE) distclean
+	$(MAKE) -C $(UBOOT) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=arm distclean
+	rm -r $(UBOOT)/am335x_evm
 
 .PHONY: u-boot u-boot.clean
 
-#
-# Doc.
-#
 
-DOC_BROWSER = x-www-browser
 
-doc:
-	cd ../lms2012/doc && \
-		doxygen Doxyfile && \
-		cp graphics/LEGO.jpg html
-
-doc.view: doc
-	$(DOC_BROWSER) ../lms2012/doc/html/index.html
-
-doc.clean:
-	rm -rf ../lms2012/doc/html
-
-.PHONY: doc doc.view doc.clean
 
 #
 # Misc.

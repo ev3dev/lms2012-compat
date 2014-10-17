@@ -19,14 +19,14 @@
  */
 
 
-//  TCP 12.12.2013
+//  TCP 08.04.2013
 //! \page testsensorsappcode Sensors Application
 //!
 //! <hr size="1"/>
 //!
 //! \verbatim
 //**********************************************************************
-define appv 'Sensors V1.03'                                           //
+define appv 'Sensors V1.02'                                           //
 //**********************************************************************
                                                                       //
 /*
@@ -75,7 +75,7 @@ vmthread  MAIN                                                        //  void  
   JR_FALSE(ShowVersion,DontShowVersion)                               //    if (ShowVersion)
                                                                       //    {
   UI_DRAW(FILLRECT,BG_COLOR,4,50,170,28)                              //      UI_DRAW(FILLRECT,BG_COLOR,4,50,170,28)
-  UI_DRAW(RECTANGLE,FG_COLOR,6,52,166,24)                                  //      UI_DRAW(RECTANGLE,FG_COLOR,6,52,166,24)
+  UI_DRAW(RECT,FG_COLOR,6,52,166,24)                                  //      UI_DRAW(RECT,FG_COLOR,6,52,166,24)
   UI_DRAW(TEXT,FG_COLOR,13,60,appv)                                   //      UI_DRAW(TEXT,FG_COLOR,13,60,appv)
   UI_DRAW(UPDATE)                                                     //      UI_DRAW(UPDATE)
                                                                       //
@@ -526,9 +526,9 @@ ModeOk:                                                               //      }
                                                                       //
 NotTooLowMode:                                                        //      }
                                                                       //
-  JR_LT8(SetMode,Modes,NotTooHighMode)                                //      if (SetModes >= Modes)
+  JR_LT8(SetMode,Views,NotTooHighMode)                                //      if (SetModes >= Views)
                                                                       //      {
-  MOVE8_8(Modes,SetMode)                                              //        SetMode  =  Modes
+  MOVE8_8(Views,SetMode)                                              //        SetMode  =  Views
   SUB8(SetMode,1,SetMode)                                             //        SetMode--
                                                                       //
 NotTooHighMode:                                                       //      }
