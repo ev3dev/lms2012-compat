@@ -205,8 +205,6 @@ static UBYTE            ExtendedFeaturesEnable[]  = {0x07, 0x83, 0xFF};
 static volatile sig_atomic_t __io_canceled         = 0;
 static volatile sig_atomic_t __io_terminated       = 0;
 
-#define LEGO_BUNDLE_SEED_ID                        "9RNK8ZF528"
-#define LEGO_BUNDLE_ID                             "com.lego.lms"
 
 enum
 {
