@@ -750,12 +750,10 @@ void      cComSystemReply(RXBUF *pRxBuf, TXBUF *pTxBuf)
 {
   COMCMD   *pComCmd;
   SYSCMDC  *pSysCmdC;
-  CMDSIZE   CmdSize;
   UBYTE     FileName[MAX_FILENAME_SIZE];
 
   pComCmd   =  (COMCMD*)pRxBuf->Buf;
   pSysCmdC  =  (SYSCMDC*)(*pComCmd).PayLoad;
-  CmdSize   =  (*pComCmd).CmdSize;
 
   switch ((*pSysCmdC).Sys)
   {
@@ -869,11 +867,9 @@ void      cComSystemReplyError(RXBUF *pRxBuf, TXBUF *pTxBuf)
 {
   COMCMD   *pComCmd;
   SYSCMDC  *pSysCmdC;
-  CMDSIZE   CmdSize;
 
   pComCmd   =  (COMCMD*)pRxBuf->Buf;
   pSysCmdC  =  (SYSCMDC*)(*pComCmd).PayLoad;
-  CmdSize   =  (*pComCmd).CmdSize;
 
   switch ((*pSysCmdC).Sys)
   {
@@ -1985,6 +1981,8 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
 
         pTxBuf->MsgLen                 =  0;
         pTxBuf->BlockLen               =  SIZEOF_RPLYCONTINUELIST;
+
+        FileHandle = pContinueList->Handle;
         cComFreeHandle(FileHandle);
       }
       else
@@ -3315,7 +3313,7 @@ UBYTE     cComFindMailbox(UBYTE *pName, UBYTE *pNo)
 void      cComReady(void)
 {
   DSPSTAT DspStat = NOBREAK;
-  DATA8   Hardware;
+  // DATA8   Hardware;
   DATA8   *pName;
   IP      TmpIp;
   UBYTE   Status;
@@ -3324,7 +3322,7 @@ void      cComReady(void)
 
 
   TmpIp     =  GetObjectIp();
-  Hardware  =  *(DATA8*)PrimParPointer();
+  /* Hardware  =  *(DATA8*) */PrimParPointer();
   pName     =   (DATA8*)PrimParPointer();
 
   if(0 == pName[0])
@@ -3385,13 +3383,13 @@ void      cComTest(void)
 {
   DSPSTAT DspStat = FAILBREAK;
   DATA8   Busy    = 0;
-  DATA8   Hardware;
+  // DATA8   Hardware;
   DATA8   *pName;
   UBYTE   Status;
   UBYTE   ChNos;
   UBYTE   ChNoArr[NO_OF_BT_CHS];
 
-  Hardware  =  *(DATA8*)PrimParPointer();
+  /* Hardware  =  *(DATA8*) */PrimParPointer();
   pName     =   (DATA8*)PrimParPointer();
 
   if(0 == pName[0])
@@ -3573,14 +3571,14 @@ void      cComOpenMailBox(void)
   DATA8   No;
   DATA8   *pBoxName;
   DATA8   Type;
-  DATA8   Values;
-  DATA8   FifoSize;
+  // DATA8   Values;
+  // DATA8   FifoSize;
 
   No          =  *(DATA8*)PrimParPointer();
   pBoxName    =   (DATA8*)PrimParPointer();
   Type        =  *(DATA8*)PrimParPointer();
-  FifoSize    =  *(DATA8*)PrimParPointer();
-  Values      =  *(DATA8*)PrimParPointer();
+  /* FifoSize    =  *(DATA8*) */PrimParPointer();
+  /* Values      =  *(DATA8*) */PrimParPointer();
 
   if (OK != ComInstance.MailBox[No].Status)
   {
@@ -3629,7 +3627,7 @@ void      cComWriteMailBox(void)
 {
   DSPSTAT DspStat = FAILBREAK;
   DATA8   *pBrickName;
-  DATA8   Hardware;
+  // DATA8   Hardware;
   DATA8   *pBoxName;
   DATA8   Type;
   DATA8   Values;
@@ -3644,7 +3642,7 @@ void      cComWriteMailBox(void)
   WRITE_MAILBOX_PAYLOAD  *pComMbxPayload;
 
   pBrickName  =   (DATA8*)PrimParPointer();
-  Hardware    =  *(DATA8*)PrimParPointer();
+  /* Hardware    =  *(DATA8*) */PrimParPointer();
   pBoxName    =   (DATA8*)PrimParPointer();
   Type        =  *(DATA8*)PrimParPointer();
   Values      =  *(DATA8*)PrimParPointer();
@@ -3784,11 +3782,11 @@ void      cComReadMailBox(void)
   DSPSTAT DspStat = FAILBREAK;
   DATA8   No;
   DATA8   Values;
-  DATA16  Len;
+  // DATA16  Len;
   UBYTE   Cnt;
 
   No        =  *(DATA8*)PrimParPointer();
-  Len       =  *(DATA16*)PrimParPointer();
+  /* Len       =  *(DATA16*) */PrimParPointer();
   Values    =  *(DATA8*)PrimParPointer();
 
   if (OK == ComInstance.MailBox[No].Status)
@@ -4043,13 +4041,11 @@ void      cComWriteFile(void)
     {
       UBYTE       ChNo[NO_OF_BT_CHS];
       UBYTE       pName[MAX_FILENAME_SIZE];
-      BEGIN_DL    *pDlMsg;
 
       cBtGetChNo((UBYTE*)pDeviceName, ChNo);
 
       ChNo[0] += BTSLAVE;                           // Add Com module offset
       pTxBuf   =  &(ComInstance.TxBuf[ChNo[0]]);
-      pDlMsg   =  (BEGIN_DL*)(&(pTxBuf->Buf[0]));
 
       if (TYPE_FOLDER == (FileType & 0x0F))
       {
@@ -5570,7 +5566,6 @@ void      cComSet(void)
  */
 void      cComRemove(void)
 {
-  DSPSTAT DspStat = FAILBREAK;
   DATA8   Hardware;
   DATA8   *pName;
   UBYTE   LocalIndex;
@@ -5588,7 +5583,6 @@ void      cComRemove(void)
     {
       if (FAIL != cBtDeleteFavourItem((UBYTE *)pName))
       {
-        DspStat  =  NOBREAK;
       }
     }
     break;
@@ -5603,7 +5597,6 @@ void      cComRemove(void)
       #endif
 
       cWiFiDeleteAsKnown(LocalIndex);       // We removes the (favorit) "*"
-      DspStat  =  NOBREAK;
     }
     break;
   }
