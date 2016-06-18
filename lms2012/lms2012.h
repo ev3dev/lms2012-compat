@@ -164,8 +164,8 @@ char      *HwId = "03";
 //#define   DISABLE_OLD_COLOR             //!< Don't support NXT color sensor
 //#define   DISABLE_ADC                   //!< Don't use ADC (no clock EMC test)
 //#define   ADC_BITBANGING                //!< Don't use SPI for a/d converter
-//#define   DISABLE_DAISYCHAIN
-//#define   DISABLE_DAISYCHAIN_COM_CALL
+#define   DISABLE_DAISYCHAIN
+#define   DISABLE_DAISYCHAIN_COM_CALL
 //#define   DISABLE_FAST_DATALOG_BUFFER
 //#define   DISABLE_BUMBED
 //#define   LOG_ASCII

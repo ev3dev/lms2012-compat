@@ -2309,12 +2309,12 @@ RESULT    mSchedInit(int argc,char *argv[])
 
   VMInstance.RefCount  =  0;
 
-  Result |=  cOutputInit();
-  Result |=  cInputInit();
-  Result |=  cUiInit();
-  Result |=  cMemoryInit();
-  Result |=  cComInit();
-  Result |=  cSoundInit();
+  cOutputInit();
+  cInputInit();
+  cUiInit();
+  cMemoryInit();
+  cComInit();
+  cSoundInit();
 
   // Initialise the dynamic loading, does not return anything
   dynloadInit();

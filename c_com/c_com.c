@@ -189,11 +189,18 @@ RESULT    cComInit(void)
   // USB cable stuff init
   UsbConUpdate = 0;               // Reset timing of USB device side cable detection;
   cComUsbDeviceConnected = FALSE; // Until we believe in something else ;-)
-  cComSetMusbHdrcMode();
 
-  BtInit((char*)&(ComInstance.BrickName[0]));
-  cDaisyInit();
-  cWiFiInit();
+  // TODO: Fixup USB
+  // cComSetMusbHdrcMode();
+
+  // TODO: Fixup Bluetooth
+  // BtInit((char*)&(ComInstance.BrickName[0]));
+
+  // TODO: Fixup Daisychaining
+  // cDaisyInit();
+
+  // TODO: Fixup Wi-Fi
+  // cWiFiInit();
 
   ComInstance.VmReady      =  1;
   ComInstance.ReplyStatus  =  0;
@@ -2493,7 +2500,9 @@ void      cComUpdate(void)
 
   ChNo    =  0;
 
+#ifndef DISABLE_DAISYCHAIN
   cDaisyControl();  // Keep the HOST part going
+#endif
 
   for(ChNo = 0; ChNo < NO_OF_CHS; ChNo++)
   {

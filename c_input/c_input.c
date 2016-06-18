@@ -2557,8 +2557,18 @@ DATAF     cInputReadDeviceRaw(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit
 }
 
 
-#else
+#else /* DISABLE_DAISYCHAIN */
 
+RESULT cInputSetChainedDeviceType(DATA8 Layer, DATA8 Port, DATA8 Type, DATA8 Mode)
+{
+  return FAIL;
+}
+
+RESULT cInputGetDeviceData(DATA8 Layer, DATA8 Port, DATA8 Length, DATA8 *pType,
+                           DATA8 *pMode, DATA8 *pData)
+{
+  return FAIL;
+}
 
 DATAF     cInputReadDeviceRaw(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit)
 {

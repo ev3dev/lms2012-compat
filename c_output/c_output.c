@@ -444,12 +444,14 @@ void      cOutputSetType(void)
   DATA8   Layer;
   DATA8   No;
   DATA8   Type;
-  UBYTE   Len;
   DSPSTAT DspStat = NOBREAK;
+#ifndef    DISABLE_DAISYCHAIN_COM_CALL
   IP      TmpIp;
+  UBYTE   Len;
 
   TmpIp  =  GetObjectIp();
   Len    =  0;
+#endif
   Layer  =  *(DATA8*)PrimParPointer();
   No     =  *(DATA8*)PrimParPointer();
   Type   =  *(DATA8*)PrimParPointer();
@@ -522,14 +524,15 @@ void      cOutputReset(void)
 {
   DATA8   Layer;
   UBYTE   Nos;
-  UBYTE   Len;
   DSPSTAT DspStat = NOBREAK;
-  IP      TmpIp;
-
   DATA8   ResetArr[2];
+#ifndef    DISABLE_DAISYCHAIN_COM_CALL
+  IP      TmpIp;
+  UBYTE   Len;
 
   TmpIp  =  GetObjectIp();
   Len    =  0;
+#endif
   Layer  =  *(DATA8*)PrimParPointer();
   Nos    =  *(DATA8*)PrimParPointer();
 
@@ -590,14 +593,15 @@ void      cOutputStop(void)
   DATA8   Layer;
   UBYTE   Nos;
   UBYTE   Brake;
-  UBYTE   Len;
   DSPSTAT DspStat = NOBREAK;
-  IP      TmpIp;
-
   DATA8   StopArr[3];
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
+  IP      TmpIp;
+  UBYTE   Len;
 
   TmpIp  =  GetObjectIp();
   Len    =  0;
+#endif
   Layer  =  *(DATA8*)PrimParPointer();
   Nos    =  *(DATA8*)PrimParPointer();
   Brake  =  *(DATA8*)PrimParPointer();
@@ -660,14 +664,15 @@ void      cOutputSpeed(void)
   DATA8   Layer;
   UBYTE   Nos;
   DATA8   Speed;
-  UBYTE   Len;
   DSPSTAT DspStat = NOBREAK;
-  IP      TmpIp;
-
   DATA8   SetSpeed[3];
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
+  IP      TmpIp;
+  UBYTE   Len;
 
   TmpIp  =  GetObjectIp();
   Len    =  0;
+#endif
   Layer  =  *(DATA8*)PrimParPointer();
   Nos    =  *(DATA8*)PrimParPointer();
   Speed  =  *(DATA8*)PrimParPointer();
@@ -731,12 +736,14 @@ void      cOutputPower(void)
   UBYTE   Nos;
   DATA8   Power;
   DATA8   SetPower[3];
-  DATA8   Len;
   DSPSTAT DspStat = NOBREAK;
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
   IP      TmpIp;
+  DATA8   Len;
 
   TmpIp  =  GetObjectIp();
   Len    =  0;
+#endif
   Layer  =  *(DATA8*)PrimParPointer();
   Nos    =  *(DATA8*)PrimParPointer();
   Power  =  *(DATA8*)PrimParPointer();
@@ -798,14 +805,15 @@ void      cOutputStart(void)
   DATA8   Tmp;
   DATA8   Layer;
   UBYTE   Nos;
-  DATA8   Len;
   DSPSTAT DspStat = NOBREAK;
-  IP      TmpIp;
-
   DATA8   StartMotor[2];
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
+  IP      TmpIp;
+  DATA8   Len;
 
   TmpIp  =  GetObjectIp();
   Len    =  0;
+#endif
   Layer  =  *(DATA8*)PrimParPointer();
   Nos    =  *(DATA8*)PrimParPointer();
 
@@ -876,12 +884,14 @@ void      cOutputPolarity(void)
 {
   DATA8   Layer;
   DATA8   Polarity[3];
-  UBYTE   Len;
   DSPSTAT DspStat = NOBREAK;
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
   IP      TmpIp;
+  UBYTE   Len;
 
   TmpIp       =  GetObjectIp();
   Len         =  0;
+#endif
   Layer       =  *(DATA8*)PrimParPointer();
   Polarity[0] =   (DATA8)opOUTPUT_POLARITY;
   Polarity[1] =  *(DATA8*)PrimParPointer();
@@ -945,12 +955,14 @@ void      cOutputStepPower(void)
   DATA8       Layer;
   DATA8       Tmp;
   STEPPOWER   StepPower;
-  UBYTE       Len;
   DSPSTAT     DspStat = NOBREAK;
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
   IP          TmpIp;
+  UBYTE       Len;
 
   TmpIp            =  GetObjectIp();
   Len              =  0;
+#endif
   Layer            =  *(DATA8*)PrimParPointer();
   StepPower.Cmd    =   opOUTPUT_STEP_POWER;
   StepPower.Nos    =  *(DATA8*)PrimParPointer();
@@ -1031,12 +1043,14 @@ void      cOutputTimePower(void)
   DATA8       Layer;
   DATA8       Tmp;
   TIMEPOWER   TimePower;
-  UBYTE       Len;
   DSPSTAT     DspStat = NOBREAK;
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
   IP          TmpIp;
+  UBYTE       Len;
 
   TmpIp            =  GetObjectIp();
   Len              =  0;
+#endif
   Layer            =  *(DATA8*) PrimParPointer();
   TimePower.Cmd    =  opOUTPUT_TIME_POWER;
   TimePower.Nos    =  *(DATA8*) PrimParPointer();
@@ -1116,12 +1130,14 @@ void      cOutputStepSpeed(void)
   DATA8       Layer;
   DATA8       Tmp;
   STEPSPEED   StepSpeed;
-  UBYTE       Len;
   DSPSTAT     DspStat = NOBREAK;
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
   IP          TmpIp;
+  UBYTE       Len;
 
   TmpIp            =  GetObjectIp();
   Len              =  0;
+#endif
   Layer            =  *(DATA8*)PrimParPointer();
   StepSpeed.Cmd    =   opOUTPUT_STEP_SPEED;
   StepSpeed.Nos    =  *(DATA8*)PrimParPointer();
@@ -1202,12 +1218,14 @@ void      cOutputTimeSpeed(void)
   DATA8       Layer;
   DATA8       Tmp;
   TIMESPEED   TimeSpeed;
-  UBYTE       Len;
   DSPSTAT     DspStat = NOBREAK;
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
   IP          TmpIp;
+  UBYTE       Len;
 
   TmpIp            =  GetObjectIp();
   Len              =  0;
+#endif
   Layer            =  *(DATA8*)PrimParPointer();
   TimeSpeed.Cmd    =   (DATA8)opOUTPUT_TIME_SPEED;
   TimeSpeed.Nos    =  *(DATA8*)PrimParPointer();
@@ -1288,12 +1306,14 @@ void      cOutputStepSync(void)
   DATA8       Tmp;
   DATA8       No;
   STEPSYNC    StepSync;
-  UBYTE       Len;
   DSPSTAT     DspStat = NOBREAK;
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
   IP          TmpIp;
+  UBYTE       Len;
 
   TmpIp          =  GetObjectIp();
   Len            =  0;
+#endif
   Layer          =  *(DATA8*)PrimParPointer();
   StepSync.Cmd   =   opOUTPUT_STEP_SYNC;
   StepSync.Nos   =  *(DATA8*)PrimParPointer();
@@ -1384,12 +1404,14 @@ void      cOutputTimeSync(void)
   DATA8     Tmp;
   DATA8     No;
   TIMESYNC  TimeSync;
-  UBYTE     Len;
   DSPSTAT   DspStat = NOBREAK;
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
   IP        TmpIp;
+  UBYTE     Len;
 
   TmpIp          =  GetObjectIp();
   Len            =  0;
+#endif
   Layer          =  *(DATA8*)PrimParPointer();
   TimeSync.Cmd   =  opOUTPUT_TIME_SYNC;
   TimeSync.Nos   =  *(DATA8*)PrimParPointer();
@@ -1555,7 +1577,7 @@ void      cOutputReady(void)
   }
   else
   {
-    Bits = cDaisyCheckBusyBit(Layer, Nos);
+    // Bits = cDaisyCheckBusyBit(Layer, Nos);
     Bits = 0;
 
     for (Tmp = 0;(Tmp < OUTPUTS) && (DspStat == NOBREAK);Tmp++)
@@ -1625,6 +1647,7 @@ void      cOutputTest(void)
       }
     }
   }
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
   else
   {
     if (cDaisyCheckBusyBit(Layer, Nos))
@@ -1632,6 +1655,7 @@ void      cOutputTest(void)
       Busy = 1;
     }
   }
+#endif
   *(DATA8*)PrimParPointer() = Busy;
 }
 
@@ -1653,13 +1677,15 @@ void      cOutputClrCount(void)
 {
   DATA8   Layer;
   DATA8   ClrCnt[2];
-  UBYTE   Len;
   DSPSTAT DspStat = NOBREAK;
-  IP      TmpIp;
   UBYTE   Tmp;
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
+  IP      TmpIp;
+  UBYTE   Len;
 
   TmpIp       =  GetObjectIp();
   Len         =  0;
+#endif
   Layer       =  *(DATA8*)PrimParPointer();
   ClrCnt[0]   =  opOUTPUT_CLR_COUNT;
   ClrCnt[1]   =  *(DATA8*)PrimParPointer();
