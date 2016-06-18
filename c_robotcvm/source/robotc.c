@@ -75,19 +75,21 @@ void vm_update()
 
 void robotc_entry_0()
 {
-  char *inputs   = (char *) PrimParPointer();
-  char *outputs  = (char *) PrimParPointer();
-  uint16_t dataSize = *(uint16_t *)PrimParPointer();
-
-	void *data = 0;
+	// char *inputs;
+	// char *outputs;
+	uint16_t dataSize;
+	// void *data = 0;
 
 #ifdef DEBUG_DYNLOAD
 	fprintf(stderr, "ROBOTC: %s called. inputs: %d, outputs: %d, datalen: %d\n", __func__, *inputs, *outputs, dataSize);
 #endif
+	/* inputs = (char *) */PrimParPointer();
+	/* outputs  = (char *) */PrimParPointer();
+	dataSize = *(uint16_t *)PrimParPointer();
 
 	// Only pick a variable off that stack if you should
 	if (dataSize > 0)
-		data = PrimParPointer();
+		/* data = */PrimParPointer();
 
 	// do something here
 }
