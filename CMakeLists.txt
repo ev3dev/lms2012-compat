@@ -5,7 +5,7 @@ add_compile_options (-Wall -Werror)
 
 add_subdirectory (c_com)
 add_subdirectory (c_dynload)
-add_subdirectory (c_input/source)
+add_subdirectory (c_input)
 add_subdirectory (c_memory/source)
 add_subdirectory (c_output/source)
 add_subdirectory (c_robotcvm/source)

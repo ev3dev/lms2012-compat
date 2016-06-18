@@ -573,7 +573,7 @@ INPUT                  =  "../lms2012/source/lms2012.h" \
                           "../lms2012/source" \
                           "../c_ui/source" \
                           "../c_com" \
-                          "../c_input/source" \
+                          "../c_input" \
                           "../c_memory/source" \
                           "../c_output/source" \
                           "../c_sound/source" \

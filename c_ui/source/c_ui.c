@@ -155,7 +155,7 @@
 #include  "d_terminal.h"
 #include  "../../c_memory/source/c_memory.h"
 #include  "c_com.h"
-#include  "../../c_input/source/c_input.h"
+#include  "c_input.h"
 #include  <string.h>
 #include  <time.h>
 extern    char *strptime(const char *s, const char *format, struct tm *tm);
