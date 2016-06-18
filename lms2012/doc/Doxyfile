@@ -576,7 +576,7 @@ INPUT                  =  "../lms2012/source/lms2012.h" \
                           "../c_input" \
                           "../c_memory" \
                           "../c_output" \
-                          "../c_sound/source" \
+                          "../c_sound" \
                           "../d_pwm/Linuxmod_AM1808" \
                           "../d_analog/Linuxmod_AM1808" \
                           "../d_ui/Linuxmod_AM1808" \
