@@ -5,7 +5,7 @@ set (SOURCE_FILES
 
 add_library (c_memory OBJECT ${SOURCE_FILES})
 target_include_directories (c_memory PUBLIC
-    ${CMAKE_SOURCE_DIR}/lms2012/source
+    ${CMAKE_SOURCE_DIR}/lms2012
     ${CMAKE_SOURCE_DIR}/c_com
     ${CMAKE_SOURCE_DIR}/c_ui
     ${C_COM_DEPS_INCLUDE_DIRS}

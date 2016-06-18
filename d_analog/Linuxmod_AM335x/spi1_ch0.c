@@ -5,8 +5,8 @@
 
 #define   HW_ID_SUPPORT
 
-#include  "../../lms2012/source/lms2012.h"
-#include  "../../lms2012/source/am335x.h"
+#include  "lms2012.h"
+#include  "am335x.h"
 
 
 

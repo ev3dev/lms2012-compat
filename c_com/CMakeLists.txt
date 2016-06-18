@@ -16,7 +16,7 @@ set (SOURCE_FILES
 
 add_library (c_com OBJECT ${SOURCE_FILES})
 target_include_directories (c_com PUBLIC
-    ${CMAKE_SOURCE_DIR}/lms2012/source
+    ${CMAKE_SOURCE_DIR}/lms2012
     ${CMAKE_SOURCE_DIR}/c_input
     ${CMAKE_SOURCE_DIR}/c_memory
     ${CMAKE_SOURCE_DIR}/c_output
