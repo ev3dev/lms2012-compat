@@ -599,8 +599,6 @@ static int Device1Init(void)
 
           SOUNDDisable; // Disable the Sound Power Amp
 
-          //#define DEBUG
-          #undef DEBUG
 		      #ifdef DEBUG
         	  printk("  %s device register succes\n",DEVICE1_NAME);
 		      #endif

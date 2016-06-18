@@ -144,23 +144,17 @@ RESULT  cWiFiKillUdHcPc(void)
 
   // Only one instance at a time :-)
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("We'll try to kill udhcpc\r\n");
   #endif
   strcpy(Cmd, "killall udhcpc &> /dev/null");
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\r\nCmd = %s\r\n", Cmd);
   #endif
 
   if(system(Cmd) == 0)
   {
-    #undef DEBUG
-    //#define DEBUG
     #ifdef DEBUG
       printf("\r\nThe kill Cmd returns OK!!\r\n");
     #endif
@@ -194,8 +188,6 @@ int cWiFiCheckTimer(void)   // Get Elapsed time in seconds
 // Used primarily for debug (development :-))
 void wpa_control_message_callback(char *message, size_t length)
 {
-  // #define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("%s\n", message);
   #endif
@@ -242,7 +234,6 @@ int cWiFiStartWpaSupplicant(char* ConfigPath,char* IFName)
   strcat(StartCmd, " -B");
   strcat(StartCmd, "&> /dev/null");
 
-  #undef DEBUG
   #ifdef DEBUG
     printf("\r\nStart WPA_Supplicant: %s\r\n", StartCmd);
   #endif
@@ -272,8 +263,6 @@ int cWiFiPopulateKnownApList(void)  // At startup
   ApStoreTableSize = 0; // ZERO size - NO known - if none in file
   PersistentFile = fopen(FileName, "rb");
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("\r\nKnownlist:\r\n");
   #endif
@@ -284,8 +273,6 @@ int cWiFiPopulateKnownApList(void)  // At startup
     {
       memcpy(&(ApStoreTable[ArrayIterator++]), &OneApRecord, sizeof(aps));
 
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
       	printf("Populating ApStoreTable[x] == KnownList\n\r");
         printf("\r\nApStoreTable[%d].mac_address = %s\r\n", (ArrayIterator - 1), ApStoreTable[ArrayIterator - 1].mac_address);
@@ -369,8 +356,6 @@ int cWiFiStoreKnownApList(void) // At exit of main application
   strcat(FileName, "/");
   strcat(FileName, WIFI_PERSISTENT_FILENAME);
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef	DEBUG
       printf("AP_FLAG_ADJUST_FOR_STORAGE = %X\n\r", AP_FLAG_ADJUST_FOR_STORAGE);
   	  printf("Persistent FileName = %s ApStoreTableSize = %d\n\r", FileName, ApStoreTableSize);
@@ -390,8 +375,6 @@ int cWiFiStoreKnownApList(void) // At exit of main application
 
         OneApRecord.ap_flags &= AP_FLAG_ADJUST_FOR_STORAGE;
 
-    	//#define DEBUG
-    	#undef DEBUG
        #ifdef  DEBUG
          printf("cWiFiStoreKnownApList ApStoreTableSize = %d, ArrayIterator = %d\n\r", ApStoreTableSize, ArrayIterator);
          printf("OneApRecord.ap_flags before: %X\n\r", OneApRecord.ap_flags);
@@ -400,8 +383,6 @@ int cWiFiStoreKnownApList(void) // At exit of main application
          fwrite(&OneApRecord, sizeof OneApRecord, 1, PersistentFile);
       }
 
-		  #undef DEBUG
-    	//#define DEBUG
       #ifdef DEBUG
     	  printf("OneApRecord.ap_flags after, just after save: %X\n\r", OneApRecord.ap_flags);
       	printf("Writing KnownList I.e. ApStoreTable[x] to Persistent file\n\r");
@@ -419,8 +400,6 @@ int cWiFiStoreKnownApList(void) // At exit of main application
   }
   else
   {
-    #undef DEBUG
-    //#define DEBUG
     #ifdef DEBUG
       printf("Handle to PersistentFile == NULL :-(\n\r");
     #endif
@@ -484,13 +463,11 @@ RESULT cWiFiRemoveNetwork(void)
 {
 RESULT Ret = FAIL;
   char CmdReturn[10];
-#if DEBUG
+#ifdef DEBUG
   int RetVal;
 #endif
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("Remove Network called\n\r");
   #endif
@@ -499,7 +476,7 @@ RESULT Ret = FAIL;
 
   if(ctrl_conn != NULL)
   {
-#if DEBUG
+#ifdef DEBUG
     RetVal = 
 #endif
     wpa_ctrl_request(ctrl_conn, "REMOVE_NETWORK all", strlen("REMOVE_NETWORK all"),
@@ -507,16 +484,12 @@ RESULT Ret = FAIL;
     sleep(3); // Force some cycles
     CmdReturn[LenCmdReturn] = '\0';
 
-    #undef DEBUG
-    //#define DEBUG
     #ifdef DEBUG
       printf("Remove returns %s - RetVal = %d\n\r", CmdReturn, RetVal);
     #endif
 
     if(strstr(CmdReturn, "OK") != NULL)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("Remove Network returned OK\n\r");
       #endif
@@ -524,8 +497,6 @@ RESULT Ret = FAIL;
     }
     else
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("Remove Network was NOT OK :-(\n\r");
       #endif
@@ -556,8 +527,6 @@ RESULT cWiFiTcpClose(void)
   {
     do
     {
-      #undef DEBUG
-      //#define DEBUG
       #ifdef DEBUG
         printf("In the do_while\r\n");
       #endif
@@ -566,8 +535,6 @@ RESULT cWiFiTcpClose(void)
     }
     while (res != 0);
 
-    #undef DEBUG
-    //#define DEBUG
     #ifdef DEBUG
       printf("\r\nError calling Tcp shutdown()\r\n");
     #endif
@@ -791,7 +758,7 @@ RESULT cWiFiTerminate(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
-#if DEBUG
+#ifdef DEBUG
   int RetVal;
 #endif
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
@@ -800,15 +767,13 @@ RESULT cWiFiTerminate(void)
 
   if(ctrl_conn != NULL)
   {
-#if DEBUG
+#ifdef DEBUG
     RetVal =
 #endif
     wpa_ctrl_request(ctrl_conn, "TERMINATE", strlen("TERMINATE"), CmdReturn,
                      &LenCmdReturn, NULL);
     CmdReturn[LenCmdReturn] = '\0';
 
-	  #undef DEBUG
-    //#define DEBUG
     #ifdef DEBUG
       printf("WiFi terminate : RetVal %d , CmdReturn %s\n\r", RetVal, CmdReturn);
     #endif
@@ -825,28 +790,24 @@ RESULT cWiFiAddNetwork(void)
 {
   RESULT Ret = FAIL;
   char aCmdReturn[128];
-#if DEBUG
+#ifdef DEBUG
   int RetVal;
 #endif
   size_t LenaCmdReturn = sizeof(aCmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(aCmdReturn, 0x00, LenaCmdReturn); // Reset to be sure!!
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("Beginning of AddNetwork\n\r");
   #endif
 
   if(ctrl_conn != NULL)
   {
-    #undef DEBUG
-    //#define DEBUG
     #ifdef DEBUG
       printf("Internal in AddNetwork - before the real call\n\r");
     #endif
 
-#if DEBUG
+#ifdef DEBUG
     RetVal =
 #endif
     wpa_ctrl_request(ctrl_conn, "ADD_NETWORK", strlen("ADD_NETWORK"),
@@ -854,16 +815,12 @@ RESULT cWiFiAddNetwork(void)
     sleep(3); // Force some cycles
     aCmdReturn[LenaCmdReturn] = '\0';
 
-    #undef DEBUG
-    //#define DEBUG
 	  #ifdef DEBUG
       printf("Add returns %s - RetVal = %d\n\r", aCmdReturn, RetVal);
     #endif
 
     if((aCmdReturn[0] == '0') && (aCmdReturn[1] == 10)) // LF
     {
-      #undef DEBUG
-      //#define DEBUG
       #ifdef DEBUG
         printf("0 (zero) in return at AddNetwork\n\r");
       #endif
@@ -872,8 +829,6 @@ RESULT cWiFiAddNetwork(void)
     }
     else
     {
-      #undef DEBUG
-      //#define DEBUG
       #ifdef DEBUG
         printf("AddNetwork NOT OK 0 = %d, 1 = %d !!\r\n", aCmdReturn[0], aCmdReturn[1]);
       #endif
@@ -887,16 +842,11 @@ RESULT cWiFiSetScanSsidToOne(void)  // The WPA_Supplicant should also be happy, 
   RESULT Ret = FAIL;
   char CmdReturn[10];
   char Cmd[128];
-#if DEBUG
-  int RetVal;
-#endif
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   WiFiStatus = BUSY;
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\n\rEntry of SET_ScanSsidToOne to ONE\n\r");
   #endif
@@ -905,15 +855,10 @@ RESULT cWiFiSetScanSsidToOne(void)  // The WPA_Supplicant should also be happy, 
   {
     strcpy(Cmd, "SET_NETWORK 0 scan_ssid 1");
 
-#if DEBUG
-    RetVal =
-#endif
     wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn, NULL);
 
     CmdReturn[LenCmdReturn] = '\0';
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("ap_scan: CMD= %s, Return= %s", Cmd, CmdReturn);
     #endif
@@ -941,8 +886,6 @@ RESULT cWiFiSetSsid(char *Ssid)
   WiFiStatus = BUSY;
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\n\rEntry of SET_SSID in c_wifi\n\r");
   #endif
@@ -958,8 +901,6 @@ RESULT cWiFiSetSsid(char *Ssid)
 
     CmdReturn[LenCmdReturn] = '\0';
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("SetSSID: CMD= %s, Return= %s", Cmd, CmdReturn);
     #endif
@@ -1066,16 +1007,12 @@ void cWiFiSetEncryptToWpa2(int Index)
 
   ApTable[Index].ap_flags |= WPA2;
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\r\nApTable[Index = %d].security before = %s\r\n", Index, ApTable[Index].security);
   #endif
 
   strcpy(ApTable[Index].security, "WPA2");
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\r\nApTable[Index = %d].security after = %s\r\n", Index, ApTable[Index].security);
   #endif
@@ -1248,8 +1185,6 @@ RESULT cWiFiFindMacAddr(void)
         strcpy(MyHwMacAddress, OneLine);
         Result = OK;
 
-        #undef DEBUG
-        //#define DEBUG
         #ifdef DEBUG
           printf("cWiFiFindMacAddr -> MAC adresse = %s\n\r", MyHwMacAddress);
         #endif
@@ -1346,8 +1281,6 @@ RESULT cWiFiFindIpAddr(void)
   strcat(IfConfigCmd, " ");
   strcat(IfConfigCmd, LogicalIfName);
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\r\nIfConfigCmd = %s\r\n", IfConfigCmd);
   #endif
@@ -1405,8 +1338,6 @@ RESULT cWiFiRequestIpAdr(char *Interface)
   RESULT Ret = FAIL;
   char Cmd[48];
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\r\nIP address = %s\r\n", MyIp4Address);
   #endif
@@ -1418,24 +1349,18 @@ RESULT cWiFiRequestIpAdr(char *Interface)
   strcat(Cmd, Interface);
   strcat(Cmd, " &> /dev/null");
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\r\nCmd = %s\r\n", Cmd);
   #endif
 
   if(system(Cmd) == 0)
   {
-    #undef DEBUG
-    //#define DEBUG
     #ifdef DEBUG
       printf("\r\nsystem(Cmd) == 0\r\n");
     #endif
 
     cWiFiFindIpAddr(); // Get and Store IP address
 
-    #undef DEBUG
-    //#define DEBUG
     #ifdef DEBUG
       printf("\r\nAfter cWiFiFindIpAddr()\r\n");
     #endif
@@ -1554,8 +1479,6 @@ RESULT cWiFiWpaStatus(void)
 
       CmdReturn[LenCmdReturn] = '\0';
 
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("cWiFiWpaStatus = %s\n\r", CmdReturn);
       #endif
@@ -1585,8 +1508,6 @@ RESULT cWiFiDisconnect(void)
 
     if(strstr(CmdReturn, "OK") != NULL)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("Disconnect OK\n\r");
       #endif
@@ -1606,8 +1527,6 @@ RESULT cWiFiReconnect(void)
 
   memset(CmdReturn, 0x00, LenCmdReturn);        // Reset to be sure!!
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("Start of Reconnect...\n\r");
   #endif
@@ -1620,8 +1539,6 @@ RESULT cWiFiReconnect(void)
 
     if(strstr(CmdReturn, "OK") != NULL)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("Reconnect OK\n\r");
       #endif
@@ -1639,8 +1556,6 @@ RESULT cWiFiGetName(char *ApName, int Index, char Length) // Get the FriendlyNam
   {
     strncpy(ApName, ApTable[Index].friendly_name, (int)(Length - 1));
 
-    #undef DEBUG
-    //#define DEBUG
     #ifdef DEBUG
       printf("\r\ncWiFiGetName called with Index = %d => %s\r\n", Index, ApTable[Index].friendly_name);
     #endif
@@ -1654,8 +1569,6 @@ RESULT cWiFiSetName(char *ApName, int Index)  // Set the FriendlyName @ ApTable[
 {
   RESULT Result = OK;
 
-	#undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\r\nApTable[Index = %d].friendly_name before = %s\r\n", Index, ApTable[Index].friendly_name);
     printf("\r\nSetName name = %s, Index = %d\r\n", ApName, Index);
@@ -1667,8 +1580,6 @@ RESULT cWiFiSetName(char *ApName, int Index)  // Set the FriendlyName @ ApTable[
     // about an OK state of the WiFi or we want it to be
     WiFiStatus = OK;
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\r\nApTable[Index = %d].friendly_name after = %s\r\n", Index, ApTable[Index].friendly_name);
   #endif
@@ -1733,8 +1644,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
   RESULT LocalResult = FAIL;
   int Tries;
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
     	printf("cWiFiMakeConnectionToAp() with Index %d, WiFiStatus = %d\n\r", Index, WiFiStatus);
     #endif
@@ -1744,8 +1653,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     {
       if(cWiFiAddNetwork() == OK)
       {
-        //#define DEBUG
-        #undef DEBUG
         #ifdef DEBUG
           printf("Try no: %d\n\r", Tries);
         #endif
@@ -1755,8 +1662,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
       }
       else
       {
-        //#define DEBUG
-        #undef DEBUG
         #ifdef DEBUG
           printf("AddNetwork returns garbage\n\r");
         #endif
@@ -1771,8 +1676,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
 
     if(LocalResult == FAIL)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
     	  printf("\r\nERROR_001\r\n");
       #endif
@@ -1783,8 +1686,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     // Set the SSID - already known
     if(cWiFiSetSsid(ApTable[Index].friendly_name) != OK)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
     	  printf("\r\nERROR_002\r\n");
       #endif
@@ -1794,8 +1695,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
 
     if(cWiFiSetScanSsidToOne() != OK)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("\r\nERROR_cWiFiSetScanSsidToOne()\r\n");
       #endif
@@ -1806,8 +1705,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     // WPA2 capability?
     if((ApTable[Index].ap_flags & WPA2) == WPA2)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
     	  printf("\r\nWPA2 flag set\r\n");
       #endif
@@ -1815,8 +1712,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     	// Set KEY MANAGEMENT
     	if(cWiFiSetKeyManagToWpa2() != OK)
     	{
-        //#define DEBUG
-    	  #undef DEBUG
         #ifdef DEBUG
     	    printf("\r\nERROR_003\r\n");
         #endif
@@ -1827,8 +1722,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     	// Set PSK (pre-shared key)
     	if(strlen(ApTable[Index].pre_shared_key) < 1)
     	{
-    	  //#define DEBUG
-    	  #undef DEBUG
     	  #ifdef DEBUG
           printf("\r\nERROR_004 pre_shared_key = %s, Index = %d, friendly_name = %s\r\n", ApTable[Index].pre_shared_key, Index, ApTable[Index].friendly_name);
         #endif
@@ -1839,8 +1732,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     	{
     	  if(cWiFiSetPsk(ApTable[Index].pre_shared_key) != OK)
     	  {
-    	    //#define DEBUG
-    	    #undef DEBUG
           #ifdef DEBUG
             printf("\r\nERROR_005 pre_shared_key = %s, Index = %d, friendly_name = %s\r\n", ApTable[Index].pre_shared_key, Index, ApTable[Index].friendly_name);
           #endif
@@ -1852,8 +1743,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     	// Set PAIR WISE CIPHERS
     	if(cWiFiSetPairWiseCcmp() != OK)
     	{
-        //#define DEBUG
-    	  #undef DEBUG
         #ifdef DEBUG
           printf("\r\nERROR_006\r\n");
         #endif
@@ -1864,8 +1753,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     	// Set GROUP CIPHERS
     	if(cWiFiSetGroupCcmp() != OK)
     	{
-        //#define DEBUG
-    	  #undef DEBUG
         #ifdef DEBUG
           printf("\r\nERROR_007\r\n");
         #endif
@@ -1876,8 +1763,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     	// SET PROTOCOL
     	if(cWiFiSetProtoRsn() != OK)
     	{
-        //#define DEBUG
-    	  #undef DEBUG
         #ifdef DEBUG
           printf("\r\nERROR_008\r\n");
         #endif
@@ -1891,8 +1776,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
       // Set KEY MANAGEMENT to NONE
       if(cWiFiSetKeyManagToNone() != OK)
       {
-        //#define DEBUG
-        #undef DEBUG
         #ifdef DEBUG
           printf("\r\nERROR_009\r\n");
         #endif
@@ -1905,8 +1788,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     // ENABLE NETWORK
     if(cWiFiSetEnableNetwork() != OK)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("\r\nERROR_010\r\n");
       #endif
@@ -1929,16 +1810,12 @@ RESULT cWiFiMakeConnectionToAp(int Index)
 
     cWiFiRequestIpAdr(LogicalIfName);
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("Here is the (new) IP address: %s\n\r", MyIp4Address);
     #endif
 
     if(strstr(MyIp4Address, "???") == NULL)
     {
-    	//#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
       	printf("MyIp4Address is OK - and NOT set to ??? => %s", MyIp4Address);
     	#endif
@@ -1946,8 +1823,6 @@ RESULT cWiFiMakeConnectionToAp(int Index)
 			Result = OK; // Assigned an IP
     }
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("\r\nDid we reach the end with an OK? cWiFiMakeConnectionToAp(Index)\r\n");
       if(Result == OK)
@@ -1980,8 +1855,6 @@ RESULT cWiFiConnectToAp(int Index)
 
   WiFiStatus = BUSY;
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("\r\ncWiFiConnectToAp(int Index = %d)\r\n", Index);
   #endif
@@ -1993,8 +1866,6 @@ RESULT cWiFiConnectToAp(int Index)
   {
     Result = OK;
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("\r\ncWiFiMakeConnectionToAp(Index = %d) == OK)\r\n", Index);
     #endif
@@ -2029,8 +1900,6 @@ RESULT cWiFiConnectToAp(int Index)
     WiFiConnectionState = READY_FOR_AP_SEARCH;
     WiFiStatus = FAIL;
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("\r\nConnect FAILed.. READY_FOR_AP_SEARCH again\r\n");
     #endif
@@ -2046,8 +1915,6 @@ RESULT cWiFiMakePsk(char *ApSsid, char *PassPhrase, int Index)  // Make the pre-
 
   WiFiStatus = BUSY;  // NOT async, but if...
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("\r\ncWiFiMakePsk\r\n");
     printf("\n\rSSID = %s, PassPhrase = %s, Index = %d\r\n", ApSsid, PassPhrase, Index);
@@ -2060,8 +1927,6 @@ RESULT cWiFiMakePsk(char *ApSsid, char *PassPhrase, int Index)  // Make the pre-
   strcat(WpaPassPhraseCmd, "\" ");
   strcat(WpaPassPhraseCmd, PassPhrase);
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("WpaPassPhraseCmd = ->%s<-\r\n", WpaPassPhraseCmd);
   #endif
@@ -2090,8 +1955,6 @@ RESULT cWiFiMakePsk(char *ApSsid, char *PassPhrase, int Index)  // Make the pre-
 
     if(Ret == OK)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("\r\nPre_Shared_Key Made = %s, %d\r\n", PskLine, NumberOfBytes);
         printf("\r\nApTable[Index = %d].pre_shared_key = %s before\r\n", Index, ApTable[Index].pre_shared_key);
@@ -2100,8 +1963,6 @@ RESULT cWiFiMakePsk(char *ApSsid, char *PassPhrase, int Index)  // Make the pre-
       strcpy(ApTable[Index].pre_shared_key, PskLine + 5);
       ApTable[Index].pre_shared_key[strlen(ApTable[Index].pre_shared_key)- 1] = '\x0'; // remove linefeed
 
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("\r\nApTable[Index = %d].pre_shared_key = %s after store etc.\r\n", Index, ApTable[Index].pre_shared_key);
         printf("\r\nApTable[Index = %d].ap_flags = %d after store etc.\r\n", Index, ApTable[Index].ap_flags);
@@ -2121,8 +1982,6 @@ RESULT cWiFiGetIndexFromName(char *Name, UBYTE *Index)
 
   ListEnd = cWiFiGetApListSize() + 1;
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(WiFiStatus == BUSY)
       printf("\r\nWiFiStatus == BUSY\r\n");
@@ -2134,8 +1993,6 @@ RESULT cWiFiGetIndexFromName(char *Name, UBYTE *Index)
 
   while(i < ListEnd)
   {
-    //#define DEBUG
-	  #undef DEBUG
     #ifdef DEBUG
       printf("\r\nApTable[%d].friendly_name = %s\r\n", i, ApTable[i].friendly_name);
     #endif
@@ -2145,8 +2002,6 @@ RESULT cWiFiGetIndexFromName(char *Name, UBYTE *Index)
       *Index = (UBYTE)i;                            // Index return
       Result = OK;                                  // Found OK
 
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("\r\nOK Index = %d\r\n", i);
       #endif
@@ -2157,8 +2012,6 @@ RESULT cWiFiGetIndexFromName(char *Name, UBYTE *Index)
       i++;
   }
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("\r\nName2Index Index = %d\r\n", i);
   #endif
@@ -2235,8 +2088,6 @@ RESULT cWiFiStoreActualApList()           // Store the latest SCAN result(s)
                                   &LenScanResponse,
                                   NULL);
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("\r\nScanresult:\r\n %s\r\n", ScanResponse);
     #endif
@@ -2429,8 +2280,6 @@ RESULT cWiFiStoreActualApList()           // Store the latest SCAN result(s)
     WiFiStatus = OK;
     WiFiConnectionState = AP_LIST_UPDATED;
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("\r\nStored list OK - STATUS = OK\r\n");
     #endif
@@ -2467,8 +2316,6 @@ RESULT cWiFiScanForAPs()
       {
         WiFiConnectionState = SEARCH_PENDING;
 
-        //#define DEBUG
-        #undef DEBUG
         #ifdef DEBUG
           printf("\r\nSCAN list OK - STATUS = BUSY\r\n");
         #endif
@@ -2480,8 +2327,6 @@ RESULT cWiFiScanForAPs()
         WiFiConnectionState = WIFI_INITIATED;  // OK init, but NO SEARCH
         // The FAIL return is already set above!
 
-        //#define DEBUG
-        #undef DEBUG
         #ifdef DEBUG
           printf("\r\nSCAN list FAILED - STATUS = FAIL\r\n");
         #endif
@@ -2559,8 +2404,6 @@ RESULT cWiFiGetLogicalName(void)  // Get the Logical Name of the Interface
 
 RESULT cWiFiGetStatus(void)
 {
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("WiFiStatus => GetResult = %d\n\r", WiFiStatus);
   #endif
@@ -2591,24 +2434,18 @@ RESULT  cWiFiInitTcpServer()
   WiFiStatus = FAIL;
   /*  Create a listening socket IPv4, TCP and only single protocol */
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("Start of cWiFiInitTcpServer()...TCPListenServer = %d \n\r", TCPListenServer);
   #endif
 
   if ( TCPListenServer == 0)   // close(TCPListenServer);
   {
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("TCPListenServer == 0 in cWiFiInitTcpServer()...\n\r");
     #endif
 
 	  if ( (TCPListenServer  = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
 	  {
-		  //#define DEBUG
-		  #undef DEBUG
     	#ifdef DEBUG
 		    printf("\r\nError creating listening socket in cWiFiInitTcpServer()...\r\n");
     	#endif
@@ -2639,8 +2476,6 @@ RESULT  cWiFiInitTcpServer()
 
 	  if ( bind(TCPListenServer, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0 )
 	  {
-	    //#define DEBUG
-		  #undef DEBUG
     	#ifdef DEBUG
 		    printf("\r\nError calling bind()\r\n");
 		    printf("errno = %d\n\r", errno);
@@ -2652,8 +2487,6 @@ RESULT  cWiFiInitTcpServer()
 
 	  if ( listen(TCPListenServer, 1) < 0 )
 	  {
-	    //#define DEBUG
-		  #undef DEBUG
     	#ifdef DEBUG
 		    printf("\r\nError calling listen()\r\n");
     	#endif
@@ -2662,8 +2495,6 @@ RESULT  cWiFiInitTcpServer()
 	  }
 
 	  // Else show debug text below.....
-	    //#define DEBUG
-  	  #undef DEBUG
   	  #ifdef DEBUG
 	  	  printf("\r\nWAITING for a CLIENT.......\r\n");
   	  #endif
@@ -2684,8 +2515,6 @@ RESULT cWiFiWaitForTcpConnection(void)
 
   if((TcpConnectionSocket = accept(TCPListenServer, (struct sockaddr *)&servaddr, &size) ) < 0)
   {
-		  #undef DEBUG
-      //#define DEBUG
       #ifdef DEBUG
         printf("\r\nError calling accept() - returns: %d\r", TcpConnectionSocket);
       #endif
@@ -2696,16 +2525,12 @@ RESULT cWiFiWaitForTcpConnection(void)
     WiFiStatus = OK;
     TcpReadState = TCP_WAIT_ON_START;
 
-    #undef DEBUG
-    //#define DEBUG
     #ifdef DEBUG
     //printf("\r\nConnected.... :-) %s : %d\r\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
       printf("\r\nConnected.... :-) %s : %d\r\n", inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port));
     #endif
   }
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printf("\r\nNow we're waiting for input TCP ...\r\n");
   #endif
@@ -2721,8 +2546,6 @@ UWORD cWiFiWriteTcp(UBYTE* Buffer, UWORD Length)
 
   if(Length > 0)
   {
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("\r\ncWiFiWriteTcp Length: %d\r\n", Length);
       // Code below used for "hunting" packets of correct length
@@ -2752,8 +2575,6 @@ UWORD cWiFiWriteTcp(UBYTE* Buffer, UWORD Length)
         // We can Write
         DataWritten = write(TcpConnectionSocket, Buffer, Length);
 
-		    #undef DEBUG
-        //#define DEBUG
         #ifdef DEBUG
           if (DataWritten != Length)
             printf("\r\nDataWritten = %d, Length = %d\r\n", DataWritten, Length);
@@ -2770,8 +2591,6 @@ RESULT cWiFiResetTcp(void)
 {
   RESULT Result = FAIL;
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("\r\nRESET - client disconnected!\r\n");
   #endif
@@ -2797,8 +2616,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
      select(TcpConnectionSocket + 1, &ReadFdSet, NULL, NULL, &ReadTimeVal);
      if (FD_ISSET(TcpConnectionSocket, &ReadFdSet))
      {
-       #undef DEBUG
-       //#define DEBUG
        #ifdef DEBUG
          printf("\r\nTcpReadState = %d\r\n", TcpReadState);
        #endif
@@ -2809,16 +2626,12 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                         break;
 
          case TCP_WAIT_ON_START:
-                                        //#define DEBUG
-                                        #undef DEBUG
                                         #ifdef DEBUG
                                          printf("TCP_WAIT_ON_START:\r\n");
                                         #endif
 
                                         DataRead = read(TcpConnectionSocket, Buffer, 100); // Fixed TEXT
 
-                                        //#define DEBUG
-                                        #undef DEBUG
                                         #ifdef DEBUG
                                           printf("\r\nDataRead = %d, Buffer = \r\n", DataRead);
                                           int ii;
@@ -2842,8 +2655,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
 
                                         if(strstr((char*)Buffer, "ET /target?sn=") > 0)
                                         {
-                                          //#define DEBUG
-										                      #undef DEBUG
                                           #ifdef DEBUG
                                             printf("\r\nTCP_WAIT_ON_START and  ET /target?sn= found :-) DataRead = %d, Length = %d, Buffer = %s\r\n", DataRead, Length, Buffer);
                                           #endif
@@ -2865,8 +2676,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
 
         	 	 	 	 	 	 	 	                TcpReadBufPointer = 0;	// Begin on new buffer :-)
 
-                                        //#define DEBUG
-										                    #undef DEBUG
                                         #ifdef DEBUG
                                           printf("TCP_WAIT_ON_LENGTH:\r\n");
                                         #endif
@@ -2888,8 +2697,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                         TcpReadBufPointer += DataRead;	// Position in ReadBuffer adjust
                                         DataRead = 0;                   // Signal NO data yet
 
-                                        //#define DEBUG
-                                        #undef DEBUG
                                         #ifdef DEBUG
                                           printf("\n\r*************** NEW TX *************\r\n");
                                           printf("TCP_WAIT_ON_LENGTH TcpRestLen = %d, Length = %d\r\n", TcpRestLen, Length);
@@ -2898,16 +2705,12 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                         break;
 
          case TCP_WAIT_ON_ONLY_CHUNK:
-                                        //#define DEBUG
-										                    #undef DEBUG
                                         #ifdef DEBUG
                                           printf("TCP_WAIT_ON_ONLY_CHUNK: BufferStart = %d\r\n", TcpReadBufPointer);
                                         #endif
 
                                         DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]), TcpRestLen);
 
-										                    //#define DEBUG
-                                        #undef DEBUG
                                         #ifdef DEBUG
                                           printf("DataRead = %d\r\n",DataRead);
                                           printf("BufferPointer = %p\r\n", &(Buffer[TcpReadBufPointer]));
@@ -2932,8 +2735,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                         	DataRead = 0;			// No COMM job yet
                                         }
 
-                                        //#define DEBUG
-                                        #undef DEBUG
                                         #ifdef DEBUG
                                         	int i;
 
@@ -2943,8 +2744,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                         	}
 										                    #endif
 
-                                        //#define DEBUG
-                                        #undef DEBUG
                                         #ifdef DEBUG
                                           printf("TcpRestLen = %d, DataRead incl. 2 = %d, Length = %d\r\n", TcpRestLen, DataRead, Length);
                                         #endif
@@ -2952,8 +2751,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                         break;
 
          case TCP_WAIT_ON_FIRST_CHUNK:
-                                        //#define DEBUG
-										                    #undef DEBUG
                                         #ifdef DEBUG
                                           printf("TCP_WAIT_ON_FIRST_CHUNK:\r\n");
                                         #endif
@@ -2965,8 +2762,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                           break;
                                         }
 
-										                    //#define DEBUG
-                                        #undef DEBUG
                                         #ifdef DEBUG
                                           printf("DataRead = %d\r\n", DataRead);
                                         #endif
@@ -2975,8 +2770,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                         TcpReadState = TCP_WAIT_COLLECT_BYTES;
                                         DataRead += 2;
 
-                                        //#define DEBUG
-                                        #undef DEBUG
                                         #ifdef DEBUG
                                           printf("\r\nTCP_WAIT_ON_FIRST_CHUNK TcpRestLen = %d, DataRead incl. 2 = %d, Length = %d\r\n", TcpRestLen, DataRead, Length);
                                         #endif
@@ -2985,8 +2778,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
 
 
          case TCP_WAIT_COLLECT_BYTES:
-                                        //#define DEBUG
-									                      #undef DEBUG
                                         #ifdef DEBUG
                                           printf("TCP_WAIT_COLLECT_BYTES:\r\n");
                                         #endif
@@ -2997,8 +2788,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                         else
                                           DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]), Length);
 
-										                    //#define DEBUG
-                                        #undef DEBUG
                                         #ifdef DEBUG
                                           printf("DataRead = %d\r\n", DataRead);
                                         #endif
@@ -3015,8 +2804,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                           TcpReadState = TCP_WAIT_ON_LENGTH;
                                         }
 
-                                        //#define DEBUG
-                                        #undef DEBUG
                                         #ifdef DEBUG
                                           printf("\r\nTCP_WAIT_COLLECT_BYTES TcpRestLen = %d, DataRead incl. 2 = %d, Length = %d\r\n", TcpRestLen, DataRead, Length);
                                         #endif
@@ -3055,8 +2842,6 @@ RESULT cWiFiBeaconAnswer(void)          // Wait for a "dating" PC
     UdpRxCount = recvfrom(UdpSocketDescriptor, BufPtr, BufLen, 0, (struct sockaddr *)&ServerAddr, &ServerAddrLen);
     if(UdpRxCount < 0)
     {
-    	//#define DEBUG
-		  #undef DEBUG
       #ifdef DEBUG
         printf("\r\nUDP Client - recvfrom() ERROR UdpRxCount < 0!!!!\r\n");
       #endif
@@ -3064,8 +2849,6 @@ RESULT cWiFiBeaconAnswer(void)          // Wait for a "dating" PC
     else
     {
 
-    	//#define DEBUG
-		  #undef DEBUG
       #ifdef DEBUG
         printf("\r\nUDP client received the following: \"%s\" message\\r\n", BufPtr);
         printf(" \r\nfrom port %d, address %s\r\n", ntohs(ServerAddr.sin_port), inet_ntoa(ServerAddr.sin_addr));
@@ -3085,8 +2868,6 @@ RESULT cWiFiTransmitBeacon(void)
   ServerAddr.sin_port = htons(BROADCAST_PORT);
   ServerAddr.sin_addr.s_addr = inet_addr(MyBroadCastAdr);
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("\r\nUDP BROADCAST to port %d, address %s\r\n", ntohs(ServerAddr.sin_port), inet_ntoa(ServerAddr.sin_addr));
   #endif
@@ -3098,8 +2879,6 @@ RESULT cWiFiTransmitBeacon(void)
   UdpTxCount =  sendto(UdpSocketDescriptor, Buffer, strlen(Buffer), 0, (struct sockaddr *)&ServerAddr, sizeof(ServerAddr));
   if(UdpTxCount < 0)
   {
-    //#define DEBUG
-	  #undef DEBUG
 	  #ifdef DEBUG
       printf("\r\nUDP SendTo ERROR : %d\n\r", UdpTxCount);
     #endif
@@ -3108,8 +2887,6 @@ RESULT cWiFiTransmitBeacon(void)
   }
   else
   {
-	  //#define DEBUG
-	  #undef DEBUG
 	  #ifdef DEBUG
       printf("\r\nUDP Client - SendTo() is OK! UdpTxCount = %d\r\n", UdpTxCount);
       printf("\r\nWaiting on a reply from UDP server...zzzzz zzzz - Send UNICAST only to me :-)\r\n");
@@ -3130,16 +2907,12 @@ RESULT cWiFiInitUdpConnection(void)
   /* Get a socket descriptor for UDP client (Beacon) */
   if((UdpSocketDescriptor = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
   {
-    //#define DEBUG
-	  #undef DEBUG
     #ifdef DEBUG
       printf("\r\nUDP Client - socket() error\r\n");
     #endif
   }
   else
   {
-    //#define DEBUG
-	  #undef DEBUG
     #ifdef DEBUG
       printf("\r\nUDP Client - socket() is OK!\r\n");
       printf("\r\nBroadCast Adr from Ifconfig = %s\r\n", MyBroadCastAdr);
@@ -3149,8 +2922,6 @@ RESULT cWiFiInitUdpConnection(void)
 
     if((ServerAddr.sin_addr.s_addr = inet_addr(MyBroadCastAdr)) == (unsigned long)INADDR_NONE)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("\r\nHOST addr == INADDR_NONE :-( \r\n");
       #endif
@@ -3159,8 +2930,6 @@ RESULT cWiFiInitUdpConnection(void)
     {
       if(setsockopt(UdpSocketDescriptor, SOL_SOCKET, SO_BROADCAST, &BroadCast, sizeof(BroadCast)) < 0)
       {
-        //#define DEBUG
-    	  #undef DEBUG
         #ifdef DEBUG
           printf("\r\nCould not setsockopt SO_BROADCAST\r\n");
         #endif
@@ -3170,8 +2939,6 @@ RESULT cWiFiInitUdpConnection(void)
         Temp = fcntl(UdpSocketDescriptor, F_GETFL, 0);
         fcntl(UdpSocketDescriptor, F_SETFL, Temp | O_NONBLOCK); // Make the socket NON_BLOCKING
 
-        //#define DEBUG
-        #undef DEBUG
         #ifdef DEBUG
           printf("\r\nSet SOCKET NON-BLOCKING :-)...\r\n");
         #endif
@@ -3180,8 +2947,6 @@ RESULT cWiFiInitUdpConnection(void)
       }
     }
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("\r\nINIT UDP ServerAddr.sin_port = %d, ServerAddr.sin_addr.s_addr = %s\r\n", ntohs(ServerAddr.sin_port), inet_ntoa(ServerAddr.sin_addr));
     #endif
@@ -3231,8 +2996,6 @@ int cWiFiCheckForLoadedModule(char *NameToCheck)
     DriverName = strtok(ReadBuffer, WhiteSpaces);
     if(strcmp(DriverName, NameToCheck) == 0)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("NameToCheck found: %s\r\n", NameToCheck);
       #endif
@@ -3241,8 +3004,6 @@ int cWiFiCheckForLoadedModule(char *NameToCheck)
     }
     else
     {
-      //#define DEBUG // Just added as DEBUG :-)
-      #undef DEBUG
       #ifdef DEBUG
         printf("NameToCheck NOT found: %s\r\n", NameToCheck);
       #endif
@@ -3254,8 +3015,6 @@ int cWiFiCheckForLoadedModule(char *NameToCheck)
 
 void cWiFiLoadAthHwModules(void)
 {
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(!(cWiFiCheckForLoadedModule("compat")))
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/compat/compat.ko");
@@ -3264,8 +3023,6 @@ void cWiFiLoadAthHwModules(void)
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/compat/compat.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(!(cWiFiCheckForLoadedModule("cfg80211")))
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/net/wireless/cfg80211.ko");
@@ -3274,8 +3031,6 @@ void cWiFiLoadAthHwModules(void)
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/net/wireless/cfg80211.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(!(cWiFiCheckForLoadedModule("mac80211")))
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/net/mac80211/mac80211.ko");
@@ -3284,8 +3039,6 @@ void cWiFiLoadAthHwModules(void)
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/net/mac80211/mac80211.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(!(cWiFiCheckForLoadedModule("ath")))
           system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/ath/ath.ko");
@@ -3294,8 +3047,6 @@ void cWiFiLoadAthHwModules(void)
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/ath/ath.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(!(cWiFiCheckForLoadedModule("ath9k_hw")))
           system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/ath/ath9k/ath9k_hw.ko");
@@ -3304,8 +3055,6 @@ void cWiFiLoadAthHwModules(void)
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/ath/ath9k/ath9k_hw.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(!(cWiFiCheckForLoadedModule("ath9k_common")))
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/ath/ath9k/ath9k_common.ko");
@@ -3314,8 +3063,6 @@ void cWiFiLoadAthHwModules(void)
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/ath/ath9k/ath9k_common.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(!(cWiFiCheckForLoadedModule("ath9k")))
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/ath/ath9k/ath9k.ko");
@@ -3324,8 +3071,6 @@ void cWiFiLoadAthHwModules(void)
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/ath/ath9k/ath9k.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(!(cWiFiCheckForLoadedModule("ath9k_htc")))
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/ath/ath9k/ath9k_htc.ko");
@@ -3337,8 +3082,6 @@ void cWiFiLoadAthHwModules(void)
 
 void cWiFiUnLoadAthHwModules(void)
 {
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(cWiFiCheckForLoadedModule("ath9k_htc"))
       system("/sbin/rmmod ath9k_htc.ko");
@@ -3347,8 +3090,6 @@ void cWiFiUnLoadAthHwModules(void)
         system("/sbin/rmmod ath9k_htc.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(cWiFiCheckForLoadedModule("ath9k"))
       system("/sbin/rmmod ath9k.ko");
@@ -3357,8 +3098,6 @@ void cWiFiUnLoadAthHwModules(void)
           system("/sbin/rmmod ath9k.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(cWiFiCheckForLoadedModule("ath9k_common"))
       system("/sbin/rmmod ath9k_common.ko");
@@ -3367,8 +3106,6 @@ void cWiFiUnLoadAthHwModules(void)
           system("/sbin/rmmod ath9k_common.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(cWiFiCheckForLoadedModule("ath9k_hw"))
       system("/sbin/rmmod ath9k_hw.ko");
@@ -3377,8 +3114,6 @@ void cWiFiUnLoadAthHwModules(void)
           system("/sbin/rmmod ath9k_hw.ko &> /dev/null");
   #endif
 
-    //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(cWiFiCheckForLoadedModule("ath"))
       system("/sbin/rmmod ath.ko");
@@ -3387,8 +3122,6 @@ void cWiFiUnLoadAthHwModules(void)
           system("/sbin/rmmod ath.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(cWiFiCheckForLoadedModule("mac80211"))
       system("/sbin/rmmod mac80211.ko");
@@ -3397,8 +3130,6 @@ void cWiFiUnLoadAthHwModules(void)
           system("/sbin/rmmod mac80211.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(cWiFiCheckForLoadedModule("cfg80211"))
       system("/sbin/rmmod cfg80211.ko");
@@ -3407,8 +3138,6 @@ void cWiFiUnLoadAthHwModules(void)
           system("/sbin/rmmod cfg80211.ko &> /dev/null");
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(cWiFiCheckForLoadedModule("compat"))
       system("/sbin/rmmod compat.ko");
@@ -3433,8 +3162,6 @@ void  cWiFiControl(void)
       }
       else
       {
-        #undef DEBUG
-        //#define DEBUG
         #ifdef DEBUG
           printf("\n\rOK beacon TX\n\r");
         #endif
@@ -3450,8 +3177,6 @@ void  cWiFiControl(void)
     case  WIFI_NOT_INITIATED: // NOTHING INIT'ed
                               // Idle
 
-    						              #undef DEBUG
-							                //#define DEBUG
                               #ifdef DEBUG
                                 printf("\r\nIDLE... %d\r", WiFiStatus); // Too many prints if enabled ;-)
                               #endif
@@ -3464,24 +3189,18 @@ void  cWiFiControl(void)
                                 case  NOT_INIT:   // Start the Wpa_Supplicant in BackGround using
                                                   // a very "thin" .conf file
 
-												                          #undef DEBUG
-                                				          //#define DEBUG
                                                   #ifdef DEBUG
                                                     printf("\r\nWIFI_INIT, NOT_INIT foer FindMacAddr... %d\r\n", WiFiStatus);
                                                   #endif
 
                                                   cWiFiFindMacAddr(); // Get the H/W MAC-address
 
-												                          #undef DEBUG
-                                                  //#define DEBUG
                                                   #ifdef DEBUG
                                                     printf("\r\nWIFI_INIT, NOT_INIT efter FindMacAddr... %d\r\n", WiFiStatus);
                                                   #endif
 
                                                   cWiFiStartTimer();
 
-												                          #undef DEBUG
-                                                  //#define DEBUG
                                                   #ifdef DEBUG
                                                     printf("\r\nWIFI_INIT, NOT_INIT foer system... %d\r\n", WiFiStatus);
                                                   #endif
@@ -3498,8 +3217,6 @@ void  cWiFiControl(void)
                                                           strcat(Command, LogicalIfName);
                                                           if(stat(Command, &st) == 0)
                                                           {
-															                              #undef DEBUG
-                                                            //#define DEBUG
                                                             #ifdef DEBUG
                                                               printf("\r\nWIFI_INIT, LOAD_SUPPLICANT => STAT OK %d\r\n", WiFiStatus);
                                                             #endif
@@ -3523,8 +3240,6 @@ void  cWiFiControl(void)
                                                         }
                                                         else
                                                         {
-														                              #undef DEBUG
-                                                          //#define DEBUG
                                                           #ifdef DEBUG
                                                             printf("\r\nWIFI_INIT, LOAD_SUPPLICANT => Timed out\r\n");
                                                           #endif
@@ -3544,8 +3259,6 @@ void  cWiFiControl(void)
                                                           {
                                                             if(cWiFiWpaPing() == 0)
                                                             {
-															                                #undef DEBUG
-                                                              //#define DEBUG
                                                               #ifdef DEBUG
                                                                 printf("\r\nWIFI_INIT, WAIT_ON_INTERFACE => Ping OK %d\r\n", WiFiStatus);
                                                               #endif
@@ -3557,8 +3270,6 @@ void  cWiFiControl(void)
                                                             }
                                                             else
                                                             {
-															                                #undef DEBUG
-                                                              //#define DEBUG
                                                               #ifdef DEBUG
                                                                 printf("\r\nWIFI_INIT, WAIT_ON_INTERFACE => PING U/S\r\n");
                                                               #endif
@@ -3578,16 +3289,12 @@ void  cWiFiControl(void)
                                 WiFiOnStatus = OK;
                                 cWiFiStartDongleCheckTimer();
 
-                                #undef DEBUG
-                                //#define DEBUG
                                 #ifdef DEBUG
                                   printf("\r\nWIFI_INITIATED %d\r\n", WiFiStatus);
                                 #endif
 
                                 WiFiConnectionState = READY_FOR_AP_SEARCH;
 
-								                #undef DEBUG
-                                //#define DEBUG
                                 #ifdef DEBUG
                                   printf("\r\nREADY for search -> %d\r\n", WiFiStatus);
                                 #endif
@@ -3600,8 +3307,6 @@ void  cWiFiControl(void)
 
     case  SEARCH_APS:           // Polite wait
 
-                                //#define DEBUG
-                                #undef DEBUG
                                 #ifdef DEBUG
                                   printf("\r\nSEARCH_APS:\r\n");
                                   printf("\r\ncIndex = %d => %s\r\n", 0, ApTable[0].friendly_name);
@@ -3614,8 +3319,6 @@ void  cWiFiControl(void)
     case  SEARCH_PENDING:
                                 // Wait some time for things to show up...
 
-                                //#define DEBUG
-                                #undef DEBUG
                                 #ifdef DEBUG
                                   printf("cWiFiCheckTimer() = %d\r", cWiFiCheckTimer());
                                 #endif
@@ -3627,8 +3330,6 @@ void  cWiFiControl(void)
                                   cWiFiStoreActualApList();
                                 }
 
-								                #undef DEBUG
-                                //#define DEBUG
                                 #ifdef DEBUG
                                   printf("\r\nSEARCH_PENDING:\r\n");
                                   printf("\r\ncIndex = %d => %s\r\n", 0, ApTable[0].friendly_name);
@@ -3636,8 +3337,6 @@ void  cWiFiControl(void)
                                   printf("\r\ncIndex = %d => %s\r\n", 2, ApTable[2].friendly_name);
                                 #endif
 
-								                #undef DEBUG
-                                //#define DEBUG
 								                #ifdef DEBUG
                                   printf("\r\nSTORED CORRECT:\r\n");
                                   printf("\r\ncIndex = %d => %s\r\n", 0, ApTable[0].friendly_name);
@@ -3645,8 +3344,6 @@ void  cWiFiControl(void)
                                   printf("\r\ncIndex = %d => %s\r\n", 2, ApTable[2].friendly_name);
                                 #endif
 
-								                #undef DEBUG
-                                //#define DEBUG
 								                #ifdef DEBUG
                                   printf("\r\nSEARCH DONE\r\n");
                                 #endif
@@ -3655,8 +3352,6 @@ void  cWiFiControl(void)
 
     case  AP_LIST_UPDATED:      // Relaxed state until connection wanted
 
-								                #undef DEBUG
-    							              //#define DEBUG
 								                #ifdef DEBUG
                                   printf("\r\nAP_LIST_UPDATED ApTableSize = %d:\r\n", ApTableSize);
                                   printf("\r\ncIndex = %d => %s\r\n", 0, ApTable[0].friendly_name);
@@ -3677,8 +3372,6 @@ void  cWiFiControl(void)
                                 // Initiated, connected and ready for UDP
                                 // I.e. ready for starting Beacons
 
-								                #undef DEBUG
-    							              //#define DEBUG
 								                #ifdef DEBUG
                                   printf("\r\nHer er UDP_NOT_INITIATED\r\n");
                                 #endif
@@ -3691,16 +3384,12 @@ void  cWiFiControl(void)
                                 WiFiStatus = BUSY;                    // We're still waiting
                                 memset(Buffer, 0x00, sizeof(Buffer)); // Reset TX buffer
 
-								                #undef DEBUG
-                                //#define DEBUG
 								                #ifdef DEBUG
                                   printf("\r\nLige foer cWiFiInitUdpConnection()\r\n");
                                 #endif
 
                                 if(cWiFiInitUdpConnection() == OK)
                                 {
-									                #undef DEBUG
-                                	//#define DEBUG
 									                #ifdef DEBUG
                                     printf("\r\nUDP connection READY @ INIT_UDP_CONNECTION\r\n");
                                   #endif
@@ -3719,8 +3408,6 @@ void  cWiFiControl(void)
                                 }
                                 else
                                 {
-								                  #undef DEBUG
-                                  //#define DEBUG
 								                  #ifdef DEBUG
                                     printf("\r\nUDP connection FAILed @ INIT_UDP_CONNECTION\r\n");
                                   #endif
@@ -3751,8 +3438,6 @@ void  cWiFiControl(void)
 
                                 if(cWiFiInitTcpServer() == OK)
                                 {
-								                  #undef DEBUG
-                                  //#define DEBUG
 								                  #ifdef DEBUG
                                     printf("\r\nTCP init OK @ UDP_CONNECTED\r\n");
                                   #endif
@@ -3765,8 +3450,6 @@ void  cWiFiControl(void)
                                 // Non-blocking test
                                 if(cWiFiWaitForTcpConnection() == OK)
                                 {
-									                #undef DEBUG
-                                	//#define DEBUG
 									                #ifdef DEBUG
                                     printf("\r\nTCP_CONNECTED @ TCP_NOT_CONNECTED\r\n");
 									                #endif
@@ -3782,8 +3465,6 @@ void  cWiFiControl(void)
 
     case  TCP_CONNECTED:        // We have a TCP connection established
 
-                                #undef DEBUG
-    							              //#define DEBUG
                                 #ifdef DEBUG
                                   printf("\r\nTCP_CONNECTED @ TCP_CONNECTED.... And then.....\r\n");
                                 #endif
@@ -3802,16 +3483,12 @@ void  cWiFiControl(void)
   {                       // Check for the "volatile" USB dongle connection
     if(cWiFiTimeFromLastDongleCheck() >= TIME_FOR_WIFI_DONGLE_CHECK) // Don't misuse the CPU cycles
     {
-      #undef DEBUG
-      //#define DEBUG
       #ifdef DEBUG
         printf("Check for Dongle....");
       #endif
 
       if(cWiFiKnownDongleAttached() != OK)
       {
-        #undef DEBUG
-        //#define DEBUG
         #ifdef DEBUG
           printf("FAIL!!\n\r");
         #endif
@@ -3820,8 +3497,6 @@ void  cWiFiControl(void)
       else
       {
         cWiFiStartDongleCheckTimer();
-        #undef DEBUG
-        //#define DEBUG
         #ifdef DEBUG
           printf("OK!!\n\r");
         #endif
@@ -3833,8 +3508,6 @@ void  cWiFiControl(void)
 
 RESULT  cWiFiGetOnStatus(void)
 {
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("cWiFiGetOnStatus returns: %d\r\n", WiFiOnStatus);
   #endif
@@ -3854,8 +3527,6 @@ RESULT    cWiFiTurnOn(void) // TURN ON
     cWiFiLoadAthHwModules();  // Load the foundation for the rest
     cWiFiGetLogicalName();
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("\r\ncWiFiTurnOn and LOGIC NAME FOUND: %s\r\n", LogicalIfName);
     #endif
@@ -3874,8 +3545,6 @@ RESULT    cWiFiTurnOn(void) // TURN ON
   else
   {
   // Just debugging stuff
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
         printf("\r\ncWiFiTurnOn refused ALREADY ON or should be....\r\n");
     #endif
@@ -3890,8 +3559,6 @@ RESULT    cWiFiTurnOff(void) // TURN OFF
   RESULT  Result = FAIL;
   int PC = 0;
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("cWiFiTurnOff called...\r\n");
   #endif
@@ -3909,8 +3576,6 @@ RESULT    cWiFiTurnOff(void) // TURN OFF
     if(PC >= 0)
         Result  =  OK;
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printf("cWiFiStoreKnownApList() returned %d\n\r", PC);
 	  #endif
@@ -3921,8 +3586,6 @@ RESULT    cWiFiTurnOff(void) // TURN OFF
 
     cWiFiTerminate();
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
     if(WiFiStatus == OK)
       printf("At TurnOff cWiFiTerminate()-> WiFiStatus == OK\n\r");
@@ -3938,8 +3601,6 @@ RESULT    cWiFiTurnOff(void) // TURN OFF
     KnownWiFiDongle = HW_NOT_KNOWN;
   }
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(WiFiStatus == OK)
       printf("At TurnOff -> WiFiStatus == OK\n\r");
@@ -3966,8 +3627,6 @@ RESULT cWiFiInit(void)
 {
   RESULT Result = FAIL;
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("\r\ncWiFiInit START %d\r\n", WiFiStatus);
   #endif
@@ -3986,8 +3645,6 @@ RESULT cWiFiInit(void)
   WiFiStatus = OK;
   Result = OK;
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("\r\nWiFiStatus = %d\r\n", WiFiStatus);
   #endif

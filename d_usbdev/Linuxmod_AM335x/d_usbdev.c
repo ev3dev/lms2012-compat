@@ -438,8 +438,6 @@ static  struct usb_composite_driver zero_driver = {
 
 static int dUsbInit(void)
 {
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("dUsbInit\n\r");
   #endif
@@ -463,8 +461,6 @@ static ssize_t Device1Write(struct file *File,const char *Buffer,size_t Count,lo
 
   int BytesWritten = 0;
 
-  #undef DEBUG
-  //#define DEBUG
   #ifdef DEBUG
     printk("Device1Write - usb_char_in_length = %d\n", usb_char_in_length);
   #endif
@@ -475,8 +471,6 @@ static ssize_t Device1Write(struct file *File,const char *Buffer,size_t Count,lo
       copy_from_user(usb_char_buffer_in, Buffer, BytesWritten);
       usb_char_in_length = BytesWritten;
 
-	  //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       	  printk("WR = %d, %d -- ", usb_char_buffer_in[2], usb_char_buffer_in[3]);
 	  #endif
@@ -486,8 +480,6 @@ static ssize_t Device1Write(struct file *File,const char *Buffer,size_t Count,lo
         // Already we've a failed tx (HOST part starwing??
 
         input_state = USB_DATA_READY;
-        #undef DEBUG
-        //#define DEBUG
         #ifdef DEBUG
           printk("DATA_PENDING SECOND time and reset!! in Device1Write\n\r");
         #endif
@@ -495,8 +487,6 @@ static ssize_t Device1Write(struct file *File,const char *Buffer,size_t Count,lo
 
       if(USB_DATA_READY == input_state)
       {
-        #undef DEBUG
-        //#define DEBUG
         #ifdef DEBUG
           printk("USB_DATA_READY in Device1Write\n\r");
         #endif
@@ -509,16 +499,12 @@ static ssize_t Device1Write(struct file *File,const char *Buffer,size_t Count,lo
       {
         input_state = USB_DATA_PENDING;
 
-        #undef DEBUG
-        //#define DEBUG
         #ifdef DEBUG
           printk("DATA_PENDING in Device1Write\n\r");
         #endif
       }
   }
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("usbdev %d written\n\r", BytesWritten);
   #endif
@@ -533,8 +519,6 @@ static ssize_t Device1Read(struct file *File,char *Buffer,size_t Count,loff_t *O
 
   if (usb_char_out_length > 0)     // Something to look at
   {
-    #undef DEBUG
-    //#define DEBUG
 	  #ifdef DEBUG
 	    printk("Some bytes to READ?\n\r");
     #endif
@@ -585,16 +569,12 @@ static int Device1Init(void)
   Result  =  misc_register(&Device1);
   if (Result)
   {
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printk("  %s device register failed\n",DEVICE1_NAME);
     #endif
   }
   else
   {
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printk("  %s device register OK\n",DEVICE1_NAME);
     #endif
@@ -633,8 +613,6 @@ static void Device1Exit(void)
   {
     ClearPageReserved(virt_to_page(((unsigned long)pTemp) + i));
 
-    //#define DEBUG
-    #undef DEBUG
     #ifdef DEBUG
       printk("  %s memory page %d unmapped\n",DEVICE1_NAME,i);
     #endif
@@ -644,8 +622,6 @@ static void Device1Exit(void)
 
   misc_deregister(&Device1);
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("  %s device unregistered\n",DEVICE1_NAME);
   #endif
@@ -663,48 +639,34 @@ module_param (SerialStr, charp, 0);
 static int ModuleInit(void)
 {
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("%s Module init started\r\n",MODULE_NAME);
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("This is DEFAULT NAME: %s\n\r", longname);
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("\n\rThis is the HostStr: %s\n\r", HostStr);
   #endif
 
   strcpy(longname, HostStr);
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("\n\rThis is the INSMODed NAME: %s\n\r", longname);
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("\n\rThis is the DEFAULT SerialNumber: %s\n\r", serial);
   #endif
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("\n\rThis is the SerialStr: %s\n\r", SerialStr);
   #endif
 
   strcpy(serial, SerialStr);
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("\n\rThis is the INSMODed SerialNumber (BT mac): %s\n\r", serial);
   #endif
@@ -716,8 +678,6 @@ static int ModuleInit(void)
 
 static void ModuleExit(void)
 {
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printk("%s exit started\n",MODULE_NAME);
   #endif

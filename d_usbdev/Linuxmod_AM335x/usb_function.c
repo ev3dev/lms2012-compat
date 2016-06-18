@@ -368,17 +368,13 @@ static void write_data_to_the_host(struct usb_ep *ep, struct usb_request *req)
 	  unsigned  i;
 	  u8    *buf = req->buf;
 
-	  //#define DEBUG
 	  #ifdef DEBUG
 	    printk("WR to HOST req->length = %d\r\n", req->length);
 	  #endif
 
-	  #undef DEBUG
-	  //#define DEBUG
 	      #ifdef DEBUG
 	        	printk("USB = %d, %d\r\n", usb_char_buffer_in[2], usb_char_buffer_in[3]);
 	  #endif
-	  #undef DEBUG
 
 	  for (i = 0; i < req->length; i++)
 		    *buf++ = usb_char_buffer_in[i];
@@ -444,7 +440,6 @@ static void rudolf_complete(struct usb_ep *ep, struct usb_request *req)
                                   #ifdef DEBUG
                                     printk("IN_IN_IN - BUSY settes to READY\n");
                                   #endif
-                                  #undef DEBUG
                                   input_state = USB_DATA_READY;
                                   // and relax
                                   break;
@@ -453,7 +448,6 @@ static void rudolf_complete(struct usb_ep *ep, struct usb_request *req)
                                   #ifdef DEBUG
                                     printk("IN_IN_IN - IDLE\n");
                                   #endif
-                                  //#undef DEBUG
 
                                   break;
 

@@ -307,8 +307,6 @@ UBYTE cComCheckUsbCable(void)
     fclose(f);
   }
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     printf("BUFFER = %s\n\r", buffer);
   #endif
@@ -316,16 +314,12 @@ UBYTE cComCheckUsbCable(void)
   if(strstr(buffer, "b_peripheral") != 0)
     Result = TRUE;
 
-  //#define DEBUG
-  #undef DEBUG
   #ifdef DEBUG
     if(Result == TRUE)
       printf("CABLE connected\n\r");
     else
       printf("CABLE dis-connected :-(\n\r");
   #endif
-  // Just to be sure - we disables further prinf "polution"
-  #undef DEBUG
 
   return Result;
 }
@@ -394,8 +388,6 @@ UWORD     cComReadBuffer(UBYTE *pBuffer,UWORD Size)
   {
     Length  =  read(ComInstance.Cmdfd,pBuffer,(size_t)Size);
 
-    #undef DEBUG
-    //#define DEBUG
 	  #ifdef DEBUG
     	printf("cComReadBuffer Length = %d\r\n", Length);
 	  #endif
@@ -420,8 +412,6 @@ UWORD     cComWriteBuffer(UBYTE *pBuffer,UWORD Size)
   	  else
   	    Length  =  write(ComInstance.Cmdfd,pBuffer,1024);
 
-	  #undef DEBUG
-	  //#define DEBUG
 	  #ifdef DEBUG
 	  	  printf("cComWriteBuffer %d\n\r", Length);
 	  #endif
@@ -492,8 +482,6 @@ UBYTE     cComDirectCommand(UBYTE *pBuffer,UBYTE *pReply)
       ComInstance.Image[Length]  =  opOBJECT_END;
       (*pImgHead).ImageSize      =  Length;
 
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("\r\n");
         for (Tmp = 0;Tmp <= Length;Tmp++)
@@ -2521,8 +2509,6 @@ void      cComUpdate(void)
     	  }
       }
 
-      #undef DEBUG
-      //#define DEBUG
       #ifdef DEBUG
         // start DEBUG
         if(ChNo == USBDEV)
@@ -2556,8 +2542,6 @@ void      cComUpdate(void)
             {
                                                     // NEW MOTOR/DAISY
               case	DIR_CMD_NO_REPLY_WITH_BUSY:	{
-                                                    #undef DEBUG
-                                                    //#define DEBUG
                                                     #ifdef DEBUG
                                                       printf("Did we reach a *BUSY* DIRECT_COMMAND_NO_REPLY pComCmd.Size = %d\n\r", ((*pComCmd).CmdSize));
                                                     #endif
@@ -2583,8 +2567,6 @@ void      cComUpdate(void)
 
             	  	  	  	  	  	  	  	  	  	 for(Iterator = (((*pComCmd).CmdSize) - 7); Iterator < (((*pComCmd).CmdSize) - 3); Iterator++ )
             	  	  	  	  	  	  	             {
-														                         #undef DEBUG
-            	  	  	  	  	  	  	  	  	  		 //#define DEBUG
 														                         #ifdef DEBUG
             	  	  	  	  	  	  	  	  	  		 	 printf("Iterator = %d\n\r", Iterator);
 														                         #endif
@@ -2600,8 +2582,6 @@ void      cComUpdate(void)
             	  	  	  	  	  	  	  	  	  		 // New MotorSignal
             	  	  	  	  	  	  	  	  	  		 MotorBusySignalPointer <<= 1;
 
-            	  	  	  	  	  	  	  	  	  		 #undef DEBUG
-            	  	  	  	  	  	  	  	  	  		 //#define DEBUG
 														                         #ifdef DEBUG
             	  	  	  	  	  	  	  	  	  		 	 printf("ThisMagicCookie = %d\n\r", ThisMagicCookie);
 														                         #endif
@@ -2612,8 +2592,6 @@ void      cComUpdate(void)
 
             	  	  	  	  	  	  	  	  	  	 ResetDelayCounter(MotorBusySignal);
 
-            	  	  	  	  	  	  	  	  	  	 #undef DEBUG
-            	  	  	  	  	  	  	  	  	  	 //#define DEBUG
             	  	  	  	  	  	  	  	  	  	 #ifdef DEBUG
             	  	  	  	  	  	  	  	  	  	   printf("cMotorSetBusyFlags(%X)\n\r", MotorBusySignal);
             	  	  	  	  	  	  	  	  	  	 #endif
@@ -2635,8 +2613,6 @@ void      cComUpdate(void)
               {
             	  // direct command
 
-                #undef DEBUG
-            	  //#define DEBUG
                	#ifdef DEBUG
            	      printf("Did we reach a DIRECT_COMMAND_REPLY\n\r");
    				      #endif
@@ -2682,8 +2658,6 @@ void      cComUpdate(void)
               {
                 // direct command
 
-                #undef DEBUG
-                //#define DEBUG
             	  #ifdef DEBUG
             	    printf("Did we reach a DIRECT_COMMAND_NO_REPLY\n\r");
 				        #endif
@@ -2749,8 +2723,6 @@ void      cComUpdate(void)
               {
                 if(ChNo == USBDEV)
                 {
-                  #undef DEBUG
-                	//#define DEBUG
 					        #ifdef DEBUG
                 		printf("Did we reach c_COM @ DAISY_COMMAND_REPLY?\n\r");
 					        #endif
@@ -2768,8 +2740,6 @@ void      cComUpdate(void)
               case DAISY_COMMAND_NO_REPLY:
               {
 
-                #undef DEBUG
-                //#define DEBUG
 					      #ifdef DEBUG
                   printf("Did we reach c_COM @ DAISY_COMMAND_NO_REPLY?\n\r");
 					      #endif
@@ -2854,8 +2824,6 @@ void      cComUpdate(void)
     UsbConUpdate++;
     if(UsbConUpdate >= USB_CABLE_DETECT_RATE)
     {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("ready to check\n\r");
       #endif
@@ -2887,40 +2855,30 @@ void      cComTxUpdate(UBYTE ChNo)
       // Do "special handling" - I.e. no conflict between pushed DaisyData and non-syncronized
       // returns from Commands (answers/errors).
 
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("\n\r001\n\r");
       #endif
 
       if(GetDaisyPushCounter() == DAISY_PUSH_NOT_UNLOCKED)  // It's the very first
       {                                                     // (or one of the first ;-)) transmission(s)
-        //#define DEBUG
-        #undef DEBUG
         #ifdef DEBUG
           printf("Not unlocked 001\n\r");
         #endif
 
         if (pTxBuf->Writing)  // Anything Pending?
         {
-          //#define DEBUG
-          #undef DEBUG
           #ifdef DEBUG
             printf("Not unlocked 002\n\r");
           #endif
 
           if(NULL != ComInstance.WriteChannel[ChNo])  // Valid channel?
           {
-            //#define DEBUG
-            #undef DEBUG
             #ifdef DEBUG
               printf("Not unlocked 003\n\r");
             #endif
 
             if((ComInstance.WriteChannel[USBDEV](pTxBuf->Buf, pTxBuf->BlockLen)) != 0)
             {
-              //#define DEBUG
-              #undef DEBUG
               #ifdef DEBUG
                 printf("Not (OR should be) unlocked 004\n\r");
               #endif
@@ -2939,32 +2897,24 @@ void      cComTxUpdate(UBYTE ChNo)
 
         if(GetDaisyPushCounter() == 0)  // It's a NON DaisyChain time-slice
         {
-          //#define DEBUG
-          #undef DEBUG
           #ifdef DEBUG
             printf("Unlocked 001\n\r");
           #endif
 
           if (pTxBuf->Writing)
           {
-            //#define DEBUG
-            #undef DEBUG
             #ifdef DEBUG
               printf("Unlocked 002\n\r");
             #endif
 
             if(NULL != ComInstance.WriteChannel[ChNo])
             {
-              //#define DEBUG
-              #undef DEBUG
               #ifdef DEBUG
                 printf("Unlocked 003\n\r");
               #endif
 
               if(ComInstance.WriteChannel[ChNo](pTxBuf->Buf, pTxBuf->BlockLen))
               {
-                //#define DEBUG
-                #undef DEBUG
                 #ifdef DEBUG
                   printf("Unlocked 004\n\r");
                 #endif
@@ -2977,8 +2927,6 @@ void      cComTxUpdate(UBYTE ChNo)
           }
           else
           {
-            //#define DEBUG
-            #undef DEBUG
             #ifdef DEBUG
               printf("Unlocked 005\n\r");
             #endif
@@ -2998,8 +2946,6 @@ void      cComTxUpdate(UBYTE ChNo)
 
             Len = cDaisyData(&pData);
 
-            //#define DEBUG
-            #undef DEBUG
             #ifdef DEBUG
               printf("Daisy Len = %d, Counter = %d\n\r", Len, GetDaisyPushCounter());
             #endif
@@ -3009,8 +2955,6 @@ void      cComTxUpdate(UBYTE ChNo)
 
               if((ComInstance.WriteChannel[USBDEV](pData, Len)) != 0)
               {
-                //#define DEBUG
-                #undef DEBUG
                 #ifdef DEBUG
                   printf("Daisy OK tx%d\n\r", GetDaisyPushCounter());
                 #endif
@@ -3021,8 +2965,6 @@ void      cComTxUpdate(UBYTE ChNo)
               }
               else
               {
-                //#define DEBUG
-                #undef DEBUG
                 #ifdef DEBUG
                   printf("Daisy FAIL in txing %d\n\r", GetDaisyPushCounter());  // TX upstream called
                 #endif
@@ -3037,24 +2979,18 @@ void      cComTxUpdate(UBYTE ChNo)
   {
 	  if (pTxBuf->Writing)
 	  {
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
 		    printf("007\n\r");
       #endif
 
 		  if(NULL != ComInstance.WriteChannel[ChNo])
 		  {
-		    //#define DEBUG
-		    #undef DEBUG
         #ifdef DEBUG
 			    printf("Tx Writing true in the bottom ChNo = %d - PushCounter = %d\n\r", ChNo, GetDaisyPushCounter());
         #endif
 
 		    if(ComInstance.WriteChannel[ChNo](pTxBuf->Buf, pTxBuf->BlockLen))
 			  {
-		      //#define DEBUG
-		      #undef DEBUG
 		      #ifdef DEBUG
 		        printf("008\n\r");
           #endif
@@ -5368,16 +5304,12 @@ void      cComSet(void)
           {
             if (OK == cWiFiGetIndexFromName((char*)pName, (UBYTE*)&Item))
             {
-              //#define DEBUG
-              #undef DEBUG
               #ifdef DEBUG
                 printf("cWiFiConnect => index: %d, Name: %s\n\r", Item, pName);
               #endif
 
               cWiFiConnectToAp((int)Item);
 
-              //#define DEBUG
-              #undef DEBUG
               #ifdef DEBUG
                 printf("We have tried to connect....\n\r");
               #endif
@@ -5500,8 +5432,6 @@ void      cComSet(void)
         {
           if (Type)
           {
-            //#define DEBUG
-            #undef DEBUG
             #ifdef DEBUG
               printf("\r\nWPA encrypt called\r\n");
             #endif
@@ -5512,8 +5442,6 @@ void      cComSet(void)
           }
           else
           {
-            //#define DEBUG
-            #undef DEBUG
             #ifdef DEBUG
               printf("\r\nNONE encrypt called\r\n");
             #endif
@@ -5599,8 +5527,6 @@ void      cComRemove(void)
     {
       cWiFiGetIndexFromName((char*)pName, (UBYTE*)&LocalIndex);
 
-      //#define DEBUG
-      #undef DEBUG
       #ifdef DEBUG
         printf("Removing Index: %d\n\r", LocalIndex);
       #endif
