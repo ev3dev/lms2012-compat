@@ -1452,8 +1452,6 @@ void      BtTurnOnSeq(void)
           const char *service_dsc       =   "MINDSTORMS EV3";
           const char *service_prov      =   "LEGO";
 
-          int err = 0;
-
           uuid_t root_uuid, l2cap_uuid, rfcomm_uuid, svc_uuid;//, svc_class_uuid;
           sdp_list_t *l2cap_list        =   0,
                      *rfcomm_list       =   0,
@@ -1506,7 +1504,7 @@ void      BtTurnOnSeq(void)
 
           session = sdp_connect( BDADDR_ANY, BDADDR_LOCAL, SDP_RETRY_IF_BUSY );
 
-          err = sdp_record_register(session, record, 0);
+          sdp_record_register(session, record, 0);
 
           // cleanup
           sdp_data_free( channel );
