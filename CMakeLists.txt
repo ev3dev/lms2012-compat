@@ -4,7 +4,7 @@ project (lms2012-compat C)
 add_compile_options (-Wall -Werror)
 
 add_subdirectory (c_com)
-add_subdirectory (c_dynload/source)
+add_subdirectory (c_dynload)
 add_subdirectory (c_input/source)
 add_subdirectory (c_memory/source)
 add_subdirectory (c_output/source)

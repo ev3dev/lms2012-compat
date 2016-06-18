@@ -28,7 +28,7 @@ INCLUDES += -I$(BASE)/lms2012/source \
 	   -I$(BASE)/c_output/source \
 	   -I$(BASE)/c_sound/source \
 	   -I$(BASE)/c_ui/source \
-	   -I$(BASE)/c_dynload/source
+	   -I$(BASE)/c_dynload
 	   
 
 ifeq ($(ARCH),X86)
