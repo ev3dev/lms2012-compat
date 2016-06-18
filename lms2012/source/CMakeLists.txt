@@ -25,6 +25,7 @@ set (LMS2012_MODULES
 
 foreach (module ${LMS2012_MODULES})
     list (APPEND LMS2012_OBJECTS "$<TARGET_OBJECTS:${module}>")
+    list (APPEND LMS2012_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/${module})
     list (APPEND LMS2012_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/${module}/source)
 endforeach ()
 

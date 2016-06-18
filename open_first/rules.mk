@@ -22,7 +22,7 @@ OBJS = $(SOURCES:%.c=%.o)
 DEPS = $(OBJS:%.o=%.d)
 
 INCLUDES += -I$(BASE)/lms2012/source \
-	   -I$(BASE)/c_com/source \
+	   -I$(BASE)/c_com \
 	   -I$(BASE)/c_input/source \
 	   -I$(BASE)/c_memory/source \
 	   -I$(BASE)/c_output/source \

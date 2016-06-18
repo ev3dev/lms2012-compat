@@ -572,7 +572,7 @@ INPUT                  =  "../lms2012/source/lms2012.h" \
                           "../lms2012/Linux_AM1808/sys/settings/" \
                           "../lms2012/source" \
                           "../c_ui/source" \
-                          "../c_com/source" \
+                          "../c_com" \
                           "../c_input/source" \
                           "../c_memory/source" \
                           "../c_output/source" \
