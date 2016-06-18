@@ -153,7 +153,7 @@
 #include  "lms2012.h"
 #include  "c_ui.h"
 #include  "d_terminal.h"
-#include  "../../c_memory/source/c_memory.h"
+#include  "c_memory.h"
 #include  "c_com.h"
 #include  "c_input.h"
 #include  <string.h>

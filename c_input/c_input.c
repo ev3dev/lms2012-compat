@@ -113,7 +113,7 @@
 #ifndef    DISABLE_DAISYCHAIN_COM_CALL
 #include  "c_daisy.h"
 #endif
-#include  "../../c_memory/source/c_memory.h"
+#include  "c_memory.h"
 
 #ifdef    DEBUG_C_INPUT
 #define   DEBUG
