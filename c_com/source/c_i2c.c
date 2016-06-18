@@ -442,7 +442,7 @@ void*     I2cCtrl(void *ptr)
 
           case 'I':
           {
-
+            UWORD ByteCnt;
             UWORD  TmpCnt;
             UWORD  BytesAvail;
 
@@ -463,7 +463,8 @@ void*     I2cCtrl(void *ptr)
                 BUFAddOutPtr(1);
               }
 
-              if(0 > I2cWrite(I2cFile, WRITE_DATA, TmpBuf, (MIN_MSG_LEN + 1)))
+              ByteCnt = I2cWrite(I2cFile, WRITE_DATA, TmpBuf, (MIN_MSG_LEN + 1));
+              if(ByteCnt < 0)
               {
                 DISCONNDueToErr;
               }
@@ -476,8 +477,6 @@ void*     I2cCtrl(void *ptr)
             }
             else
             {
-              UWORD ByteCnt;
-
               // Check for LEGO App data to the mode2 decoding
               // ByteCnt can be bigger than i2c buffer size, if that is the case
               // then ByteCnt has to be split up in I2CBUF_SIZE
