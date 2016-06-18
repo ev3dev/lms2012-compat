@@ -284,7 +284,7 @@ void    cDaisySetOwnLayer(UBYTE Layer);                   // The nice to known -
 RESULT  cDaisyMotorDownStream(DATA8 *pData, DATA8 Length, DATA8 Layer, DATA8 PortField);	// Looks like the normal CMD, but
 																						              // port field added - i.e. NOT too much
 																						              // specific protocol down @ the transport layer
-enum
+typedef enum
 {
   DAISY_WR_NOT_CONNECTED,   // No DAISY device connected :-(
   DAISY_WR_CONNECTED,       // Connected but not opened yet
@@ -296,7 +296,7 @@ enum
 }
 DAISY_WRITE_STATES;
 
-enum
+typedef enum
 {
   DAISY_RD_IDLE,              // Daisy READ control state idling
   DAISY_RD_REQUESTED,         // Read request issued - async
@@ -308,7 +308,7 @@ enum
 }
 DAISY_READ_STATES;
 
-enum
+typedef enum
 {
   DAISY_DOWN_DISCONNECTED,    // Daisy downstream states
   DAISY_DOWN_CONNECTED,
@@ -320,7 +320,7 @@ enum
 }
 DAISY_DOWN_CONNECTION_STATES;
 
-enum
+typedef enum
 {
   DAISY_PUSH_NOT_CONNECTED,
   DAISY_PUSH_CONNECTED
@@ -344,7 +344,7 @@ DAISY_PUSH_CONNECTION_STATES;
 // LIBUSB_ERROR_OTHER 				= 	-99 	Other error
 // DAISY_ERROR_RD_DONE				=		-80		Signal READ done - NOT an error
 
-enum
+typedef enum
 {
   DAISY_WR_OK = LIBUSB_SUCCESS,							      // Write started OK - REMEMBER we try to be asyncronous :-)
   DAISY_WR_DONE = DAISY_WR_OK,							      // Request fullfilled else DAISY_WR_NOT_FINISHED
@@ -357,7 +357,7 @@ DAISY_WR_ERROR_CODES;
 
 // PAYLOAD Helper defines
 
-enum
+typedef enum
 {
   STATUS_POS,
   TYPE_POS,
@@ -366,7 +366,7 @@ enum
 }
 PAYLOAD_POSITIONS;
 
-enum
+typedef enum
 {
   LEN1,
   LEN2,
@@ -378,7 +378,7 @@ enum
 }
 REPLY_INDEXES;
 
-enum
+typedef enum
 {
   INFO_LEN1,
   INFO_LEN2,
@@ -400,7 +400,7 @@ INFO_INDEXES;
 #define TYPE_POS_TO_SLAVE (SENSOR_POS_TO_SLAVE + 1)
 #define MODE_POS_TO_SLAVE (TYPE_POS_TO_SLAVE + 1)
 
-enum
+typedef enum
 {
   EMPTY,
   VALID
@@ -413,7 +413,7 @@ INFO_STATES;
 #define DAISY_PRIORITY_COUNT	2	      // 1:3
 #define DAISY_PUSH_NOT_UNLOCKED 0x55
 
-enum
+typedef enum
 {
   DAISY_RD_OK  = LIBUSB_SUCCESS,									  // Read request started OK - REMEMBER we try to be asyncronous :-)
   DAISY_RD_NO_DATA_YET =  LIBUSB_ERROR_BUSY,			  // Data not received yet
