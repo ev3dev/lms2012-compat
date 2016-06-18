@@ -1,0 +1,13 @@
+cmake_minimum_required (VERSION 2.8)
+project (lms2012-compat C)
+
+add_subdirectory (c_com/source)
+add_subdirectory (c_dynload/source)
+add_subdirectory (c_input/source)
+add_subdirectory (c_memory/source)
+add_subdirectory (c_output/source)
+add_subdirectory (c_robotcvm/source)
+add_subdirectory (c_sound/source)
+add_subdirectory (c_ui/source)
+add_subdirectory (lmssrc/c_ui)
+add_subdirectory (lms2012/source)
