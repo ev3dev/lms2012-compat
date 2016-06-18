@@ -852,6 +852,10 @@ RESULT    cUiInit(void)
   cUiInitTemp();
 #endif
 
+  if (Result == FAIL) {
+    cUiExit();
+  }
+
   return (Result);
 }
 
