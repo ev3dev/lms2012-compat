@@ -42,10 +42,16 @@ Development with debug messages:    DEBUG defined, TERMINAL_ENABLED = 1, DEBUG_U
 
 */
 
+#ifndef   NDEBUG //!< CMake automatically defines NDEBUG if the CMAKE_BUILD_TYPE != Debug
+#define   DEBUG //!< When defined debug messages is output on standard I/O (d_uart is different)
+#endif
 
-//#define   DEBUG                         //!< When defined debug messages is output on standard I/O (d_uart is different)
+#ifdef    DEBUG
+#define   TERMINAL_ENABLED      1       //!< DEBUG terminal enabled (0 = disabled, 1 = enabled)
+#else
+#define   TERMINAL_ENABLED      0
+#endif
 
-#define   TERMINAL_ENABLED      0       //!< DEBUG terminal enabled (0 = disabled, 1 = enabled)
 #define   DEBUG_UART            4       //!< UART used for debug (0 = port1, 1 = port2, ... 4 = none)
 
 
