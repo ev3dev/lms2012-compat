@@ -787,11 +787,7 @@ DATA8     cMemoryFindSubFolders(char *pFolderName)
   int     Items;
   DATA8   Folders = 0;
 
-#ifdef Linux_X86
   Items     =  scandir(pFolderName,&NameList,0,(int (*)(const struct dirent **,const struct dirent **))cMemorySort);
-#else
-  Items     =  scandir(pFolderName,&NameList,0,(int (*)(const void *,const void *))cMemorySort);
-#endif
   if (Items >= 0)
   {
     while (Items--)
@@ -880,11 +876,7 @@ DATA8     cMemoryGetSubFolderName(DATA8 Item,DATA8 MaxLength,char *pFolderName,c
   DATA8   Folders = 0;
 
   pSubFolderName[0]  =  0;
-#ifdef Linux_X86
   Items     =  scandir(pFolderName,&NameList,0,(int (*)(const struct dirent **,const struct dirent **))cMemorySort);
-#else
-  Items     =  scandir(pFolderName,&NameList,0,(int (*)(const void *,const void *))cMemorySort);
-#endif
   Tmp       =  0;
 
   if (Items >= 0)
@@ -980,11 +972,7 @@ DATA32    cMemoryFindSize(char *pFolderName,DATA32 *pFiles)
   if (stat(pFolderName,&Status) == 0)
   {
     Size +=  (DATA32)Status.st_size;
-#ifdef Linux_X86
     Items     =  scandir(pFolderName,&NameList,0,(int (*)(const struct dirent **,const struct dirent **))cMemorySort);
-#else
-    Items     =  scandir(pFolderName,&NameList,0,(int (*)(const void *,const void *))cMemorySort);
-#endif
     if (Items >= 0)
     {
       *pFiles  =  (DATA32)Items;
