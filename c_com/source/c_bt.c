@@ -1887,7 +1887,7 @@ void    create_paired_device_reply(DBusPendingCall *pending, void *user_data)
 {
   PAIREDDEVINFO *pPairedDevInfo;
   struct         sockaddr_rc  addr;
-  int            sock_flags, status;
+  int            sock_flags;
 
   DBusMessage   *message;
   DBusError     err;
@@ -1924,7 +1924,7 @@ void    create_paired_device_reply(DBusPendingCall *pending, void *user_data)
     sock_flags = fcntl(BtInstance.BtCh[pPairedDevInfo->Port].BtSocket.Socket, F_GETFL, 0);
     fcntl(BtInstance.BtCh[pPairedDevInfo->Port].BtSocket.Socket, F_SETFL, sock_flags | O_NONBLOCK);
 
-    status = connect(BtInstance.BtCh[pPairedDevInfo->Port].BtSocket.Socket,(struct sockaddr *) &addr, sizeof(addr));
+    connect(BtInstance.BtCh[pPairedDevInfo->Port].BtSocket.Socket,(struct sockaddr *) &addr, sizeof(addr));
     BtClearChBuf(pPairedDevInfo->Port);
     BtInstance.BtCh[pPairedDevInfo->Port].Status = CH_CONNECTING;
 
