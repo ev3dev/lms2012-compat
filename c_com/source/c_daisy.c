@@ -233,7 +233,7 @@ RESULT cDaisyTxDownStream(void)
 
 	RetRes = cDaisyWrite();
 
-	switch(RetRes)
+	switch((DAISY_WR_ERROR_CODES)RetRes)
 	{
 		case DAISY_WR_DISCONNECTED:
 
@@ -1806,10 +1806,9 @@ void DaisyAsyncWriteCallBack(struct libusb_transfer *WriteUsbTransfer)
 int cDaisyWriteDone(void)                               // Called for an asyncronous check on the actual write
 {
   int ReturnValue = DAISY_WR_NOT_FINISHED;
-  int EventResult = 0;
 
-  EventResult = libusb_handle_events_timeout(0, &TV);         // Let the CPU get some job done - but don't let it
-                                                              // use too much time.......
+  libusb_handle_events_timeout(0, &TV);         // Let the CPU get some job done - but don't let it
+                                                // use too much time.......
   switch(LastWriteResult)
   {
     case  DAISY_WR_NOT_FINISHED:                                        // Return Write in progress
@@ -1852,13 +1851,12 @@ int cDaisyWriteDone(void)                               // Called for an asyncro
 void cDaisyPollFromDownStream(void)  // Autonomous put into array etc. :-)
 {
   int ReadResult = 0;
-  int EventResult = 0;
   int InfoLength = 0;
   int TempStorePointer = 0;                             // Used for the offset of O/P sensors
                                                         // (i.e. 16 = 4, 17 = 5 index in array)
 
-  EventResult = libusb_handle_events_timeout(0, &TV);   // Let the CPU get some job done - but don't let it
-                                                        // use too much time.......
+  libusb_handle_events_timeout(0, &TV);   // Let the CPU get some job done - but don't let it
+                                          // use too much time.......
 
   	if(ReadState != DAISY_RD_IDLE)
   	{
@@ -2368,10 +2366,8 @@ void cDaisyControl(void)
 
   // Do we have an interface at all?
 
-  int EventResult = 0;
-
-  EventResult = libusb_handle_events_timeout(0, &TV);   // Let the CPU get some job done - but don't let it
-                                                        // use too much time.......
+  libusb_handle_events_timeout(0, &TV);   // Let the CPU get some job done - but don't let it
+                                          // use too much time.......
 
   switch(DownConnectionState)       // What is downstream and what should we do---
   {
