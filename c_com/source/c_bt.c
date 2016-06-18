@@ -1465,23 +1465,16 @@ void      BtTurnOnSeq(void)
           sdp_data_t *channel           =   0;                //, *psm = 0;
           sdp_profile_desc_t profile;
 
-          UBYTE *pUUID;
           sdp_record_t *record = sdp_record_alloc();
 
           // set the general service ID
           sdp_uuid128_create( &svc_uuid, &svc_uuid_int );
 
-          pUUID = &(svc_uuid.value.uuid128.data[0]);
-
           sdp_set_service_id( record, svc_uuid );
-
-          pUUID = &(record->svclass.value.uuid128.data[0]);
 
           // set the service class
           svc_class_list = sdp_list_append(0, &svc_uuid);
           sdp_set_service_classes(record, svc_class_list);
-
-          pUUID = &(record->svclass.value.uuid128.data[0]);
 
           // set the Bluetooth profile information
           sdp_uuid16_create(&profile.uuid, SERIAL_PORT_PROFILE_ID);
@@ -1512,8 +1505,6 @@ void      BtTurnOnSeq(void)
           sdp_set_info_attr(record, service_name, service_prov, service_dsc);
 
           session = sdp_connect( BDADDR_ANY, BDADDR_LOCAL, SDP_RETRY_IF_BUSY );
-
-          pUUID = &(record->svclass.value.uuid128.data[0]);
 
           err = sdp_record_register(session, record, 0);
 
