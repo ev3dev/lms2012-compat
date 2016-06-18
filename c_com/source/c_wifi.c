@@ -484,7 +484,9 @@ RESULT cWiFiRemoveNetwork(void)
 {
 RESULT Ret = FAIL;
   char CmdReturn[10];
+#if DEBUG
   int RetVal;
+#endif
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   //#define DEBUG
@@ -497,12 +499,11 @@ RESULT Ret = FAIL;
 
   if(ctrl_conn != NULL)
   {
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "REMOVE_NETWORK all",
-                                strlen("REMOVE_NETWORK all"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+#if DEBUG
+    RetVal = 
+#endif
+    wpa_ctrl_request(ctrl_conn, "REMOVE_NETWORK all", strlen("REMOVE_NETWORK all"),
+                     CmdReturn, &LenCmdReturn, NULL);
     sleep(3); // Force some cycles
     CmdReturn[LenCmdReturn] = '\0';
 
@@ -541,13 +542,11 @@ RESULT cWiFiTcpClose(void)
 
   WiFiStatus = BUSY;
 
-  int z;  /* Status code */
-
   struct linger so_linger;
 
   so_linger.l_onoff = TRUE;
   so_linger.l_linger = 0;
-  z = setsockopt(TcpConnectionSocket,
+  setsockopt(TcpConnectionSocket,
       SOL_SOCKET,
       SO_LINGER,
       &so_linger,
@@ -792,19 +791,20 @@ RESULT cWiFiTerminate(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
+#if DEBUG
   int RetVal;
+#endif
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
   if(ctrl_conn != NULL)
   {
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "TERMINATE",
-                                strlen("TERMINATE"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+#if DEBUG
+    RetVal =
+#endif
+    wpa_ctrl_request(ctrl_conn, "TERMINATE", strlen("TERMINATE"), CmdReturn,
+                     &LenCmdReturn, NULL);
     CmdReturn[LenCmdReturn] = '\0';
 
 	  #undef DEBUG
@@ -825,7 +825,9 @@ RESULT cWiFiAddNetwork(void)
 {
   RESULT Ret = FAIL;
   char aCmdReturn[128];
+#if DEBUG
   int RetVal;
+#endif
   size_t LenaCmdReturn = sizeof(aCmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(aCmdReturn, 0x00, LenaCmdReturn); // Reset to be sure!!
@@ -844,12 +846,11 @@ RESULT cWiFiAddNetwork(void)
       printf("Internal in AddNetwork - before the real call\n\r");
     #endif
 
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "ADD_NETWORK",
-                                strlen("ADD_NETWORK"),
-                                aCmdReturn,
-                                &LenaCmdReturn,
-                                NULL);
+#if DEBUG
+    RetVal =
+#endif
+    wpa_ctrl_request(ctrl_conn, "ADD_NETWORK", strlen("ADD_NETWORK"),
+                     aCmdReturn, &LenaCmdReturn, NULL);
     sleep(3); // Force some cycles
     aCmdReturn[LenaCmdReturn] = '\0';
 
@@ -886,7 +887,9 @@ RESULT cWiFiSetScanSsidToOne(void)  // The WPA_Supplicant should also be happy, 
   RESULT Ret = FAIL;
   char CmdReturn[10];
   char Cmd[128];
+#if DEBUG
   int RetVal;
+#endif
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   WiFiStatus = BUSY;
@@ -902,12 +905,10 @@ RESULT cWiFiSetScanSsidToOne(void)  // The WPA_Supplicant should also be happy, 
   {
     strcpy(Cmd, "SET_NETWORK 0 scan_ssid 1");
 
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                Cmd,
-                                strlen(Cmd),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+#if DEBUG
+    RetVal =
+#endif
+    wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn, NULL);
 
     CmdReturn[LenCmdReturn] = '\0';
 
@@ -935,7 +936,6 @@ RESULT cWiFiSetSsid(char *Ssid)
   RESULT Ret = FAIL;
   char CmdReturn[10];
   char Cmd[128];
-  int RetVal;
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   WiFiStatus = BUSY;
@@ -954,12 +954,7 @@ RESULT cWiFiSetSsid(char *Ssid)
     strcat(Cmd, "\"");
 
 
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                Cmd,
-                                strlen(Cmd),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+    wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn, NULL);
 
     CmdReturn[LenCmdReturn] = '\0';
 
@@ -986,19 +981,15 @@ RESULT cWiFiSetKeyManagToWpa2(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
-  int RetVal;
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
   if(ctrl_conn != NULL)
   {
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "SET_NETWORK 0 key_mgmt WPA-PSK",
-                                strlen("SET_NETWORK 0 key_mgmt WPA-PSK"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+    wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 key_mgmt WPA-PSK",
+                     strlen("SET_NETWORK 0 key_mgmt WPA-PSK"), CmdReturn,
+                     &LenCmdReturn, NULL);
 
     CmdReturn[LenCmdReturn] = '\0';
     if(strstr(CmdReturn, "OK") != NULL)
@@ -1013,19 +1004,15 @@ RESULT cWiFiSetKeyManagToNone(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
-  int RetVal;
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
   if(ctrl_conn != NULL)
   {
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "SET_NETWORK 0 key_mgmt NONE",
-                                strlen("SET_NETWORK 0 key_mgmt NONE"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+    wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 key_mgmt NONE",
+                     strlen("SET_NETWORK 0 key_mgmt NONE"), CmdReturn,
+                     &LenCmdReturn, NULL);
 
     CmdReturn[LenCmdReturn] = '\0';
     if(strstr(CmdReturn, "OK") != NULL)
@@ -1040,7 +1027,6 @@ RESULT cWiFiSetPsk(char *Psk )
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
-  int RetVal;
   char Cmd[128];
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
@@ -1051,12 +1037,7 @@ RESULT cWiFiSetPsk(char *Psk )
     strcpy(Cmd, "SET_NETWORK 0 psk ");
     strcat(Cmd, Psk);
 
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                Cmd,
-                                strlen(Cmd),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+    wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn, NULL);
 
     CmdReturn[LenCmdReturn] = '\0';
     if(strstr(CmdReturn, "OK") != NULL)
@@ -1468,19 +1449,15 @@ RESULT cWiFiSetPairWiseCcmp(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
-  int RetVal;
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
   if(ctrl_conn != NULL)
   {
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "SET_NETWORK 0 pairwise CCMP TKIP",
-                                strlen("SET_NETWORK 0 pairwise CCMP TKIP"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+    wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 pairwise CCMP TKIP",
+                     strlen("SET_NETWORK 0 pairwise CCMP TKIP"), CmdReturn,
+                     &LenCmdReturn, NULL);
 
     CmdReturn[LenCmdReturn] = '\0';
     if(strstr(CmdReturn, "OK") != NULL)
@@ -1495,19 +1472,15 @@ RESULT cWiFiSetGroupCcmp(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
-  int RetVal;
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
   if(ctrl_conn != NULL)
   {
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "SET_NETWORK 0 group CCMP TKIP",
-                                strlen("SET_NETWORK 0 group CCMP TKIP"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+    wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 group CCMP TKIP",
+                     strlen("SET_NETWORK 0 group CCMP TKIP"), CmdReturn,
+                     &LenCmdReturn, NULL);
     CmdReturn[LenCmdReturn] = '\0';
     if(strstr(CmdReturn, "OK") != NULL)
     {
@@ -1523,19 +1496,14 @@ RESULT cWiFiSetProtoRsn(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
-  int RetVal;
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
   if(ctrl_conn != NULL)
   {
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "SET_NETWORK 0 proto RSN",
-                                strlen("SET_NETWORK 0 proto RSN"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+    wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 proto RSN", strlen("SET_NETWORK 0 proto RSN"),
+                     CmdReturn, &LenCmdReturn, NULL);
 
     CmdReturn[LenCmdReturn] = '\0';
     if(strstr(CmdReturn, "OK") != NULL)
@@ -1550,19 +1518,14 @@ RESULT cWiFiSetEnableNetwork(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
-  int RetVal;
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
   if(ctrl_conn != NULL)
   {
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "ENABLE_NETWORK 0",
-                                strlen("ENABLE_NETWORK 0"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+    wpa_ctrl_request(ctrl_conn, "ENABLE_NETWORK 0", strlen("ENABLE_NETWORK 0"),
+                     CmdReturn, &LenCmdReturn, NULL);
 
     CmdReturn[LenCmdReturn] = '\0';
     if(strstr(CmdReturn, "OK") != NULL)
@@ -1577,7 +1540,6 @@ RESULT cWiFiWpaStatus(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[256];
-  int RetVal;
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
@@ -1587,12 +1549,8 @@ RESULT cWiFiWpaStatus(void)
     // TODO Some escape
     if(ctrl_conn != NULL)
     {
-      RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "STATUS",
-                                strlen("STATUS"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+      wpa_ctrl_request(ctrl_conn, "STATUS", strlen("STATUS"), CmdReturn,
+                       &LenCmdReturn, NULL);
 
       CmdReturn[LenCmdReturn] = '\0';
 
@@ -1613,19 +1571,14 @@ RESULT cWiFiDisconnect(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
-  int RetVal;
   size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
 
   memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
   if(ctrl_conn != NULL)
   {
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "DISCONNECT",
-                                strlen("DISCONNECT"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+    wpa_ctrl_request(ctrl_conn, "DISCONNECT", strlen("DISCONNECT"), CmdReturn,
+                     &LenCmdReturn, NULL);
 
     sleep(2);
     CmdReturn[LenCmdReturn] = '\0';
@@ -1649,7 +1602,6 @@ RESULT cWiFiReconnect(void)
 {
   RESULT Ret = FAIL;
   char CmdReturn[10];
-  int RetVal;
   size_t LenCmdReturn = sizeof(CmdReturn) - 1;  // We leave space for a terminating /0x00
 
   memset(CmdReturn, 0x00, LenCmdReturn);        // Reset to be sure!!
@@ -1662,12 +1614,8 @@ RESULT cWiFiReconnect(void)
 
   if(ctrl_conn != NULL)
   {
-    RetVal = wpa_ctrl_request(  ctrl_conn,
-                                "RECONNECT",
-                                strlen("RECONNECT"),
-                                CmdReturn,
-                                &LenCmdReturn,
-                                NULL);
+    wpa_ctrl_request(ctrl_conn, "RECONNECT", strlen("RECONNECT"), CmdReturn,
+                     &LenCmdReturn, NULL);
     CmdReturn[LenCmdReturn] = '\0';
 
     if(strstr(CmdReturn, "OK") != NULL)
@@ -2493,7 +2441,6 @@ RESULT cWiFiStoreActualApList()           // Store the latest SCAN result(s)
 RESULT cWiFiScanForAPs()
 {
   RESULT Result = FAIL;                               // HARD ERROR
-  int Status = 0;
   char ScanResponse[10];
   size_t LenScanResponse = sizeof(ScanResponse) - 1;  // Space for a trailing /0
 
@@ -2511,13 +2458,8 @@ RESULT cWiFiScanForAPs()
   {
     if (ctrl_conn != NULL)
     {
-      Status = wpa_ctrl_request(  ctrl_conn,
-                                  "SCAN",
-                                  strlen("SCAN"),
-
-                                  ScanResponse,
-                                  &LenScanResponse,
-                                  NULL);
+      wpa_ctrl_request(ctrl_conn, "SCAN", strlen("SCAN"), ScanResponse,
+                       &LenScanResponse, NULL);
 
       ScanResponse[LenScanResponse] = '\0';
 
