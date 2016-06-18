@@ -3543,35 +3543,6 @@ void      cComWrite(void)
   }
 }
 
-/* UNUSED function */
-void      cComReadData(void)
-{
-  DATA8   Hardware;
-  DATA8   *pName;
-  DATA8   Size;
-  DATA8   *pData;
-
-  Hardware  =  *(DATA8*)PrimParPointer();
-  pName     =   (DATA8*)PrimParPointer();
-  Size      =  *(DATA8*)PrimParPointer();
-  pData     =   (DATA8*)PrimParPointer();
-}
-
-
-/* UNUSED function */
-void      cComWriteData(void)
-{
-  DATA8   Hardware;
-  DATA8   *pName;
-  DATA8   Size;
-  DATA8   *pData;
-
-  Hardware  =  *(DATA8*)PrimParPointer();
-  pName     =   (DATA8*)PrimParPointer();
-  Size      =  *(DATA8*)PrimParPointer();
-  pData     =   (DATA8*)PrimParPointer();
-}
-
 
 /*! \page cCom
  *  <hr size="1"/>

@@ -1440,9 +1440,6 @@ UBYTE     cComGetWifiStatus(void);
 void      cComReady(void);
 void      cComTest(void);
 
-void      cComReadData(void);
-void      cComWriteData(void);
-
 void      cComWriteFile(void);
 
 void      cComOpenMailBox(void);
