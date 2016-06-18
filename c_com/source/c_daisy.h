@@ -20,19 +20,8 @@
 
 #ifndef C_DAISY_H_
 #define C_DAISY_H_
-#include "libusb.h"
 
-      /* The public libusb header file
-			 *
-			 * The libusb library is free software and it can
-			 * redistribute it and/or modify it under the terms 
-			 * of the GNU Lesser General Publil License as 				 
-			 * published by the Free Software Foundation; either
- 			 * version 2.1 of the License, or (at your option) any 				 
-			 * later version.
-			 * See the libusb.h for more informations
-			 *
-			 * Thanks to: Daniel Drake and Johannes Erdfelt! */
+#include <libusb.h>
 
 #include "lms2012.h"
 

@@ -1,6 +1,6 @@
 
 find_package (PkgConfig REQUIRED)
-pkg_check_modules (C_COM_DEPS REQUIRED bluez dbus-1)
+pkg_check_modules (C_COM_DEPS REQUIRED bluez dbus-1 libusb-1.0)
 
 set (SOURCE_FILES
     c_bt.c
