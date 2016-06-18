@@ -140,13 +140,13 @@ static    WRITEBUF  *pMode2WriteBuf;
 static    char      *pBundleIdString;
 static    char      *pBundleSeedIdString;
 
-static    char      TmpBuf[I2CBUF_SIZE + 1];
+static    unsigned char TmpBuf[I2CBUF_SIZE + 1];
 
 
 UBYTE     I2cReadStatus(UBYTE *pBuf);
 UBYTE     I2cReadCts(void);
-int       I2cRead(int fd, unsigned int addr, char *buf, unsigned char len);
-int       I2cWrite(int fd, unsigned int addr, char *buf, unsigned char len);
+int       I2cRead(int fd, unsigned int addr, unsigned char *buf, unsigned char len);
+int       I2cWrite(int fd, unsigned int addr, unsigned char *buf, unsigned char len);
 void*     I2cCtrl(void *ptr);
 
 void      I2cSetPIC_RST(void);
@@ -200,7 +200,6 @@ void      I2cExit(void)
 void      I2cStart(void)
 {
   pthread_t I2cFunc;
-  int       I2cRet;
   char *message     = "I2c Func thread";
 
   Mode2InBuf.InPtr  = 0;
@@ -208,7 +207,7 @@ void      I2cStart(void)
   Status            = MODE2_BOOTING;
 
   ThreadRunState = 1;
-  I2cRet = pthread_create(&I2cFunc, NULL, I2cCtrl, (void*) message);
+  pthread_create(&I2cFunc, NULL, I2cCtrl, (void*) message);
 }
 
 
@@ -376,7 +375,7 @@ void*     I2cCtrl(void *ptr)
               if (0 < Size)
               {
                 // Bytes for mode2 decoding are ready - read them
-                if (0 > I2cRead(I2cFile, READ_DATA, (char *)Buf, Size))
+                if (0 > I2cRead(I2cFile, READ_DATA, Buf, Size))
                 {
                   // Error
                   #ifdef DEBUG
@@ -430,7 +429,7 @@ void*     I2cCtrl(void *ptr)
                 BUFAddOutPtr(1);
               }
 
-              if (0 > I2cWrite(I2cFile, WRITE_DATA, (char*)TmpBuf, BytesToTx))
+              if (0 > I2cWrite(I2cFile, WRITE_DATA, TmpBuf, BytesToTx))
               {
                 // Error
                 #ifdef DEBUG
@@ -464,7 +463,7 @@ void*     I2cCtrl(void *ptr)
                 BUFAddOutPtr(1);
               }
 
-              if(0 > I2cWrite(I2cFile, WRITE_DATA, (char*)TmpBuf, (MIN_MSG_LEN + 1)))
+              if(0 > I2cWrite(I2cFile, WRITE_DATA, TmpBuf, (MIN_MSG_LEN + 1)))
               {
                 DISCONNDueToErr;
               }
@@ -503,7 +502,7 @@ void*     I2cCtrl(void *ptr)
                   pMode2WriteBuf->OutPtr = 0;
                 }
 
-                if (0 > I2cWrite(I2cFile, WRITE_RAW, (char *)&(TmpBuf[0]), ByteCnt + 1))
+                if (0 > I2cWrite(I2cFile, WRITE_RAW, &(TmpBuf[0]), ByteCnt + 1))
                 {
                   DISCONNDueToErr;
                 }
@@ -533,7 +532,7 @@ void*     I2cCtrl(void *ptr)
             {
               // Buf[1] contains the number of bytes ready to be read
               Size = Buf[1];
-              if (0 <= I2cRead(I2cFile, READ_DATA, (char*)&(pReadBuf->Buf[0]), Size))
+              if (0 <= I2cRead(I2cFile, READ_DATA, &(pReadBuf->Buf[0]), Size))
               {
                 pReadBuf->OutPtr = 0;
                 pReadBuf->InPtr  = Size;
@@ -566,7 +565,7 @@ void*     I2cCtrl(void *ptr)
 
             IdString[0] = (UBYTE)(strlen(&(IdString[1])));
 
-            if (0 <= I2cWrite(I2cFile, WRITE_DATA, (char*)IdString, (IdString[0] + 1)))
+            if (0 <= I2cWrite(I2cFile, WRITE_DATA, (unsigned char*)IdString, (IdString[0] + 1)))
             {
               if (MODE2_BOOTING == Status)
               {
@@ -709,13 +708,13 @@ void      I2cHiImpPIC_EN(void)
 
 UBYTE     I2cReadStatus(UBYTE *pBuf)
 {
-  return(I2cRead(I2cFile, READ_STATUS, (char*)pBuf, 3));
+  return(I2cRead(I2cFile, READ_STATUS, pBuf, 3));
 }
 
 
 // read len bytes stored in the device at address addr in array buf
 // return -1 on error, 0 on success
-int       I2cRead(int fd, unsigned int addr, char *buf, unsigned char len)
+int I2cRead(int fd, unsigned int addr, unsigned char *buf, unsigned char len)
 {
   int i;
 
@@ -749,7 +748,7 @@ int       I2cRead(int fd, unsigned int addr, char *buf, unsigned char len)
 }
 
 
-int       I2cWrite(int fd, unsigned int addr, char *buf, unsigned char len)
+int I2cWrite(int fd, unsigned int addr, unsigned char *buf, unsigned char len)
 {
   int    i;
 
