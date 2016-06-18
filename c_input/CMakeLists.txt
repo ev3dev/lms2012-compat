@@ -9,6 +9,6 @@ target_include_directories (c_input PUBLIC
     ${CMAKE_SOURCE_DIR}/c_com
     ${CMAKE_SOURCE_DIR}/c_memory
     ${CMAKE_SOURCE_DIR}/c_output
-    ${CMAKE_SOURCE_DIR}/c_ui/source
+    ${CMAKE_SOURCE_DIR}/c_ui
     ${C_COM_DEPS_INCLUDE_DIRS}
 )

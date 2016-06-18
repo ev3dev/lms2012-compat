@@ -27,7 +27,7 @@ INCLUDES += -I$(BASE)/lms2012/source \
 	   -I$(BASE)/c_memory \
 	   -I$(BASE)/c_output \
 	   -I$(BASE)/c_sound \
-	   -I$(BASE)/c_ui/source \
+	   -I$(BASE)/c_ui \
 	   -I$(BASE)/c_dynload
 	   
 

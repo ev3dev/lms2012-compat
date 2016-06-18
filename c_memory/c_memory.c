@@ -55,7 +55,7 @@
 #include  "lms2012.h"
 #include  "c_memory.h"
 #include  "c_md5.h"
-#include  "../../c_ui/source/c_ui.h"
+#include  "c_ui.h"
 
 #if (HARDWARE != SIMULATION)
 	#include  <stdlib.h>
