@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 2.8)
 project (lms2012-compat C)
 
+add_compile_options (-Wall)
+
 add_subdirectory (c_com/source)
 add_subdirectory (c_dynload/source)
 add_subdirectory (c_input/source)
