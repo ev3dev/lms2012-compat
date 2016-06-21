@@ -565,7 +565,12 @@ void      cUiExitTemp(void)
 #endif
 
 
-IMGDATA   DownloadSuccesSound[]    =  { opINFO,LC0(GET_VOLUME),LV0(0),opSOUND,LC0(PLAY),LV0(0),LCS,'u','i','/','D','o','w','n','l','o','a','d','S','u','c','c','e','s',0,opSOUND_READY,opOBJECT_END };
+static IMGDATA DownloadSuccesSound[] = {
+  opINFO, LC0(GET_VOLUME), LV0(0),
+  opSOUND, LC0(PLAY), LV0(0), LCS, 'u','i','/','D','o','w','n','l','o','a','d','S','u','c','c','e','s', 0,
+  opSOUND_READY,
+  opOBJECT_END
+};
 
 void      cUiDownloadSuccesSound(void)
 {
