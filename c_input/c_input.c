@@ -525,7 +525,7 @@ RESULT    cInputInsertNewIicString(DATA8 Type,DATA8 Mode,DATA8 *pManufacturer,DA
     if (Result == FAIL)
     { // No room for type/mode
 
-      LogErrorNumber(TYPEDATA_TABEL_FULL);
+      LogErrorNumber(TYPEDATA_TABLE_FULL);
     }
   }
   else
@@ -653,7 +653,7 @@ RESULT    cInputGetNewTypeDataPointer(SBYTE *pName,DATA8 Type,DATA8 Mode,DATA8 C
     if (Result == FAIL)
     { // No room for type/mode
 
-      LogErrorNumber(TYPEDATA_TABEL_FULL);
+      LogErrorNumber(TYPEDATA_TABLE_FULL);
     }
   }
   else
@@ -2950,7 +2950,7 @@ RESULT    cInputCheckUartInfo(UBYTE Port)
 
           Result  =  cInputGetNewTypeDataPointer(InputInstance.UartCtl.TypeData.Name,InputInstance.UartCtl.TypeData.Type,InputInstance.UartCtl.TypeData.Mode,CONN_INPUT_UART,&pTmp);
           if (pTmp != NULL)
-          { // Tabel index found
+          { // Table index found
 
             if (InputInstance.DeviceType[Port] == TYPE_UNKNOWN)
             { // Use first mode info to set type
@@ -2961,7 +2961,7 @@ RESULT    cInputCheckUartInfo(UBYTE Port)
             if (Result == OK)
             { // New mode
 
-              // Insert in tabel
+              // Insert in table
               Memcpy(pTmp,&InputInstance.UartCtl.TypeData,sizeof(TYPES));
 
             }
@@ -3993,7 +3993,7 @@ void      cInputDeviceList(void)
  *\n
  *\anchor opINPUT_DEVICE_INSERT_TYPE
  *  - CMD = INSERT_TYPE
- *\n  Insert type in tabel\n
+ *\n  Insert type in table\n
  *    -  \param  (DATA8)   TYPEDATA     - String variable or handle to string containing type data\n
  *    -  \param  (DATA8)   FORCE        - Force type insert even if present (0 = don't force, 1 = force)\n
  *    -  \return (DATA8)   ERROR        - Error if not Third Party type (0 = no error, 1 = error or known)\n

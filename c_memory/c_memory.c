@@ -31,7 +31,7 @@
 /*! \page MemoryLibraryDescription Description
  *
  *  When "create array" is called - memory is allocated using "malloc" for the descriptor and the array itself. The memory pointer is stored in a
- *  list specific to every program. The returned handle is simply the index in that tabel.\n
+ *  list specific to every program. The returned handle is simply the index in that table.\n
  *  When a program is terminated the memory is automatically freed.
  *
 \verbatim

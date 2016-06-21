@@ -80,7 +80,7 @@
  *  <b>Description</b>\n
  *
  *  The NXT dumb input device is as an example the "NXT-TOUCH" sensor.\n
- *  Connection type of the sensor is defined as shown in tabel \ref inputdevicerules "Detection Rules".\n
+ *  Connection type of the sensor is defined as shown in table \ref inputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -121,7 +121,7 @@
  *  <b>Description</b>\n
  *
  *  The NXT IIC input device is as an example the "NXT-US-CM" sensor.\n
- *  Connection type of the sensor is defined as shown in tabel \ref inputdevicerules "Detection Rules".\n
+ *  Connection type of the sensor is defined as shown in table \ref inputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -162,7 +162,7 @@
  *  <b>Description</b>\n
  *
  *  The EV3 dumb input device is as an example the "TOUCH" sensor.\n
- *  Connection type of the sensor is defined as shown in tabel \ref inputdevicerules "Detection Rules".\n
+ *  Connection type of the sensor is defined as shown in table \ref inputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -204,7 +204,7 @@
  *  <b>Description</b>\n
  *
  *  The EV3 UART input device is as an example the "GYRO-ANG" sensor.\n
- *  Connection type of the sensor is defined as shown in tabel \ref inputdevicerules "Detection Rules".\n
+ *  Connection type of the sensor is defined as shown in table \ref inputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -246,7 +246,7 @@
  *  <b>Description</b>\n
  *
  *  The NXT dumb output device is as an example the "L-MOTOR-DEG" motor.\n
- *  Connection type of the motor is defined as shown in tabel \ref outputdevicerules "Detection Rules".\n
+ *  Connection type of the motor is defined as shown in table \ref outputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -288,7 +288,7 @@
  *
  *  The NXT tacho output device is as an example the "L-MOTOR-DEG" motor.\n
  *  This device has the same type and caracteristics as the EV3 large motor.\n
- *  Connection type of the motor is defined as shown in tabel \ref outputdevicerules "Detection Rules".\n
+ *  Connection type of the motor is defined as shown in table \ref outputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -335,7 +335,7 @@
  *  <b>Description</b>\n
  *
  *  The EV3 dumb output device is as an example the "O-#01" motor (future).\n
- *  Connection type of the motor is defined as shown in tabel \ref outputdevicerules "Detection Rules".\n
+ *  Connection type of the motor is defined as shown in table \ref outputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -381,7 +381,7 @@
  *  <b>Description</b>\n
  *
  *  The EV3 tacho output device is as an example the "M-MOTOR-DEG" motor.\n
- *  Connection type of the motor is defined as shown in tabel \ref outputdevicerules "Detection Rules".\n
+ *  Connection type of the motor is defined as shown in table \ref outputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -502,7 +502,7 @@
  *  <b>Description</b>\n
  *
  *  The NXT dumb input device is as an example the "HT Force Sensor".\n
- *  Connection type of the sensor is defined as shown in tabel \ref inputdevicerules "Detection Rules".\n
+ *  Connection type of the sensor is defined as shown in table \ref inputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -547,7 +547,7 @@
  *  <b>Description</b>\n
  *
  *  The third party IIC input device is as an example the "HT-ANG-DEG" sensor.\n
- *  Connection type of the sensor is defined as shown in tabel \ref inputdevicerules "Detection Rules".\n
+ *  Connection type of the sensor is defined as shown in table \ref inputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -605,7 +605,7 @@
  *  <b>Description</b>\n
  *
  *  The EV3 dumb input device is a posibility to make a cheap analog sensor for the EV3.\n
- *  Connection type of the sensor is defined as shown in tabel \ref inputdevicerules "Detection Rules".\n
+ *  Connection type of the sensor is defined as shown in table \ref inputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -647,7 +647,7 @@
  *  <b>Description</b>\n
  *
  *  The EV3 UART input device is as an example the "GYRO-ANG" sensor.\n
- *  Connection type of the sensor is defined as shown in tabel \ref inputdevicerules "Detection Rules".\n
+ *  Connection type of the sensor is defined as shown in table \ref inputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n
@@ -689,7 +689,7 @@
  *  <b>Description</b>\n
  *
  *  The EV3 dumb output device is as an example the "3th.party-O" motor.\n
- *  Connection type of the motor is defined as shown in tabel \ref outputdevicerules "Detection Rules".\n
+ *  Connection type of the motor is defined as shown in table \ref outputdevicerules "Detection Rules".\n
  *
  *\n\n  
  *  <b>Type/Mode</b>\n

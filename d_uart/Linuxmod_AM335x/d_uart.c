@@ -650,7 +650,7 @@ void InitGpio(void)
 	memcpy(InputUartPin, pInputUartPin[Hw], sizeof(EP2_InputUartPin));
 	if (memcmp((const void*)InputUartPin,(const void*)pInputUartPin[Hw],sizeof(EP2_InputUartPin)) != 0)
 	{
-		printk("%s InputUartPin tabel broken!\n",MODULE_NAME);
+		printk("%s InputUartPin table broken!\n",MODULE_NAME);
 	}
 
 	for (Port = 0; Port < INPUTS; Port++)

@@ -835,7 +835,7 @@
  *-#  SUBCALL mutex bug fixed ("motorsCrash" program runs)                                    \n
  *-#  opINPUT_READEXT implemented (see doc)                                                   \n
  *-#  support for more data sets added (c_input and d_uart)                                   \n
- *-#  device type tabel content has changed                                                   \n
+ *-#  device type table content has changed                                                   \n
  *
  *          
  *  \version lms2012_v023_110307
@@ -986,7 +986,7 @@
  *-#  Place holder for d_pwm, d_tacho, d_analog, d_dcm added                                  \n
  *-#  d_analog - bitbang SPI for A/D converter implemented                                    \n
  *-#  d_dcm    - 1st implementation of device ID detection                                    \n
- *-#  c_input  - 1st implementation of device tabel                                           \n
+ *-#  c_input  - 1st implementation of device table                                           \n
  *-#  Support for eval-add-on-board input port started                                        \n
  *          
  *          

@@ -175,9 +175,9 @@ typedef struct
 
   DATA8     TypeModes[MAX_DEVICE_TYPE + 1];   //!< No of modes for specific type
 
-  UWORD     MaxDeviceTypes;                   //!< Number of device type/mode entries in tabel
+  UWORD     MaxDeviceTypes;                   //!< Number of device type/mode entries in table
   TYPES     *TypeData;                        //!< Type specific data
-  UWORD     IicDeviceTypes;                   //!< Number of IIC device type/mode entries in tabel
+  UWORD     IicDeviceTypes;                   //!< Number of IIC device type/mode entries in table
   IICSTR    *IicString;
   IICSTR    IicStr;
 

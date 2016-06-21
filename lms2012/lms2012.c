@@ -150,7 +150,7 @@ UBYTE     UiImage[] =
 //*****************************************************************************
 #define   PRIMDISPATHTABLE_SIZE   256
 
-extern PRIM      PrimDispatchTabel[PRIMDISPATHTABLE_SIZE];          //!< Dispatch table
+extern PRIM      PrimDispatchTable[PRIMDISPATHTABLE_SIZE];          //!< Dispatch table
 
 void      Error(void);
 void      Nop(void);
@@ -407,7 +407,7 @@ char      ErrString[ERRORS][ERR_STRING_SIZE] =
 {
 
   ERROR(TOO_MANY_ERRORS_TO_BUFFER),
-  ERROR(TYPEDATA_TABEL_FULL),
+  ERROR(TYPEDATA_TABLE_FULL),
   ERROR(TYPEDATA_FILE_NOT_FOUND),
   ERROR(ANALOG_DEVICE_FILE_NOT_FOUND),
   ERROR(ANALOG_SHARED_MEMORY),
@@ -562,7 +562,7 @@ DSPSTAT   ExecuteByteCode(IP pByteCode,GP pGlobals,LP pLocals)
     while ((VMInstance.Priority) && (*VMInstance.ObjectIp != opOBJECT_END))
     {
       VMInstance.Priority--;
-      PrimDispatchTabel[*(VMInstance.ObjectIp++)]();
+      PrimDispatchTable[*(VMInstance.ObjectIp++)]();
     }
 
     VMInstance.NewTime  =  GetTimeMS();
@@ -2182,12 +2182,12 @@ RESULT    mSchedInit(int argc,char *argv[])
   settimeofday(&tv,NULL);
 #endif
 
-  // Fill holes in PrimDispatchTabel
+  // Fill holes in PrimDispatchTable
   for (Loop = 0;Loop < PRIMDISPATHTABLE_SIZE;Loop++)
   {
-    if (PrimDispatchTabel[Loop] == NULL)
+    if (PrimDispatchTable[Loop] == NULL)
     {
-      PrimDispatchTabel[Loop]  =  &Error;
+      PrimDispatchTable[Loop]  =  &Error;
     }
   }
 
@@ -2427,7 +2427,7 @@ RESULT    mSchedCtrl(UBYTE *pRestart)
         cValidateDisassemble(VMInstance.pImage,&Index,VMInstance.Program[VMInstance.ProgramId].Label);
       }
 #endif
-      PrimDispatchTabel[*(VMInstance.ObjectIp++)]();
+      PrimDispatchTable[*(VMInstance.ObjectIp++)]();
       VMInstance.InstrCnt++;
 #ifdef DEBUG_TRACE_TASK
       if (VMInstance.Program[USER_SLOT].Status != STOPPED)
@@ -2680,7 +2680,7 @@ int       main(int argc,char *argv[])
 #endif
 
 
-PRIM      PrimDispatchTabel[PRIMDISPATHTABLE_SIZE] =
+PRIM      PrimDispatchTable[PRIMDISPATHTABLE_SIZE] =
 {
   [opERROR]               =   &Error,
   [opNOP]                 =   &Nop,
@@ -3705,7 +3705,7 @@ void      BreakPoint(void)
 
     VMInstance.Debug  =  1;
   }
-  PrimDispatchTabel[*(VMInstance.ObjectIp++)]();
+  PrimDispatchTable[*(VMInstance.ObjectIp++)]();
   *(DATA8*)TmpIp  =  No;
 }
 
@@ -4835,7 +4835,7 @@ void      Monitor(void)
       {
         VMInstance.Priority  =  SavedPriority;
         VMInstance.Priority--;
-        PrimDispatchTabel[*(VMInstance.ObjectIp++)]();
+        PrimDispatchTable[*(VMInstance.ObjectIp++)]();
         VMInstance.Debug--;
       }
       break;
@@ -4844,7 +4844,7 @@ void      Monitor(void)
       {
         VMInstance.Priority  =  SavedPriority;
         VMInstance.Priority--;
-        PrimDispatchTabel[*(VMInstance.ObjectIp++)]();
+        PrimDispatchTable[*(VMInstance.ObjectIp++)]();
         VMInstance.Debug     =  0;
       }
       break;

@@ -699,7 +699,7 @@ void InitGpio(void)
   memcpy(InputPortPin, pInputPortPin[Hw], sizeof(EP2_InputPortPin));
   if (memcmp((const void*)InputPortPin,(const void*)pInputPortPin[Hw],sizeof(EP2_InputPortPin)) != 0)
   {
-    printk("%s InputPortPin tabel broken!\n",MODULE_NAME);
+    printk("%s InputPortPin table broken!\n",MODULE_NAME);
   }
 
   for (Port = 0; Port < NO_OF_INPUT_PORTS; Port++)
@@ -767,7 +767,7 @@ void InitGpio(void)
   memcpy(OutputPortPin, pOutputPortPin[Hw], sizeof(EP2_OutputPortPin));
   if (memcmp((const void*)OutputPortPin, (const void*)pOutputPortPin[Hw], sizeof(EP2_OutputPortPin)) != 0)
   {
-     printk("%s OutputPortPin tabel broken!\n",MODULE_NAME);
+     printk("%s OutputPortPin table broken!\n",MODULE_NAME);
   }
   for (Port = 0;Port < NO_OF_OUTPUT_PORTS;Port++)
   {
@@ -811,7 +811,7 @@ void InitGpio(void)
   memcpy(AdcPowerPin,pAdcPowerPin[Hw],sizeof(EP2_AdcPowerPin));
   if (memcmp((const void*)AdcPowerPin,(const void*)pAdcPowerPin[Hw],sizeof(EP2_AdcPowerPin)) != 0)
   {
-    	printk("%s AdcPowerPin tabel broken!\n",MODULE_NAME);
+    printk("%s AdcPowerPin table broken!\n",MODULE_NAME);
   }
 
   for (Pin = 0;Pin < ADC_POWER_PINS;Pin++)
