@@ -1469,7 +1469,7 @@ RESULT    ProgramReset(PRGID PrgId,IP pI,GP pG,UBYTE Deb)
       }
 #endif
 
-      if (cValidateProgram(PrgId,pI,VMInstance.Program[PrgId].Label,Disassemble) != OK)
+      if (cValidateProgram(PrgId,pI,VMInstance.Program[PrgId].Label,Disassemble&0) != OK)
       {
         if (PrgId != CMD_SLOT)
         {
@@ -1913,15 +1913,15 @@ void      ObjectDeQueue(OBJID Id)
 DATA8     CheckSdcard(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force)
 {
   DATA8   Result = 0;
-  DATAF   Tmp;
-  char    Name[vmNAMESIZE];
-  char    Buffer[250];
 
   *pChanged   =  0;
   *pTotal     =  0;
   *pFree      =  0;
 
 #ifndef DISABLE_SDCARD_SUPPORT
+  DATAF   Tmp;
+  char    Name[vmNAMESIZE];
+  char    Buffer[250];
   ULONG   Time;
   struct  statvfs Status;
 
@@ -2644,6 +2644,11 @@ int       main(int argc,char *argv[])
 {
   RESULT  Result = FAIL;
   UBYTE   Restart;
+
+  if (chdir("/var/lib/lms2012/sys") == -1) {
+    perror("Failed to change directory");
+    exit(1);
+  }
 
   do
   {

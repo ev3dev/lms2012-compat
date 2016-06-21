@@ -2509,16 +2509,6 @@ void      cComUpdate(void)
     	  }
       }
 
-      #ifdef DEBUG
-        // start DEBUG
-        if(ChNo == USBDEV)
-        {
-          printf("Writing NOT set @ USBDEV - BytesRead = %d\r\n", BytesRead);
-        }
-        // end DEBUG
-	    #endif
-
-
       if(BytesRead)
       {
         // Temporary fix until full implementation of com channels is ready
@@ -2824,16 +2814,15 @@ void      cComUpdate(void)
     UsbConUpdate++;
     if(UsbConUpdate >= USB_CABLE_DETECT_RATE)
     {
-      #ifdef DEBUG
-        printf("ready to check\n\r");
-      #endif
       UsbConUpdate = 0;
-      cComUsbDeviceConnected = cComCheckUsbCable();
+      // TODO: get USB working
+      // cComUsbDeviceConnected = cComCheckUsbCable();
     }
 
   }
 
-  BtUpdate();
+  // TODO: Get Bluetooth working
+  // BtUpdate();
   cWiFiControl();
 }
 

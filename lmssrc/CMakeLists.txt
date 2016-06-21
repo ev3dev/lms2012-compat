@@ -29,8 +29,9 @@ macro (add_lms_app TARGET)
             COMMAND ${JAVA}
                 -jar ${LMSASM_DIR}/assembler.jar
                 ${CMAKE_CURRENT_SOURCE_DIR}/${program}
-            COMMAND
-                mv ${CMAKE_CURRENT_SOURCE_DIR}/${program}.rbf ${rbf}
+            COMMAND mv
+                ${CMAKE_CURRENT_SOURCE_DIR}/${program}.rbf
+                ${rbf}
             DEPENDS
                 ${lms}
                 ${LMSASM_DIR}/bytecodes.c
@@ -98,17 +99,17 @@ add_subdirectory (Bluetooth)
 add_subdirectory ("Brick Datalog")
 add_subdirectory ("Brick Info")
 add_subdirectory ("Brick Program")
-# add_subdirectory (Debug)
-# add_subdirectory (Demo)
+add_subdirectory (Debug)
+add_subdirectory (Demo)
 add_subdirectory ("IR Control")
 add_subdirectory ("Motor Control")
 add_subdirectory ("Port View")
-# add_subdirectory (SelfTest)
+add_subdirectory (SelfTest)
 add_subdirectory (Sleep)
-# add_subdirectory (TEST)
-# add_subdirectory (Test)
+add_subdirectory (TEST)
+add_subdirectory (Test)
 add_subdirectory (Volume)
 add_subdirectory (WiFi)
 add_subdirectory (c_ui)
-# add_subdirectory (tst)
+add_subdirectory (tst)
 add_subdirectory (ui)

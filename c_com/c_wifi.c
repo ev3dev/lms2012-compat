@@ -3176,11 +3176,6 @@ void  cWiFiControl(void)
 
     case  WIFI_NOT_INITIATED: // NOTHING INIT'ed
                               // Idle
-
-                              #ifdef DEBUG
-                                printf("\r\nIDLE... %d\r", WiFiStatus); // Too many prints if enabled ;-)
-                              #endif
-
                               break;
 
     case  WIFI_INIT:          // Do the time consumption stuff
@@ -3508,9 +3503,6 @@ void  cWiFiControl(void)
 
 RESULT  cWiFiGetOnStatus(void)
 {
-  #ifdef DEBUG
-    printf("cWiFiGetOnStatus returns: %d\r\n", WiFiOnStatus);
-  #endif
   return WiFiOnStatus;
 }
 

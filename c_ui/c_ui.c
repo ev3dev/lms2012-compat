@@ -853,7 +853,7 @@ RESULT    cUiInit(void)
 #endif
 
   if (Result == FAIL) {
-    cUiExit();
+    // cUiExit();
   }
 
   return (Result);
@@ -2203,7 +2203,9 @@ void      cUiCheckVoltage(void)
 
     if ((UiInstance.MilliSeconds - UiInstance.VoltageTimer) >= LOW_VOLTAGE_SHUTDOWN_TIME)
     { // Realy bad
-
+      #ifdef DEBUG
+      printf("Shutting down due to low battery\n");
+      #endif
       UiInstance.ShutDown         =  1;
     }
   }

@@ -762,8 +762,10 @@ void      cSoundEntry(void)
             SoundInstance.cSoundState = SOUND_FILE_PLAYING;
         }
       }
-      else
+      else {
         SoundInstance.cSoundState = SOUND_STOPPED;          // Couldn't do the job :-(
+        (*SoundInstance.pSound).Status = OK;
+      }
     }
     else
     {

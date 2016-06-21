@@ -88,7 +88,7 @@ Development with debug messages:    DEBUG defined, TERMINAL_ENABLED = 1, DEBUG_U
 
 //#define   DEBUG_TRACE_USB_COMMAND
 //#define   DEBUG_TRACE_MODE_CHANGE
-//#define   DEBUG_TRACE_KEY
+#define   DEBUG_TRACE_KEY
 //#define   DEBUG_TRACE_ANGLE
 //#define   DEBUG_TRACE_US
 //#define   DEBUG_TRACE_VM
@@ -171,12 +171,12 @@ char      *HwId = "03";
 //#define   LOG_ASCII
 //#define   DISABLE_FIQ_IIC
 #define   UART1_FAKE_INTERRUPT          //!< Don't use real interrupt on UART1 (linux prompt)
-//#define   DISABLE_LOW_VOLTAGE           //!< Don't shut down on low voltage
+#define   DISABLE_LOW_VOLTAGE           //!< Don't shut down on low voltage
 //#define   ENABLE_HIGH_CURRENT           //!< Don't shut down on high current
 //#define   DISABLE_LOW_MEMORY            //!< Don't check low memory
 //#define   DISABLE_UART_DATA_ERROR       //!< Don't reset UART sensor if timeout or crc error
 #define   DISABLE_PREEMPTED_VM          //!< Don't run VM as preempted
-//#define   DISABLE_SDCARD_SUPPORT        //!< Don't use SD card
+#define   DISABLE_SDCARD_SUPPORT        //!< Don't use SD card
 #define   DISABLE_USBSTICK_SUPPORT      //!< Don't use USB stick
 //#define   ENABLE_PERFORMANCE_TEST       //!< Show performance bar in the top line
 //#define   ENABLE_LOAD_TEST              //!< Show integrated current in the top line
@@ -431,16 +431,6 @@ char      *HwId = "03";
 
 #define   USBSTICK_MOUNT        "./mount_usbstick"
 #define   USBSTICK_UNMOUNT      "./unmount_usbstick"
-
-/*
-#define   DEFAULT_PRJS_FOLDER   "~/lms2012/prjs"      //!< Project folder name without trailing "/"
-#define   DEFAULT_APPS_FOLDER   "~/lms2012/apps"      //!< Applet folder name without trailing "/"
-#define   DEFAULT_TOOLS_FOLDER  "~/lms2012/tools"     //!< Setting folder name without trailing "/"
-#define   DEFAULT_SYS_FOLDER    "~/lms2012/sys"       //!< System folder name without trailing "/"
-#define   DEFAULT_SETUP_FOLDER  "~/lms2012/sys"       //!< Setup folder name without trailing "/"
-#define   DEFAULT_SD_FOLDER     "~/lms2012/SD Card"   //!< Sd card folder name without trailing "/"
-#define   DEFAULT_USB_FOLDER    "~/lms2012/USB Memory"//!< USB Memory folder name without trailing "/"
-*/
 
 #define   DEFAULT_FOLDER        "ui"                  //!< Folder containing the first small programs
 #define   DEFAULT_UI            "ui"                  //!< Default user interface

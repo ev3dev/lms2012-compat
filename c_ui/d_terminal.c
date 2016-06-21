@@ -35,10 +35,10 @@
   #define STDOUT_FILENO 1
 #endif
 
-struct    termios TerminalAttr;
-struct    termios TerminalSavedAttr;
+static struct    termios TerminalAttr;
+static struct    termios TerminalSavedAttr;
 
-RESULT    TerminalResult = FAIL;
+static RESULT    TerminalResult = FAIL;
 
 
 RESULT    dTerminalInit(void)
@@ -128,7 +128,7 @@ RESULT    dTerminalExit(void)
 		tcsetattr(STDIN_FILENO,TCSAFLUSH,&TerminalSavedAttr);
 	}
 	TerminalResult  =  FAIL;
-
+printf("dTerminalExit\n");
 	return (OK);
 }
 
