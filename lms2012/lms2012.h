@@ -345,9 +345,6 @@ char      *HwId = "03";
 #define   DCM_DEVICE            "lms_dcm"             //!< DCM device name
 #define   DCM_DEVICE_NAME       "/dev/lms_dcm"        //!< DCM device file name
 
-#define   UI_DEVICE             "lms_ui"              //!< UI device name
-#define   UI_DEVICE_NAME        "/dev/lms_ui"         //!< UI device file name
-
 #define   LCD_DEVICE            "lms_display"         //!< DISPLAY device name
 //#define   LCD_DEVICE_NAME       "/dev/lms_display"    //!< DISPLAY device file name
 #define   LCD_DEVICE_NAME       "/dev/fb0"            //!< DISPLAY device file name

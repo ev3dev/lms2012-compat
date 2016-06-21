@@ -2660,13 +2660,6 @@ int       main(int argc,char *argv[])
       do
       {
         Result  =  mSchedCtrl(&Restart);
-/*
-        if ((*UiInstance.pUi).State[BACK_BUTTON] & BUTTON_LONGPRESS)
-        {
-          Restart  =  1;
-          Result   =  FAIL;
-        }
-*/
       }
       while (Result == OK);
 

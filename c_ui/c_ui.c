@@ -596,40 +596,40 @@ void      cUiButtonFlush(void)
   }
 }
 
-
+// FIXME: Need to update to use kernel LED drivers or simulated LEDs.
 void      cUiSetLed(DATA8 State)
 {
-  DATA8   Buffer[2];
+  // DATA8   Buffer[2];
 
-  UiInstance.LedState  =  State;
+  // UiInstance.LedState  =  State;
 
-  if (UiInstance.UiFile >= MIN_HANDLE)
-  {
-    if (UiInstance.Warnlight)
-    {
-      if ((State == LED_GREEN_FLASH) || (State == LED_RED_FLASH) || (State == LED_ORANGE_FLASH))
-      {
-        Buffer[0]  =  LED_ORANGE_FLASH + '0';
-      }
-      else
-      {
-        if ((State == LED_GREEN_PULSE) || (State == LED_RED_PULSE) || (State == LED_ORANGE_PULSE))
-        {
-          Buffer[0]  =  LED_ORANGE_PULSE + '0';
-        }
-        else
-        {
-          Buffer[0]  =  LED_ORANGE + '0';
-        }
-      }
-    }
-    else
-    {
-      Buffer[0]  =  UiInstance.LedState + '0';
-    }
-    Buffer[1]  =  0;
-    write(UiInstance.UiFile,Buffer,2);
-  }
+  // if (UiInstance.UiFile >= MIN_HANDLE)
+  // {
+  //   if (UiInstance.Warnlight)
+  //   {
+  //     if ((State == LED_GREEN_FLASH) || (State == LED_RED_FLASH) || (State == LED_ORANGE_FLASH))
+  //     {
+  //       Buffer[0]  =  LED_ORANGE_FLASH + '0';
+  //     }
+  //     else
+  //     {
+  //       if ((State == LED_GREEN_PULSE) || (State == LED_RED_PULSE) || (State == LED_ORANGE_PULSE))
+  //       {
+  //         Buffer[0]  =  LED_ORANGE_PULSE + '0';
+  //       }
+  //       else
+  //       {
+  //         Buffer[0]  =  LED_ORANGE + '0';
+  //       }
+  //     }
+  //   }
+  //   else
+  //   {
+  //     Buffer[0]  =  UiInstance.LedState + '0';
+  //   }
+  //   Buffer[1]  =  0;
+  //   write(UiInstance.UiFile,Buffer,2);
+  // }
 }
 
 
@@ -642,10 +642,8 @@ void      cUiAlive(void)
 RESULT    cUiInit(void)
 {
   RESULT  Result = OK;
-  UI      *pUiTmp;
   ANALOG  *pAdcTmp;
   UBYTE   Tmp;
-  DATAF   Hw;
   char    Buffer[32];
   char    OsBuf[2000];
   int     Lng;
@@ -686,7 +684,6 @@ RESULT    cUiInit(void)
   UiInstance.VoltageState       =  0;
 
   UiInstance.pLcd               =  &UiInstance.LcdSafe;
-  UiInstance.pUi                =  &UiInstance.UiSafe;
   UiInstance.pAnalog            =  &UiInstance.Analog;
 
   UiInstance.Browser.PrgId      =  0;
@@ -705,42 +702,12 @@ RESULT    cUiInit(void)
   Result          =  dTerminalInit();
 
   UiInstance.PowerFile  =  open(POWER_DEVICE_NAME,O_RDWR);
-  UiInstance.UiFile     =  open(UI_DEVICE_NAME,O_RDWR | O_SYNC);
   UiInstance.AdcFile    =  open(ANALOG_DEVICE_NAME,O_RDWR | O_SYNC);
 
   dLcdInit((*UiInstance.pLcd).Lcd);
 
-  Hw  =  0;
-  if (UiInstance.UiFile >= MIN_HANDLE)
-  {
-    pUiTmp    =  (UI*)mmap(0, sizeof(UI), PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, UiInstance.UiFile, 0);
-
-    if (pUiTmp == MAP_FAILED)
-    {
-#ifndef Linux_X86
-      LogErrorNumber(UI_SHARED_MEMORY);
-      Result  =  FAIL;
-#endif
-    }
-    else
-    {
-      UiInstance.pUi     =  pUiTmp;
-    }
-
-    read(UiInstance.UiFile,UiInstance.HwVers,HWVERS_SIZE);
-    sscanf(&UiInstance.HwVers[1],"%f",&Hw);
-  }
-  else
-  {
-#ifndef Linux_X86
-    LogErrorNumber(UI_DEVICE_FILE_NOT_FOUND);
-    Result  =  FAIL;
-#else
-    snprintf(UiInstance.HwVers,HWVERS_SIZE,"X86");
-#endif
-  }
-  Hw *=  (DATAF)10;
-  UiInstance.Hw  =  (DATA8)Hw;
+  snprintf(UiInstance.HwVers,HWVERS_SIZE,"compat");
+  UiInstance.Hw = 0;
 
   if (UiInstance.AdcFile >= MIN_HANDLE)
   {
@@ -915,12 +882,6 @@ RESULT    cUiExit(void)
     close(UiInstance.AdcFile);
   }
 
-  if (UiInstance.UiFile >= MIN_HANDLE)
-  {
-    munmap(UiInstance.pUi,sizeof(UI));
-    close(UiInstance.UiFile);
-  }
-
   if (UiInstance.PowerFile >= MIN_HANDLE)
   {
     close(UiInstance.PowerFile);
@@ -936,39 +897,7 @@ void      cUiUpdateButtons(DATA16 Time)
 {
   DATA8   Button;
 
-  for (Button = 0;Button < BUTTONS;Button++)
-  {
-
-    // Check real hardware buttons
-
-    if ((*UiInstance.pUi).Pressed[Button])
-    { // Button pressed
-
-      if (UiInstance.ButtonDebounceTimer[Button] == 0)
-      { // Button activated
-
-        UiInstance.ButtonState[Button]           |=  BUTTON_ACTIVE;
-      }
-
-      UiInstance.ButtonDebounceTimer[Button]      =  BUTTON_DEBOUNCE_TIME;
-    }
-    else
-    { // Button not pressed
-
-      if (UiInstance.ButtonDebounceTimer[Button] > 0)
-      { // Debounce delay
-
-        UiInstance.ButtonDebounceTimer[Button]   -=  Time;
-
-        if (UiInstance.ButtonDebounceTimer[Button] <= 0)
-        { // Button released
-
-          UiInstance.ButtonState[Button]         &= ~BUTTON_ACTIVE;
-          UiInstance.ButtonDebounceTimer[Button]  =  0;
-        }
-      }
-    }
-
+  for (Button = 0;Button < BUTTONS;Button++) {
     // Check virtual buttons (hardware, direct command, PC)
 
     if (UiInstance.ButtonState[Button] & BUTTON_ACTIVE)
@@ -2621,13 +2550,6 @@ void      cUiUpdate(UWORD Time)
           cUiUpdateTopline();
           dLcdUpdate(UiInstance.pLcd);
         }
-#ifdef BUFPRINTSIZE
-        if ((*UiInstance.pUi).Activated & BUTTON_BUFPRINT)
-        {
-          (*UiInstance.pUi).Activated &= ~BUTTON_BUFPRINT;
-          BufPrint('w',"");
-        }
-#endif
       }
       break;
 

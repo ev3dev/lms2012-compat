@@ -334,9 +334,6 @@ typedef   struct
   LCD       LcdBuffer;
   LCD       *pLcd;
 
-  UI        UiSafe;
-  UI        *pUi;
-
   ANALOG    Analog;
   ANALOG    *pAnalog;
 
