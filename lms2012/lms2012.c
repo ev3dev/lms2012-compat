@@ -706,8 +706,8 @@ void*     PrimParPointer(void)
   if (Data & PRIMPAR_LONG)
   { // long format
 
-    if (Data & PRIMPAR_VARIABEL)
-    { // variabel
+    if (Data & PRIMPAR_VARIABLE)
+    { // variable
 
       switch(Data & PRIMPAR_BYTES)
       {
@@ -833,8 +833,8 @@ void*     PrimParPointer(void)
   else
   { // short format
 
-    if (Data & PRIMPAR_VARIABEL)
-    { // variabel
+    if (Data & PRIMPAR_VARIABLE)
+    { // variable
 
       VMInstance.Value  =  (ULONG)(Data & PRIMPAR_INDEX);
 
@@ -879,8 +879,8 @@ void      PrimParAdvance(void)
   if (Data & PRIMPAR_LONG)
   { // long format
 
-    if (Data & PRIMPAR_VARIABEL)
-    { // variabel
+    if (Data & PRIMPAR_VARIABLE)
+    { // variable
 
       switch(Data & PRIMPAR_BYTES)
       {

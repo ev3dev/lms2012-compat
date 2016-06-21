@@ -383,8 +383,8 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
                   LineLength +=  printf("ADR(");
                 }
             }
-              if (ParCode & PRIMPAR_VARIABEL)
-              { // variabel
+              if (ParCode & PRIMPAR_VARIABLE)
+              { // variable
 
                 if (ParCode & PRIMPAR_GLOBAL)
                 { // global
@@ -575,8 +575,8 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
             else
             { // short format
 
-              if (ParCode & PRIMPAR_VARIABEL)
-              { // variabel
+              if (ParCode & PRIMPAR_VARIABLE)
+              { // variable
 
                 if (ParCode & PRIMPAR_GLOBAL)
                 { // global
@@ -606,14 +606,14 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
             }
             if (ParType == PARNO)
             {
-              if (!(ParCode & PRIMPAR_VARIABEL))
+              if (!(ParCode & PRIMPAR_VARIABLE))
               {
                 Parameters  =  (DATA8)(*(DATA32*)pParValue);
               }
             }
             if (ParType == PARLAB)
             {
-              if (!(ParCode & PRIMPAR_VARIABEL))
+              if (!(ParCode & PRIMPAR_VARIABLE))
               {
               }
             }
@@ -654,8 +654,8 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
                 LineLength +=  printf("ADR(");
               }
             }
-            if (ParCode & PRIMPAR_VARIABEL)
-            { // variabel
+            if (ParCode & PRIMPAR_VARIABLE)
+            { // variable
 
               if (ParCode & PRIMPAR_GLOBAL)
               { // global
@@ -846,8 +846,8 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
           else
           { // short format
 
-            if (ParCode & PRIMPAR_VARIABEL)
-            { // variabel
+            if (ParCode & PRIMPAR_VARIABLE)
+            { // variable
 
               if (ParCode & PRIMPAR_GLOBAL)
               { // global
@@ -883,14 +883,14 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
           }
           if (ParType == PARNO)
           {
-            if (!(ParCode & PRIMPAR_VARIABEL))
+            if (!(ParCode & PRIMPAR_VARIABLE))
             {
               Parameters  =  (DATA8)(*(DATA32*)pParValue);
             }
           }
           if (ParType == PARLAB)
           {
-            if (!(ParCode & PRIMPAR_VARIABEL))
+            if (!(ParCode & PRIMPAR_VARIABLE))
             {
 
 
@@ -1242,8 +1242,8 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
             if (ParCode & PRIMPAR_LONG)
             { // long format
 
-              if (ParCode & PRIMPAR_VARIABEL)
-              { // variabel
+              if (ParCode & PRIMPAR_VARIABLE)
+              { // variable
 
                 switch(ParCode & PRIMPAR_BYTES)
                 {
@@ -1339,8 +1339,8 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
             else
             { // short format
 
-              if (ParCode & PRIMPAR_VARIABEL)
-              { // variabel
+              if (ParCode & PRIMPAR_VARIABLE)
+              { // variable
 
                 Value  =  (ULONG)(ParCode & PRIMPAR_VALUE);
               }
@@ -1397,8 +1397,8 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
           if (ParCode & PRIMPAR_LONG)
           { // long format
 
-            if (ParCode & PRIMPAR_VARIABEL)
-            { // variabel
+            if (ParCode & PRIMPAR_VARIABLE)
+            { // variable
 
               switch(ParCode & PRIMPAR_BYTES)
               {
@@ -1494,8 +1494,8 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
           else
           { // short format
 
-            if (ParCode & PRIMPAR_VARIABEL)
-            { // variabel
+            if (ParCode & PRIMPAR_VARIABLE)
+            { // variable
 
               Value  =  (ULONG)(ParCode & PRIMPAR_VALUE);
             }
@@ -1512,7 +1512,7 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
             }
           }
 
-          if (ParCode & PRIMPAR_VARIABEL)
+          if (ParCode & PRIMPAR_VARIABLE)
           {
             Result  =  OK;
           }
@@ -1539,7 +1539,7 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
           { // Check number of parameters
 
             ParNo   =  1;
-            if (!(ParCode & PRIMPAR_VARIABEL))
+            if (!(ParCode & PRIMPAR_VARIABLE))
             { // Must be constant
 
               if (((*(DATA32*)pParValue) >= 0) && ((*(DATA32*)pParValue) <= DATA8_MAX))
@@ -1553,7 +1553,7 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
           if (ParType == PARLAB)
           { // Check number of parameters
 
-            if (!(ParCode & PRIMPAR_VARIABEL))
+            if (!(ParCode & PRIMPAR_VARIABLE))
             { // Must be constant
 
               if (((*(DATA32*)pParValue) >= 0) && ((*(DATA32*)pParValue) < MAX_LABELS))
@@ -1574,8 +1574,8 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
             if (ParCode & PRIMPAR_LONG)
             { // long format
 
-              if (ParCode & PRIMPAR_VARIABEL)
-              { // variabel
+              if (ParCode & PRIMPAR_VARIABLE)
+              { // variable
 
                 if (ParCode & PRIMPAR_HANDLE)
                 { // handle
@@ -1610,8 +1610,8 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
             else
             { // short format
 
-              if (ParCode & PRIMPAR_VARIABEL)
-              { // variabel
+              if (ParCode & PRIMPAR_VARIABLE)
+              { // variable
 
                 if (ParCode & PRIMPAR_GLOBAL)
                 { // global

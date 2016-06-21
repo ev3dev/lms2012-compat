@@ -1520,9 +1520,9 @@
 \verbatim 
   STRINGS IN VM MEMORY
   --------------------
-    Strings are located in the VM's normal global or local variabel space as other DATA8 
-    variables and referenced by the variabel (start) number. Enough room must be ensured
-    by allocating the next variabel on a suitable distance (string length) ahead.
+    Strings are located in the VM's normal global or local variable space as other DATA8
+    variables and referenced by the variable (start) number. Enough room must be ensured
+    by allocating the next variable on a suitable distance (string length) ahead.
   
     Examples:
   
@@ -1533,11 +1533,11 @@
       #define Dummy   LV0(21)     // Next variable 
 
 
-      // Initialise string variabel 1 with a string constant
+      // Initialise string variable 1 with a string constant
 
         opSTRING,LC0(DUPLICATE),LCS,'L','E','G','O',0,String1,    
 
-      // Initialise string variabel 2 with a another string constant
+      // Initialise string variable 2 with a another string constant
 
         opSTRING,LC0(DUPLICATE),LCS,'M','i','n','d','s','t','o','r','m','s',0,String2,
       
@@ -1586,7 +1586,7 @@
         opARRAY,LC0(CREATE8),LC0(100),String2,                    // Length: 100 characters (including zero termination)
       
       
-      // Initialise string variabel 1 with a string constant through system call 
+      // Initialise string variable 1 with a string constant through system call
 
         opSTRING,LC0(DUPLICATE),LCS,'L','E','G','O',0,HND(String1),    
 
