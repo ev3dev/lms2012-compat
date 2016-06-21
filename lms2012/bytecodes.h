@@ -1674,8 +1674,8 @@ DEVCMD;
 #define   vmPOP3_ABS_WARN_LINE_ENDX     155
 
 
-#define   LONGToBytes(_x)               (UBYTE)((_x) & 0xFF),(UBYTE)((_x >> 8) & 0xFF),(UBYTE)((_x >> 16) & 0xFF),(UBYTE)((_x >> 24) & 0xFF)
-#define   WORDToBytes(_x)               (UBYTE)((_x) & 0xFF),(UBYTE)((_x >> 8) & 0xFF)
+#define   LONGToBytes(_x)               (UBYTE)((_x) & 0xFF),(UBYTE)(((_x) >> 8) & 0xFF),(UBYTE)(((_x) >> 16) & 0xFF),(UBYTE)(((_x) >> 24) & 0xFF)
+#define   WORDToBytes(_x)               (UBYTE)((_x) & 0xFF),(UBYTE)(((_x) >> 8) & 0xFF)
 #define   BYTEToBytes(_x)               (UBYTE)((_x) & 0xFF)
 
 #define   PROGRAMHeader(VersionInfo,NumberOfObjects,GlobalBytes)\
@@ -1716,27 +1716,27 @@ DEVCMD;
 
 #define   PRIMPAR_LABEL                 0x20
 
-#define   HND(x)                        PRIMPAR_HANDLE | x
-#define   ADR(x)                        PRIMPAR_ADDR | x
+#define   HND(x)                        (PRIMPAR_HANDLE | (x))
+#define   ADR(x)                        (PRIMPAR_ADDR | (x))
 
 #define   LCS                           (PRIMPAR_LONG | PRIMPAR_STRING)
 
-#define   LAB1(v)                       (PRIMPAR_LONG | PRIMPAR_LABEL),(v & 0xFF)
+#define   LAB1(v)                       (PRIMPAR_LONG | PRIMPAR_LABEL),((v) & 0xFF)
 
-#define   LC0(v)                        ((v & PRIMPAR_VALUE) | PRIMPAR_SHORT | PRIMPAR_CONST)
-#define   LC1(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_1_BYTE),(v & 0xFF)
-#define   LC2(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_2_BYTES),(v & 0xFF),((v >> 8) & 0xFF)
-#define   LC4(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_4_BYTES),((ULONG)v & 0xFF),(((ULONG)v >> (ULONG)8) & 0xFF),(((ULONG)v >> (ULONG)16) & 0xFF),(((ULONG)v >> (ULONG)24) & 0xFF)
+#define   LC0(v)                        (((v) & PRIMPAR_VALUE) | PRIMPAR_SHORT | PRIMPAR_CONST)
+#define   LC1(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_1_BYTE),((v) & 0xFF)
+#define   LC2(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_2_BYTES),((v) & 0xFF),(((v) >> 8) & 0xFF)
+#define   LC4(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_4_BYTES),((ULONG)(v) & 0xFF),(((ULONG)(v) >> (ULONG)8) & 0xFF),(((ULONG)(v) >> (ULONG)16) & 0xFF),(((ULONG)(v) >> (ULONG)24) & 0xFF)
 
-#define   LV0(i)                        ((i & PRIMPAR_INDEX) | PRIMPAR_SHORT | PRIMPAR_VARIABLE | PRIMPAR_LOCAL)
-#define   LV1(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_LOCAL | PRIMPAR_1_BYTE),(i & 0xFF)
-#define   LV2(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_LOCAL | PRIMPAR_2_BYTES),(i & 0xFF),((i >> 8) & 0xFF)
-#define   LV4(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_LOCAL | PRIMPAR_4_BYTES),(i & 0xFF),((i >> 8) & 0xFF),((i >> 16) & 0xFF),((i >> 24) & 0xFF)
+#define   LV0(i)                        (((i) & PRIMPAR_INDEX) | PRIMPAR_SHORT | PRIMPAR_VARIABLE | PRIMPAR_LOCAL)
+#define   LV1(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_LOCAL | PRIMPAR_1_BYTE),((i) & 0xFF)
+#define   LV2(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_LOCAL | PRIMPAR_2_BYTES),((i) & 0xFF),(((i) >> 8) & 0xFF)
+#define   LV4(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_LOCAL | PRIMPAR_4_BYTES),((i) & 0xFF),(((i) >> 8) & 0xFF),(((i) >> 16) & 0xFF),(((i) >> 24) & 0xFF)
 
-#define   GV0(i)                        ((i & PRIMPAR_INDEX) | PRIMPAR_SHORT | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL)
-#define   GV1(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL | PRIMPAR_1_BYTE),(i & 0xFF)
-#define   GV2(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL | PRIMPAR_2_BYTES),(i & 0xFF),((i >> 8) & 0xFF)
-#define   GV4(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL | PRIMPAR_4_BYTES),(i & 0xFF),((i >> 8) & 0xFF),((i >> 16) & 0xFF),((i >> 24) & 0xFF)
+#define   GV0(i)                        (((i) & PRIMPAR_INDEX) | PRIMPAR_SHORT | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL)
+#define   GV1(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL | PRIMPAR_1_BYTE),((i) & 0xFF)
+#define   GV2(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL | PRIMPAR_2_BYTES),((i) & 0xFF),(((i) >> 8) & 0xFF)
+#define   GV4(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL | PRIMPAR_4_BYTES),((i) & 0xFF),(((i) >> 8) & 0xFF),(((i) >> 16) & 0xFF),(((i) >> 24) & 0xFF)
 
 //        MACROS FOR SUB CALLS
 
@@ -1762,11 +1762,11 @@ DEVCMD;
 #define   OUT_F                         (CALLPAR_OUT | CALLPAR_DATAF)
 #define   OUT_S                         (CALLPAR_OUT | CALLPAR_STRING)
 
-#define   IO_8                          IN_8  | OUT_8
-#define   IO_16                         IN_16 | OUT_16
-#define   IO_32                         IN_32 | OUT_32
-#define   IO_F                          IN_F  | OUT_F
-#define   IO_S                          IN_S  | OUT_S
+#define   IO_8                          (IN_8  | OUT_8)
+#define   IO_16                         (IN_16 | OUT_16)
+#define   IO_32                         (IN_32 | OUT_32)
+#define   IO_F                          (IN_F  | OUT_F)
+#define   IO_S                          (IN_S  | OUT_S)
 
 #define   IN_OUT_8                      IO_8
 #define   IN_OUT_16                     IO_16
