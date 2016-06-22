@@ -46,13 +46,13 @@ subcall   Test0201                                                    //  void T
   ARRAY(CREATE8,Size,hArray)                                          //
   MOVE16_F(hArray,Result)                                             //
   CALL(TestRange,'CREATE8  handle    ',Result,0.0F,249.0F)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   MOVE32_F(Size,DataF)                                                //
   CALL(TestRange,'SIZE               ',Result,DataF,DataF)            //
   MOVE32_32(10,Size)                                                  //
   ARRAY(RESIZE,hArray,Size)                                           //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   MOVE32_F(Size,DataF)                                                //
   CALL(TestRange,'RESIZE             ',Result,DataF,DataF)            //
@@ -96,7 +96,7 @@ subcall   Test0201                                                    //  void T
   MOVE8_F(Data8,Result)                                               //
   MOVE8_F(99,DataF)                                                   //
   CALL(TestRange,'ARRAY_WRITE/READ   ',Result,DataF,DataF)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   ADD32(Place,1,Place)                                                //
   MOVE32_F(Place,DataF)                                               //
@@ -107,14 +107,14 @@ subcall   Test0201                                                    //  void T
   MOVE8_F(Data8,Result)                                               //
   MOVE8_F(54,DataF)                                                   //
   CALL(TestRange,'ARRAY_APPEND       ',Result,DataF,DataF)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   ADD32(Place,1,Place)                                                //
   MOVE32_F(Place,DataF)                                               //
   CALL(TestRange,'SIZE               ',Result,DataF,DataF)            //
                                                                       //
-  ARRAY(DELETE,hCopy)                                                 //
-  ARRAY(DELETE,hArray)                                                //
+  ARRAY(DESTROY,hCopy)                                                 //
+  ARRAY(DESTROY,hArray)                                                //
                                                                       //
                                                                       //
   CALL(TestWrite,' MEMORY ARRAY DATA16')                              //
@@ -124,13 +124,13 @@ subcall   Test0201                                                    //  void T
   ARRAY(CREATE16,Size,hArray)                                         //
   MOVE16_F(hArray,Result)                                             //
   CALL(TestRange,'CREATE16 handle    ',Result,0.0F,249.0F)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   MOVE32_F(Size,DataF)                                                //
   CALL(TestRange,'SIZE               ',Result,DataF,DataF)            //
   MOVE32_32(10,Size)                                                  //
   ARRAY(RESIZE,hArray,Size)                                           //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   MOVE32_F(Size,DataF)                                                //
   CALL(TestRange,'RESIZE             ',Result,DataF,DataF)            //
@@ -174,7 +174,7 @@ subcall   Test0201                                                    //  void T
   MOVE16_F(Data16,Result)                                             //
   MOVE16_F(99,DataF)                                                  //
   CALL(TestRange,'ARRAY_WRITE/READ   ',Result,DataF,DataF)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   ADD32(Place,1,Place)                                                //
   MOVE32_F(Place,DataF)                                               //
@@ -185,14 +185,14 @@ subcall   Test0201                                                    //  void T
   MOVE16_F(Data16,Result)                                             //
   MOVE16_F(54,DataF)                                                  //
   CALL(TestRange,'ARRAY_APPEND       ',Result,DataF,DataF)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   ADD32(Place,1,Place)                                                //
   MOVE32_F(Place,DataF)                                               //
   CALL(TestRange,'SIZE               ',Result,DataF,DataF)            //
                                                                       //
-  ARRAY(DELETE,hCopy)                                                 //
-  ARRAY(DELETE,hArray)                                                //
+  ARRAY(DESTROY,hCopy)                                                 //
+  ARRAY(DESTROY,hArray)                                                //
                                                                       //
                                                                       //
   CALL(TestWrite,' MEMORY ARRAY DATA32')                              //
@@ -202,13 +202,13 @@ subcall   Test0201                                                    //  void T
   ARRAY(CREATE32,Size,hArray)                                         //
   MOVE16_F(hArray,Result)                                             //
   CALL(TestRange,'CREATE32 handle    ',Result,0.0F,249.0F)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   MOVE32_F(Size,DataF)                                                //
   CALL(TestRange,'SIZE               ',Result,DataF,DataF)            //
   MOVE32_32(10,Size)                                                  //
   ARRAY(RESIZE,hArray,Size)                                           //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   MOVE32_F(Size,DataF)                                                //
   CALL(TestRange,'RESIZE             ',Result,DataF,DataF)            //
@@ -252,7 +252,7 @@ subcall   Test0201                                                    //  void T
   MOVE32_F(Data32,Result)                                             //
   MOVE32_F(99,DataF)                                                  //
   CALL(TestRange,'ARRAY_WRITE/READ   ',Result,DataF,DataF)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   ADD32(Place,1,Place)                                                //
   MOVE32_F(Place,DataF)                                               //
@@ -263,14 +263,14 @@ subcall   Test0201                                                    //  void T
   MOVE32_F(Data32,Result)                                             //
   MOVE32_F(54,DataF)                                                  //
   CALL(TestRange,'ARRAY_APPEND       ',Result,DataF,DataF)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   ADD32(Place,1,Place)                                                //
   MOVE32_F(Place,DataF)                                               //
   CALL(TestRange,'SIZE               ',Result,DataF,DataF)            //
                                                                       //
-  ARRAY(DELETE,hCopy)                                                 //
-  ARRAY(DELETE,hArray)                                                //
+  ARRAY(DESTROY,hCopy)                                                 //
+  ARRAY(DESTROY,hArray)                                                //
                                                                       //
                                                                       //
   CALL(TestWrite,' MEMORY ARRAY DATAF')                               //
@@ -280,13 +280,13 @@ subcall   Test0201                                                    //  void T
   ARRAY(CREATEF,Size,hArray)                                          //
   MOVE16_F(hArray,Result)                                             //
   CALL(TestRange,'CREATEF  handle    ',Result,0.0F,249.0F)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   MOVE32_F(Size,DataF)                                                //
   CALL(TestRange,'SIZE               ',Result,DataF,DataF)            //
   MOVE32_32(10,Size)                                                  //
   ARRAY(RESIZE,hArray,Size)                                           //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   MOVE32_F(Size,DataF)                                                //
   CALL(TestRange,'RESIZE             ',Result,DataF,DataF)            //
@@ -330,7 +330,7 @@ subcall   Test0201                                                    //  void T
   MOVEF_F(DataF,Result)                                               //
   MOVEF_F(99.0F,DataF)                                                //
   CALL(TestRange,'ARRAY_WRITE/READ   ',Result,DataF,DataF)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   ADD32(Place,1,Place)                                                //
   MOVE32_F(Place,DataF)                                               //
@@ -341,14 +341,14 @@ subcall   Test0201                                                    //  void T
   MOVEF_F(DataF,Result)                                               //
   MOVEF_F(54.0F,DataF)                                                //
   CALL(TestRange,'ARRAY_APPEND       ',Result,DataF,DataF)            //
-  ARRAY(SIZE,hArray,Elements)                                         //
+  ARRAY(SET_SIZE,hArray,Elements)                                     //
   MOVE32_F(Elements,Result)                                           //
   ADD32(Place,1,Place)                                                //
   MOVE32_F(Place,DataF)                                               //
   CALL(TestRange,'SIZE               ',Result,DataF,DataF)            //
                                                                       //
-  ARRAY(DELETE,hCopy)                                                 //
-  ARRAY(DELETE,hArray)                                                //
+  ARRAY(DESTROY,hCopy)                                                 //
+  ARRAY(DESTROY,hArray)                                                //
                                                                       //
   CALL(TestClose)                                                     //
 }                                                                     //  }
