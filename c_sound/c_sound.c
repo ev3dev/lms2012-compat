@@ -49,21 +49,22 @@ SOUND_GLOBALS SoundInstance;
 #define   DEBUG
 #endif
 
-static const SWORD StepSizeTable[STEP_SIZE_TABLE_ENTRIES] = { 7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
-        19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
-        50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
-        130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
-        337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
-        876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
-        2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
-        5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
-        15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
-    };
+static const SWORD StepSizeTable[STEP_SIZE_TABLE_ENTRIES] = {
+    7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
+    19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
+    50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
+    130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
+    337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
+    876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
+    2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
+    5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
+    15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
+};
 
 static const SWORD IndexTable[INDEX_TABLE_ENTRIES] = {
-     -1, -1, -1, -1, 2, 4, 6, 8,
-     -1, -1, -1, -1, 2, 4, 6, 8
-   };
+    -1, -1, -1, -1, 2, 4, 6, 8,
+    -1, -1, -1, -1, 2, 4, 6, 8
+};
 
 RESULT    cSoundInit(void)
 {
@@ -195,199 +196,169 @@ UBYTE cSoundGetAdPcmValue(UBYTE Delta)  // Call ONLY when cSoundInitAdPcm has be
 
 RESULT cSoundUpdate(void)
 {
-  int     BytesRead;
-  int     i;
-  UBYTE   AdPcmData[SOUND_ADPCM_CHUNK]; // Temporary ADPCM input buffer
-  UWORD   BytesToRead;
-  UBYTE   BytesWritten = 0;
-  RESULT  Result = FAIL;
+    int     BytesRead;
+    int     i;
+    UBYTE   AdPcmData[SOUND_ADPCM_CHUNK]; // Temporary ADPCM input buffer
+    UWORD   BytesToRead;
+    UBYTE   BytesWritten = 0;
+    RESULT  Result = FAIL;
 
-  switch(SoundInstance.cSoundState)
-  {
-    case  SOUND_STOPPED:        // Do nothing
-                                break;
+    switch(SoundInstance.cSoundState) {
+    case SOUND_STOPPED:
+        // Do nothing
+        break;
 
-    case  SOUND_SETUP_FILE:     // Keep hands off - should only appear, when needed... but...
-                                break;
+    case SOUND_SETUP_FILE:
+        // Keep hands off - should only appear, when needed... but...
+        break;
 
-    case  SOUND_FILE_LOOPING:   // Make it looping!!
-                                // Fall through
+    case SOUND_FILE_LOOPING:
+    case SOUND_FILE_PLAYING:
+        if (SoundInstance.BytesToWrite > 0) { // Do we have "NOT WRITTEN DATA"
+            // Yes, write the pending stuff to Driver
+            SoundInstance.SoundDriverDescriptor = open(SOUND_DEVICE_NAME, O_WRONLY);
+            if (SoundInstance.SoundDriverDescriptor >= 0) {
+                BytesWritten = write(SoundInstance.SoundDriverDescriptor,
+                                     SoundInstance.SoundData,
+                                     SoundInstance.BytesToWrite);
+                close(SoundInstance.SoundDriverDescriptor);
+                SoundInstance.SoundDriverDescriptor = -1;
+                Result = OK;
+                // Adjust BytesToWrite with Bytes actually written
+                if (BytesWritten > 1) {
+                    if(SoundInstance.SoundFileFormat == FILEFORMAT_ADPCM_SOUND) {
+                        SoundInstance.SoundDataLength -= (UBYTE)(BytesWritten / 2); // nibbles in file
+                        SoundInstance.BytesToWrite -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
+                    } else {
+                        SoundInstance.SoundDataLength -= BytesWritten;
+                        SoundInstance.BytesToWrite -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
+                    }
+                }
+            } else {
+                // ERROR!!!!! in writing to driver
+                SoundInstance.cSoundState = SOUND_STOPPED;  // Couldn't do the job :-(
+                if (SoundInstance.hSoundFile >= 0) {
+                    close(SoundInstance.hSoundFile);
+                    SoundInstance.hSoundFile = -1;
+                }
+            }
+        } else { // Get new sound data
+            // No pending stuff
+            if (SoundInstance.SoundDataLength > 0) { // Any new data?
+                SoundInstance.SoundData[0] = SERVICE;
 
-    case  SOUND_FILE_PLAYING:   if(SoundInstance.BytesToWrite > 0)  // Do we have "NOT WRITTEN DATA"
-                                {
-                                  // Yes, write the pending stuff to Driver
-                                  SoundInstance.SoundDriverDescriptor = open(SOUND_DEVICE_NAME, O_WRONLY);
-                                  if (SoundInstance.SoundDriverDescriptor >= 0)
-                                  {
-                                    BytesWritten = write(SoundInstance.SoundDriverDescriptor, SoundInstance.SoundData, SoundInstance.BytesToWrite);
-                                    close(SoundInstance.SoundDriverDescriptor);
-                                    SoundInstance.SoundDriverDescriptor = -1;
-                                    Result = OK;
-                                    // Adjust BytesToWrite with Bytes actually written
-                                    if (BytesWritten > 1)
-                                    {
-                                      if(SoundInstance.SoundFileFormat == FILEFORMAT_ADPCM_SOUND)
-                                      {
-                                        SoundInstance.SoundDataLength -= (UBYTE)(BytesWritten / 2); // nibbles in file
-                                        SoundInstance.BytesToWrite  -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
-                                      }
-                                      else
-                                      {
-                                        SoundInstance.SoundDataLength -= BytesWritten;
-                                        SoundInstance.BytesToWrite  -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
-                                      }
-                                    }
-                                  }
-                                  else
-                                  {
-                                    // ERROR!!!!! in writing to driver
-                                    SoundInstance.cSoundState = SOUND_STOPPED;  // Couldn't do the job :-(
-                                    if (SoundInstance.hSoundFile >= 0)
-                                    {
-                                      close(SoundInstance.hSoundFile);
-                                      SoundInstance.hSoundFile  = -1;
-                                    }
+                if (SoundInstance.SoundFileFormat == FILEFORMAT_ADPCM_SOUND) {
+                    // Adjust the chunk size for ADPCM (nibbles) if necessary
+                    if (SoundInstance.SoundDataLength > SOUND_ADPCM_CHUNK) {
+                        BytesToRead = SOUND_ADPCM_CHUNK;
+                    } else {
+                        BytesToRead = SoundInstance.SoundDataLength;
+                    }
 
-                                  }
-                                }
-                                else  // Get new sound data
-                                {     // No pending stuff
-                                  if(SoundInstance.SoundDataLength > 0) // Any new data?
-                                  {
-                                    SoundInstance.SoundData[0] = SERVICE;
+                    if(SoundInstance.hSoundFile >= 0) { // Valid file
+                        BytesRead = read(SoundInstance.hSoundFile,AdPcmData,BytesToRead);
 
-                                    if(SoundInstance.SoundFileFormat == FILEFORMAT_ADPCM_SOUND)
-                                    {
-                                      // Adjust the chunk size for ADPCM (nibbles) if necessary
-                                      if (SoundInstance.SoundDataLength > SOUND_ADPCM_CHUNK)
-                                        BytesToRead = SOUND_ADPCM_CHUNK;
-                                      else
-                                        BytesToRead = SoundInstance.SoundDataLength;
+                        for (i = 0; i < BytesRead; i++) {
+                            SoundInstance.SoundData[2*i + 1] = cSoundGetAdPcmValue((AdPcmData[i] >> 4) & 0x0F);
+                            SoundInstance.SoundData[2*i + 2] = cSoundGetAdPcmValue(AdPcmData[i] & 0x0F);
+                        }
 
-                                      if(SoundInstance.hSoundFile >= 0)  // Valid file
-                                      {
-                                        BytesRead  =  read(SoundInstance.hSoundFile,AdPcmData,BytesToRead);
+                        SoundInstance.BytesToWrite = (UBYTE) (1 + BytesRead * 2);
+                    }
+                } else { // Non compressed data
+                    // Adjust the chunk size if necessary
+                    if (SoundInstance.SoundDataLength > SOUND_CHUNK) {
+                        BytesToRead = SOUND_CHUNK;
+                    } else {
+                        BytesToRead = SoundInstance.SoundDataLength;
+                    }
 
-                                        for(i = 0; i < BytesRead; i++)
-                                        {
-                                          SoundInstance.SoundData[2*i + 1] = cSoundGetAdPcmValue((AdPcmData[i] >> 4) & 0x0F);
-                                          SoundInstance.SoundData[2*i + 2] = cSoundGetAdPcmValue(AdPcmData[i] & 0x0F);
-                                        }
+                    if(SoundInstance.hSoundFile >= 0) { // Valid file
+                        BytesRead = read(SoundInstance.hSoundFile,
+                                         &(SoundInstance.SoundData[1]),BytesToRead);
 
-                                        SoundInstance.BytesToWrite = (UBYTE) (1 + BytesRead * 2);
-                                      }
-                                    }
-                                    else // Non compressed data
-                                    {
-                                      // Adjust the chunk size if necessary
-                                      if (SoundInstance.SoundDataLength > SOUND_CHUNK)
-                                        BytesToRead = SOUND_CHUNK;
-                                      else
-                                        BytesToRead = SoundInstance.SoundDataLength;
+                        SoundInstance.BytesToWrite = BytesRead + 1;
+                    }
+                }
+                // Now we have or should have some bytes to write down into the driver
+                SoundInstance.SoundDriverDescriptor = open(SOUND_DEVICE_NAME, O_WRONLY);
+                if (SoundInstance.SoundDriverDescriptor >= 0) {
+                    BytesWritten = write(SoundInstance.SoundDriverDescriptor,
+                                         SoundInstance.SoundData,
+                                         SoundInstance.BytesToWrite);
+                    close(SoundInstance.SoundDriverDescriptor);
+                    SoundInstance.SoundDriverDescriptor = -1;
+                    Result = OK;
 
-                                      if(SoundInstance.hSoundFile >= 0)  // Valid file
-                                      {
-                                        BytesRead  =  read(SoundInstance.hSoundFile,&(SoundInstance.SoundData[1]),BytesToRead);
+                    // Adjust BytesToWrite with Bytes actually written
+                    if (BytesWritten > 1) {
+                        if(SoundInstance.SoundFileFormat == FILEFORMAT_ADPCM_SOUND) {
+                            SoundInstance.SoundDataLength -= (UBYTE)(BytesWritten / 2); // nibbles in file
+                            SoundInstance.BytesToWrite -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
+                        } else {
+                            SoundInstance.SoundDataLength -= BytesWritten;
+                            SoundInstance.BytesToWrite -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
+                        }
+                    }
+                } else {
+                  // ERROR!!!!! in writing to driver
+                  SoundInstance.cSoundState = SOUND_STOPPED;  // Couldn't do the job :-(
+                  if (SoundInstance.hSoundFile >= 0) {
+                      close(SoundInstance.hSoundFile);
+                      SoundInstance.hSoundFile = -1;
+                  }
+                }
+            } // end new data
+            else  // Shut down the SOUND stuff until new request/data i.e.
+            {     // SoundDataLength > 0
+                if (SoundInstance.cSoundState == SOUND_FILE_LOOPING) {
+                    lseek(SoundInstance.hSoundFile, 0, SEEK_SET);
+                    stat(SoundInstance.PathBuffer, &SoundInstance.FileStatus);
+                    SoundInstance.SoundDataLength = SoundInstance.FileStatus.st_size;
+                    // TODO make a new write here, so no zero-"sound"
+                } else {
+                    SoundInstance.cSoundState = SOUND_STOPPED;
 
-                                        SoundInstance.BytesToWrite = BytesRead + 1;
-                                      }
-                                    }
-                                    // Now we have or should have some bytes to write down into the driver
-                                    SoundInstance.SoundDriverDescriptor = open(SOUND_DEVICE_NAME, O_WRONLY);
-                                    if (SoundInstance.SoundDriverDescriptor >= 0)
-                                    {
-                                      BytesWritten = write(SoundInstance.SoundDriverDescriptor, SoundInstance.SoundData, SoundInstance.BytesToWrite);
-                                      close(SoundInstance.SoundDriverDescriptor);
-                                      SoundInstance.SoundDriverDescriptor = -1;
-                                      Result = OK;
+                    if (SoundInstance.hSoundFile >= 0) {
+                        close(SoundInstance.hSoundFile);
+                        SoundInstance.hSoundFile = -1;
+                    }
 
-                                      // Adjust BytesToWrite with Bytes actually written
-                                      if (BytesWritten > 1)
-                                      {
-                                        if(SoundInstance.SoundFileFormat == FILEFORMAT_ADPCM_SOUND)
-                                        {
-                                          SoundInstance.SoundDataLength -= (UBYTE)(BytesWritten / 2); // nibbles in file
-                                          SoundInstance.BytesToWrite  -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
-                                        }
-                                        else
-                                        {
-                                          SoundInstance.SoundDataLength -= BytesWritten;
-                                          SoundInstance.BytesToWrite  -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
-                                        }
-                                      }
-                                    }
-                                    else
-                                    {
-                                      // ERROR!!!!! in writing to driver
-                                      SoundInstance.cSoundState = SOUND_STOPPED;  // Couldn't do the job :-(
-                                      if (SoundInstance.hSoundFile >= 0)
-                                      {
-                                        close(SoundInstance.hSoundFile);
-                                        SoundInstance.hSoundFile  = -1;
-                                      }
+                    if (SoundInstance.SoundDriverDescriptor >= 0) {
+                        close(SoundInstance.SoundDriverDescriptor);
+                        SoundInstance.SoundDriverDescriptor = -1;
+                    }
+                }
+            }
+        }   // No pending write
+        break;
 
-                                    }
+    case  SOUND_TONE_PLAYING:
+        // Check for duration done in d_sound :-)
 
-                                  } // end new data
-                                  else  // Shut down the SOUND stuff until new request/data i.e.
-                                  {     // SoundDataLength > 0
+        if (SoundInstance.pSound->Status == OK) {
+            // DO the finished stuff
+            SoundInstance.cSoundState = SOUND_STOPPED;
+            if (SoundInstance.SoundDriverDescriptor >= 0) {
+                close(SoundInstance.SoundDriverDescriptor);
+                SoundInstance.SoundDriverDescriptor = -1;
+            }
 
-                                    if(SoundInstance.cSoundState == SOUND_FILE_LOOPING)
-                                    {
-                                      lseek(SoundInstance.hSoundFile, 0, SEEK_SET);
-                                      stat(SoundInstance.PathBuffer,&SoundInstance.FileStatus);
-                                      SoundInstance.SoundDataLength   =  SoundInstance.FileStatus.st_size;
-                                      // TODO make a new write here, so no zero-"sound"
+            if (SoundInstance.hSoundFile >= 0) {
+                close(SoundInstance.hSoundFile);
+                SoundInstance.hSoundFile = -1;
+            }
 
-                                    }
-                                    else
-                                    {
-                                      SoundInstance.cSoundState = SOUND_STOPPED;
+            Result = OK;
+        }
+        break;
 
-                                      if (SoundInstance.hSoundFile >= 0)
-                                      {
-                                        close(SoundInstance.hSoundFile);
-                                        SoundInstance.hSoundFile  = -1;
-                                      }
+    default:
+        // Do nothing
+        break;
+    }
 
-                                      if (SoundInstance.SoundDriverDescriptor >= 0)
-                                      {
-                                        close(SoundInstance.SoundDriverDescriptor);
-                                        SoundInstance.SoundDriverDescriptor = -1;
-                                      }
-
-                                    }
-
-                                  }
-                                }   // No pending write
-                                break;
-
-    case  SOUND_TONE_PLAYING:   // Check for duration done in d_sound :-)
-
-                                if ((*SoundInstance.pSound).Status == OK)
-                                {
-                                  // DO the finished stuff
-                                  SoundInstance.cSoundState = SOUND_STOPPED;
-                                  if (SoundInstance.SoundDriverDescriptor >= 0)
-                                  {
-                                    close(SoundInstance.SoundDriverDescriptor);
-                                    SoundInstance.SoundDriverDescriptor = -1;
-                                  }
-
-                                  if (SoundInstance.hSoundFile >= 0)
-                                  {
-                                    close(SoundInstance.hSoundFile);
-                                    SoundInstance.hSoundFile  = -1;
-                                  }
-
-                                  Result = OK;
-                                }
-                                break;
-
-    default:                    // Do nothing
-                                break;
-  }
-    return (Result);
+    return Result;
 }
 
 RESULT    cSoundExit(void)
