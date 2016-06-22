@@ -21,6 +21,11 @@ macro (add_lms_app TARGET)
         set (icon_SOURCE ${LMSSRC_ICON})
     endif ()
 
+    configure_file (${CMAKE_SOURCE_DIR}/lms2012/bytecodes.h
+        ${LMSASM_DIR}/bytecodes.h COPYONLY)
+    configure_file (${CMAKE_SOURCE_DIR}/lms2012/bytecodes.c
+        ${LMSASM_DIR}/bytecodes.c COPYONLY)
+
     foreach (program ${LMSSRC_PROGRAMS})
         set (lms ${CMAKE_CURRENT_SOURCE_DIR}/${program}.lms)
         set (rbf ${CMAKE_CURRENT_BINARY_DIR}/${program}.rbf)
