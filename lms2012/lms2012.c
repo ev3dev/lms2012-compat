@@ -2645,9 +2645,11 @@ int       main(int argc,char *argv[])
   RESULT  Result = FAIL;
   UBYTE   Restart;
 
+  // TODO: make the working directory configurable via environment variable so
+  // that we can run debug instances without messing up the system install
   if (chdir("/var/lib/lms2012/sys") == -1) {
     perror("Failed to change directory");
-    exit(1);
+    return (int)Result;
   }
 
   do
