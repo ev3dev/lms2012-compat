@@ -149,83 +149,64 @@
   */
 
 
-#include  "lms2012.h"
-#include  "c_com.h"
-#include  "c_bt.h"
-#include  "c_i2c.h"
+#include "lms2012.h"
+#include "c_com.h"
+#include "c_bt.h"
+#include "c_i2c.h"
 
-#if (HARDWARE != SIMULATION)
+#include <stdio.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <signal.h>
+#include <sys/mman.h>
+#include <time.h>
+#include <errno.h>
 
-  #include  <stdio.h>
-  #include  <fcntl.h>
-  #include  <stdlib.h>
-  #include  <unistd.h>
-  #include  <string.h>
-  #include  <signal.h>
-  #include  <sys/mman.h>
-  #include  <time.h>
-  #include  <errno.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/rfcomm.h>
+#include <bluetooth/hci.h>
+#include <bluetooth/hci_lib.h>
+#include <bluetooth/sdp.h>
+#include <bluetooth/sdp_lib.h>
+#include <sys/socket.h>
 
-  #include <bluetooth/bluetooth.h>
-  #include <bluetooth/rfcomm.h>
-  #include <bluetooth/hci.h>
-  #include <bluetooth/hci_lib.h>
-  #include <bluetooth/sdp.h>
-  #include <bluetooth/sdp_lib.h>
-  #include <sys/socket.h>
+#include <dbus/dbus.h>
 
-  #include <dbus/dbus.h>
-
-  #include <sys/poll.h>
-  #include <sys/ioctl.h>
+#include <sys/poll.h>
+#include <sys/ioctl.h>
 
 
-  typedef struct
-  {
-    bdaddr_t  Addr;
-    UBYTE     Port;
-  }PAIREDDEVINFO;
+typedef struct
+{
+  bdaddr_t  Addr;
+  UBYTE     Port;
+} PAIREDDEVINFO;
 
 
-  static PAIREDDEVINFO PairedDevInfo;
-  static UBYTE         NameReqDueToPin = FALSE;
+static PAIREDDEVINFO    PairedDevInfo;
+static UBYTE            NameReqDueToPin = FALSE;
 
-  BT_GLOBALS BtInstance;
-  static  DBusConnection  *conn;
-  static  DBusMessage     *reply;
-  static  DBusMessage     *RejectReply;
+static BT_GLOBALS       BtInstance;
+static DBusConnection  *conn;
+static DBusMessage     *reply;
+static DBusMessage     *RejectReply;
 
-  static  sdp_session_t   *session                   =   0;
+static sdp_session_t   *session                   =   0;
 
-  static  char            *adapter_path              =  NULL;
-  char                    *agent_path                =  "/org/bluez/agent";
-  static  UBYTE            SimplePairingDisable[]    = {0x06, 0x73, 0xFF};
-  static  UBYTE            SimplePairingEnable[]     = {0x06, 0x7B, 0xFF};
-  static  UBYTE            ExtendedFeaturesDisable[] = {0x07, 0x03, 0xFF};
-  static  UBYTE            ExtendedFeaturesEnable[]  = {0x07, 0x83, 0xFF};
+static char            *adapter_path              =  NULL;
+static const char      *agent_path                =  "/org/bluez/agent";
+static UBYTE            SimplePairingDisable[]    = {0x06, 0x73, 0xFF};
+static UBYTE            SimplePairingEnable[]     = {0x06, 0x7B, 0xFF};
+static UBYTE            ExtendedFeaturesDisable[] = {0x07, 0x03, 0xFF};
+static UBYTE            ExtendedFeaturesEnable[]  = {0x07, 0x83, 0xFF};
 
-  static volatile sig_atomic_t __io_canceled         = 0;
-  static volatile sig_atomic_t __io_terminated       = 0;
+static volatile sig_atomic_t __io_canceled         = 0;
+static volatile sig_atomic_t __io_terminated       = 0;
 
-#else
-
-  BT_GLOBALS * gBtInstance;
-
-  void setOutputInstance(BT_GLOBALS * _Instance)
-  {
-    gBtInstance= _Instance;
-  }
-
-  BT_GLOBALS* getBtInstance()
-  {
-    return gBtInstance;
-  }
-
-#endif
-
-
-#define   LEGO_BUNDLE_SEED_ID                     "9RNK8ZF528"
-#define   LEGO_BUNDLE_ID                          "com.lego.lms"
+#define LEGO_BUNDLE_SEED_ID                        "9RNK8ZF528"
+#define LEGO_BUNDLE_ID                             "com.lego.lms"
 
 enum
 {

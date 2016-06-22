@@ -454,17 +454,8 @@ typedef   struct
 
   IMGDATA   Globals[MAX_COMMAND_GLOBALS];
 
-}
-UI_GLOBALS;
+} UI_GLOBALS;
 
-#if       (HARDWARE == SIMULATION)
-  extern UI_GLOBALS * gUiInstance;
-  #define UiInstance (*gUiInstance)
-
-  void setUiInstance(UI_GLOBALS * _Instance);
-  UI_GLOBALS * getUiInstance();
-#else
-  extern UI_GLOBALS UiInstance;
-#endif
+extern UI_GLOBALS UiInstance;
 
 #endif /* C_UI_H_ */

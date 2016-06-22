@@ -18,38 +18,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <stdio.h>
 
-#include  <stdio.h>
+#include "lmstypes.h"
+#include "bytecodes.h"
+#include "bytecodes.c"
+#include "validate.h"
 
-#include  "lmstypes.h"
-#include  "bytecodes.h"
-#include  "bytecodes.c"
-#include  "validate.h"
+#include <stdlib.h>
+#include <unistd.h>
 
-//#define   DEBUG
-
-#ifndef LEGO_SIMULATION
-
-  #include  <stdlib.h>
-  #include  <unistd.h>
-  VALIDATE_GLOBALS ValidateInstance;
-
-#else
-
-  VALIDATE_GLOBALS * gValidateInstance;
-
-  void setValidateInstance(VALIDATE_GLOBALS * _Instance)
-  {
-    gValidateInstance= _Instance;
-  }
-
-  VALIDATE_GLOBALS* getValidateInstance()
-  {
-    return gValidateInstance;
-  }
-
-#endif
-
+VALIDATE_GLOBALS ValidateInstance;
 
 void      ShowOpcode(UBYTE OpCode,char *Buf,int Lng)
 {

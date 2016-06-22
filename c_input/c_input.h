@@ -186,17 +186,8 @@ typedef struct
 
 
   CALIB     Calib[MAX_DEVICE_TYPE][MAX_DEVICE_MODES];
-}
-INPUT_GLOBALS;
+} INPUT_GLOBALS;
 
-#if       (HARDWARE == SIMULATION)
-  extern INPUT_GLOBALS * gInputInstance;
-  #define InputInstance (*gInputInstance)
-
-  void setInputInstance(INPUT_GLOBALS * _Instance);
-  INPUT_GLOBALS * getInputInstance();
-#else
-  extern INPUT_GLOBALS InputInstance;
-#endif
+extern INPUT_GLOBALS InputInstance;
 
 #endif /* C_INPUT_H_ */

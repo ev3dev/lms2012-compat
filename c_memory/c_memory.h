@@ -167,17 +167,8 @@ typedef struct
 
   DATA8   Cache[CACHE_DEEPT + 1][vmFILENAMESIZE];
 
-}
-MEMORY_GLOBALS;
+} MEMORY_GLOBALS;
 
-#if       (HARDWARE == SIMULATION)
-  extern MEMORY_GLOBALS * gMemoryInstance;
-  #define MemoryInstance (*gMemoryInstance)
-
-  void setMemoryInstance(MEMORY_GLOBALS * _Instance);
-  MEMORY_GLOBALS * getMemoryInstance();
-#else
-  extern MEMORY_GLOBALS MemoryInstance;
-#endif
+extern MEMORY_GLOBALS MemoryInstance;
 
 #endif /* C_MEMORY_H_ */

@@ -117,17 +117,8 @@ typedef struct
   char    PathBuffer[MAX_FILENAME_SIZE];
   struct  stat FileStatus;
   UBYTE   SoundData[SOUND_FILE_BUFFER_SIZE + 1]; // Add up for CMD
-}
-SOUND_GLOBALS;
+} SOUND_GLOBALS;
 
-#if       (HARDWARE == SIMULATION)
-  extern SOUND_GLOBALS * gSoundInstance;
-  #define SoundInstance (*gSoundInstance)
-
-  void setSoundInstance(SOUND_GLOBALS * _Instance);
-  SOUND_GLOBALS * getSoundInstance();
-#else
-  extern SOUND_GLOBALS SoundInstance;
-#endif
+extern SOUND_GLOBALS SoundInstance;
 
 #endif /* C_SOUND_H_ */

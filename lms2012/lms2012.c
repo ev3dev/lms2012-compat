@@ -58,48 +58,43 @@
  *\n\n
  */
 
-#include  "c_dynload.h"
+#include "c_dynload.h"
 
-#include  "lms2012.h"
-#include  "c_math.h"
-#include  "c_move.h"
-#include  "c_branch.h"
-#include  "c_compare.h"
-#include  "c_timer.h"
-#include  "c_output.h"
-#include  "c_input.h"
-#include  "c_ui.h"
-#include  "c_memory.h"
-#include  "c_com.h"
-#include  "c_sound.h"
+#include "lms2012.h"
+#include "c_math.h"
+#include "c_move.h"
+#include "c_branch.h"
+#include "c_compare.h"
+#include "c_timer.h"
+#include "c_output.h"
+#include "c_input.h"
+#include "c_ui.h"
+#include "c_memory.h"
+#include "c_com.h"
+#include "c_sound.h"
 #ifndef Linux_X86
-#include  "c_bt.h"
-#include  "c_i2c.h"
+#include "c_bt.h"
+#include "c_i2c.h"
 #endif
-#include  "validate.h"
+#include "validate.h"
 
-#if       (HARDWARE != SIMULATION)
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <time.h>
+#include <syslog.h>
+#include <math.h>
 
-#include  <stdio.h>
-#include  <stdlib.h>
-#include  <string.h>
-#include  <unistd.h>
-#include  <time.h>
-#include  <syslog.h>
-#include  <math.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
 
-#include  <dirent.h>
-#include  <sys/stat.h>
-#include  <sys/statvfs.h>
-#include  <sys/types.h>
-#include  <sys/time.h>
-#include  <fcntl.h>
-#include  <sys/ioctl.h>
-
-#include  <sys/mman.h>
-
-
-#endif
 
 #ifdef    DEBUG_VM
 #define   DEBUG
@@ -129,22 +124,8 @@ UBYTE     UiImage[] =
 
 };
 
-#if       (HARDWARE != SIMULATION)
-  GLOBALS VMInstance;
-#else
-  GLOBALS * gInstance;
+GLOBALS VMInstance;
 
-  void setInstance(GLOBALS * _Instance)
-  {
-    gInstance= _Instance;
-  }
-
-  GLOBALS* getInstance()
-  {
-    return gInstance;
-  }
-
-#endif
 //*****************************************************************************
 // Forward declarations
 //*****************************************************************************
@@ -2336,7 +2317,6 @@ RESULT    mSchedInit(int argc,char *argv[])
   pImgHead                =  (IMGHEAD*)UiImage;
   (*pImgHead).ImageSize   =  sizeof(UiImage);
 
-#if (HARDWARE != SIMULATION)
   openlog(PROJECT,LOG_NDELAY,LOG_USER);
   syslog(LOG_INFO,"VM Started");
 
@@ -2348,10 +2328,6 @@ RESULT    mSchedInit(int argc,char *argv[])
   {
     snprintf((char*)VMInstance.FirstProgram,MAX_FILENAME_SIZE,DEFAULT_UI);
   }
-
-#else
-  //TBD
-#endif
 
   ProgramReset(VMInstance.ProgramId,UiImage,(GP)VMInstance.FirstProgram,0);
 
@@ -2620,11 +2596,7 @@ RESULT    mSchedExit(void)
   Result    |=  cInputExit();
   Result    |=  cOutputExit();
 
-#if (HARDWARE != SIMULATION)
   closelog();
-#else
-//TBD
-#endif
 
 #ifndef DISABLE_PREEMPTED_VM
   VMInstance.AdcFile     =  open(ANALOG_DEVICE_NAME,O_RDWR | O_SYNC);
@@ -2639,7 +2611,6 @@ RESULT    mSchedExit(void)
 }
 
 
-#if (HARDWARE != SIMULATION)
 int       main(int argc,char *argv[])
 {
   RESULT  Result = FAIL;
@@ -2678,8 +2649,6 @@ int       main(int argc,char *argv[])
 
   return ((int)Result);
 }
-
-#endif
 
 
 PRIM      PrimDispatchTable[PRIMDISPATHTABLE_SIZE] =

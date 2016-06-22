@@ -32,8 +32,6 @@
 
 //        BASIC DATA TYPES
 
-#ifndef LEGO_SIMULATION
-
 typedef   unsigned char         UBYTE;  //!< Basic Type used to symbolise 8  bit unsigned values
 typedef   unsigned short        UWORD;  //!< Basic Type used to symbolise 16 bit unsigned values
 typedef   unsigned int          ULONG;  //!< Basic Type used to symbolise 32 bit unsigned values
@@ -45,24 +43,6 @@ typedef   signed int            SLONG;  //!< Basic Type used to symbolise 32 bit
 typedef   float                 FLOAT;  //!< Basic Type used to symbolise 32 bit floating point values
 
 #define   LFILE                 FILE
-
-#else
-
-#include  <Base/BasicTypes.h>
-#include  <VMCalls.h>
-
-typedef   LEGO::UInt8           UBYTE;  //!< Basic Type used to symbolise 8  bit unsigned values
-typedef   LEGO::UInt16          UWORD;  //!< Basic Type used to symbolise 16 bit unsigned values
-typedef   unsigned long         ULONG;  //!< Basic Type used to symbolise 32 bit unsigned values
-
-
-typedef   LEGO::Int8            SBYTE;  //!< Basic Type used to symbolise 8  bit signed values
-typedef   LEGO::Int16           SWORD;  //!< Basic Type used to symbolise 16 bit signed values
-typedef   LEGO::Int32           SLONG;  //!< Basic Type used to symbolise 32 bit signed values
-
-typedef   LEGO::Real32          FLOAT;  //!< Basic Type used to symbolise 32 bit floating point values
-
-#endif
 
 //        VM DATA TYPES
 

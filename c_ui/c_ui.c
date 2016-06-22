@@ -149,70 +149,46 @@
  *
  */
 
+#include "lms2012.h"
+#include "c_ui.h"
+#include "d_terminal.h"
+#include "c_memory.h"
+#include "c_com.h"
+#include "c_input.h"
+#include <string.h>
 
-#include  "lms2012.h"
-#include  "c_ui.h"
-#include  "d_terminal.h"
-#include  "c_memory.h"
-#include  "c_com.h"
-#include  "c_input.h"
-#include  <string.h>
-#include  <time.h>
-extern    char *strptime(const char *s, const char *format, struct tm *tm);
+#include <sys/stat.h>
+#include <sys/statvfs.h>
+#include <sys/types.h>
+#include <sys/sysinfo.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <dirent.h>
+#include "d_lcd.h"
+
+#include <sys/mman.h>
+#include <sys/ioctl.h>
+#include <math.h>
+#include <sys/utsname.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <time.h>
 
 #ifdef    DEBUG_C_UI
 #define   DEBUG
 #endif
 
-
-#if       (HARDWARE != SIMULATION)
-
-#include  <sys/stat.h>
-#include  <sys/statvfs.h>
-#include  <sys/types.h>
-#include  <sys/sysinfo.h>
-
-#include  <stdio.h>
-#include  <stdlib.h>
-#include  <fcntl.h>
-#include  <unistd.h>
-#include  <dirent.h>
-#include  "d_lcd.h"
-
-#include  <sys/mman.h>
-#include  <sys/ioctl.h>
-#include  <math.h>
-#include  <sys/utsname.h>
-
-#include  <sys/socket.h>
-#include  <netinet/in.h>
-#include  <net/if.h>
-#include  <arpa/inet.h>
-
+// from <time.h>
+// supposed to #define _XOPEN_SOURCE, but doing so messes up other stuff
+extern char *strptime(const char *s, const char *format, struct tm *tm);
 
 UI_GLOBALS UiInstance;
-
-
-#else
-
-#define snprintf _snprintf
-#include  <stdio.h>
-#include  <stdlib.h>
-  UI_GLOBALS * gUiInstance;
-
-  void setUiInstance(UI_GLOBALS * _Instance)
-  {
-    gUiInstance= _Instance;
-  }
-
-  UI_GLOBALS* getUiInstance()
-  {
-    return gUiInstance;
-  }
-
-#endif
-
 
 #ifndef DISABLE_VIRTUAL_BATT_TEMP
 
@@ -977,7 +953,6 @@ void      cUiUpdateButtons(DATA16 Time)
 }
 
 
-#ifndef LEGO_SIMULATION
 RESULT    cUiUpdateInput(void)
 {
   UBYTE   Key;
@@ -1030,7 +1005,6 @@ RESULT    cUiUpdateInput(void)
 
   return (OK);
 }
-#endif
 
 
 DATA8     cUiEscape(void)

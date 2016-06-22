@@ -57,41 +57,21 @@
 #include  "c_md5.h"
 #include  "c_ui.h"
 
-#if (HARDWARE != SIMULATION)
-	#include  <stdlib.h>
-	#include  <string.h>
-	#include  <stdio.h>
-	#include  <unistd.h>
-	#include  <dirent.h>
-	#include  <sys/stat.h>
-  #include  <sys/statvfs.h>
-  #include  <dirent.h>
-  #include  <sys/types.h>
-  #include  <fcntl.h>
-  #include  <sys/sysinfo.h>
-  #include  <mntent.h>
-  #include  <malloc.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/sysinfo.h>
+#include <mntent.h>
+#include <malloc.h>
 
 MEMORY_GLOBALS MemoryInstance;
-
-#else
-  #define snprintf _snprintf
-  #include  <stdio.h>
-  #include  <stdlib.h>
-
-  MEMORY_GLOBALS * gMemoryInstance;
-
-  void setMemoryInstance(MEMORY_GLOBALS * _Instance)
-  {
-    gMemoryInstance= _Instance;
-  }
-
-  MEMORY_GLOBALS* getMemoryInstance()
-  {
-    return gMemoryInstance;
-  }
-
-#endif
 
 #ifdef    DEBUG_C_MEMORY
 #define   DEBUG

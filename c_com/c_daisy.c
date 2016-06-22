@@ -41,14 +41,11 @@
 #include "c_daisy.h"
 #include "c_output.h"
 
-
-/*#if       (HARDWARE != SIMULATION)
-*/
-#include  <stdio.h>
+#include <stdio.h>
 #include <string.h>
-#include  <fcntl.h>
-#include  <stdlib.h>
-#include  <unistd.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/mman.h>
 
 // Device vars etc.

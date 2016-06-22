@@ -34,38 +34,19 @@
  *
  */
 
-#include  "c_sound.h"
-#include  "lms2012.h"
+#include "c_sound.h"
+#include "lms2012.h"
 
-#if       (HARDWARE != SIMULATION)
+#include <stdio.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/mman.h>
 
-  #include  <stdio.h>
-  #include  <fcntl.h>
-  #include  <stdlib.h>
-  #include  <unistd.h>
-  #include <sys/mman.h>
- // #include  <sys/stat.h>
-
-  SOUND_GLOBALS SoundInstance;
-
-#else
-
-  SOUND_GLOBALS * gSoundInstance;
-
-  void setSoundInstance(SOUND_GLOBALS * _Instance)
-  {
-    gSoundInstance= _Instance;
-  }
-
-  SOUND_GLOBALS* getSoundInstance()
-  {
-    return gSoundInstance;
-  }
-
-#endif
+SOUND_GLOBALS SoundInstance;
 
 #ifdef    DEBUG_C_SOUND
-  #define   DEBUG
+#define   DEBUG
 #endif
 
 static const SWORD StepSizeTable[STEP_SIZE_TABLE_ENTRIES] = { 7, 8, 9, 10, 11, 12, 13, 14, 16, 17,

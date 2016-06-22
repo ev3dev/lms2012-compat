@@ -41,45 +41,31 @@
  */
 
 
-#include  "c_com.h"
-#include  "lms2012.h"
-#include  "c_bt.h"
-#include  "c_wifi.h"
-#include  "c_daisy.h"
-#include  "c_md5.h"
-#include  "c_i2c.h"
-#include  "c_output.h"
-#include  "c_memory.h"
+#include "c_com.h"
+#include "lms2012.h"
+#include "c_bt.h"
+#include "c_wifi.h"
+#include "c_daisy.h"
+#include "c_md5.h"
+#include "c_i2c.h"
+#include "c_output.h"
+#include "c_memory.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <dirent.h>
 
 #ifdef    DEBUG_C_COM
 #define   DEBUG
 #endif
 
-#if (HARDWARE != SIMULATION)
-  #include  <stdlib.h>
-  #include  <stdio.h>
-  #include  <sys/types.h>
-  #include  <sys/stat.h>
-  #include  <fcntl.h>
-  #include  <unistd.h>
-  #include  <string.h>
-  #include  <errno.h>
-  #include  <dirent.h>
-  COM_GLOBALS ComInstance;
-#else
-
-COM_GLOBALS * gComInstance;
-
-void setComInstance(COM_GLOBALS * _Instance)
-{
-  gComInstance= _Instance;
-}
-
-COM_GLOBALS* getComInstance()
-{
-  return gComInstance;
-}
-#endif
+COM_GLOBALS ComInstance;
 
 #define USB_CABLE_DETECT_RATE 15000   // ?? Approx 5 sec. on a good day. Cable detection is a NON-critical
                                       // event
@@ -110,9 +96,6 @@ RESULT    cComInit(void)
   UWORD   TmpFileHandle;
   UBYTE   Cnt;
   FILE    *File;
-
-
-#if (HARDWARE != SIMULATION)
 
   ComInstance.CommandReady      =  0;
   ComInstance.Cmdfd             =  open(COM_CMD_DEVICE_NAME, O_RDWR, 0666);
@@ -204,10 +187,6 @@ RESULT    cComInit(void)
 
   ComInstance.VmReady      =  1;
   ComInstance.ReplyStatus  =  0;
-
-  #else
-    return OK;
-  #endif
 
   return (Result);
 
@@ -375,7 +354,6 @@ void      cComShow(UBYTE *pB)
 UWORD     cComReadBuffer(UBYTE *pBuffer,UWORD Size)
 {
   UWORD   Length = 0;
-#if (HARDWARE != SIMULATION)
 
   struct  timeval Cmdtv;
   fd_set  Cmdfds;
@@ -393,7 +371,7 @@ UWORD     cComReadBuffer(UBYTE *pBuffer,UWORD Size)
 	  #endif
 
   }
-#endif
+
   return (Length);
 }
 
@@ -401,22 +379,17 @@ UWORD     cComReadBuffer(UBYTE *pBuffer,UWORD Size)
 UWORD     cComWriteBuffer(UBYTE *pBuffer,UWORD Size)
 {
   UWORD   Length = 0;
-#if (HARDWARE != SIMULATION)
 
+  if(FULL_SPEED == cDaisyGetUsbUpStreamSpeed()) {
+    Length  =  write(ComInstance.Cmdfd,pBuffer,64);
+  } else {
+    Length  =  write(ComInstance.Cmdfd,pBuffer,1024);
+  }
 
-
-  	  if(FULL_SPEED == cDaisyGetUsbUpStreamSpeed())
-  	  {
-  	    Length  =  write(ComInstance.Cmdfd,pBuffer,64);
-  	  }
-  	  else
-  	    Length  =  write(ComInstance.Cmdfd,pBuffer,1024);
-
-	  #ifdef DEBUG
-	  	  printf("cComWriteBuffer %d\n\r", Length);
-	  #endif
-
+#ifdef DEBUG
+  printf("cComWriteBuffer %d\n\r", Length);
 #endif
+
   return (Length);
 }
 

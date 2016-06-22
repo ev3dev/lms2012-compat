@@ -72,17 +72,8 @@ typedef struct
 
   MOTORDATA   MotorData[OUTPUTS];
   MOTORDATA   *pMotor;
-}
-OUTPUT_GLOBALS;
+} OUTPUT_GLOBALS;
 
-#if       (HARDWARE == SIMULATION)
-  extern OUTPUT_GLOBALS * gOutputInstance;
-  #define OutputInstance (*gOutputInstance)
-
-  void setOutputInstance(OUTPUT_GLOBALS * _Instance);
-  OUTPUT_GLOBALS * getOutputInstance();
-#else
-  extern OUTPUT_GLOBALS OutputInstance;
-#endif
+extern OUTPUT_GLOBALS OutputInstance;
 
 #endif /* C_OUTPUT_H_ */

@@ -39,18 +39,8 @@ typedef struct
 
   int       Row;
   IMINDEX   ValidateErrorIndex;
-}
-VALIDATE_GLOBALS;
+} VALIDATE_GLOBALS;
 
-#ifndef LEGO_SIMULATION
 extern VALIDATE_GLOBALS ValidateInstance;
-#else
-extern VALIDATE_GLOBALS * gValidateInstance;
-#define ValidateInstance (*gValidateInstance)
 
-void setValidateInstance(VALIDATE_GLOBALS * _Instance);
-VALIDATE_GLOBALS * getValidateInstance();
-#endif
-
-
-  #endif /* VALIDATE_H_ */
+#endif /* VALIDATE_H_ */

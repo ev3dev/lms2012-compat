@@ -19,18 +19,11 @@
  */
 
 
-#include  "lms2012.h"
-#include  "c_timer.h"
+#include "lms2012.h"
+#include "c_timer.h"
 
-#if       (HARDWARE != SIMULATION)
-
-#include  <time.h>
-#include  <sys/time.h>
-
-
-#endif
-
-#if (HARDWARE != SIMULATION)
+#include <time.h>
+#include <sys/time.h>
 
 
 ULONG     cTimerGetmS(void)
@@ -57,7 +50,6 @@ ULONG     cTimerGetuS(void)
   return(VMInstance.TimeuS);
 }
 
-#endif
 
 //******* BYTE CODE SNIPPETS **************************************************
 

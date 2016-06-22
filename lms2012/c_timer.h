@@ -22,10 +22,8 @@
 #ifndef C_TIMER_H_
 #define C_TIMER_H_
 
-#if (HARDWARE != SIMULATION)
 ULONG     cTimerGetuS(void);
 ULONG     cTimerGetmS(void);
-#endif
 
 void      cTimerWait(void);
 

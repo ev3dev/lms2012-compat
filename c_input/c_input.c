@@ -102,61 +102,40 @@
  *
  */
 
-
-#include  <string.h>
-#include  <math.h>
-#include  "lms2012.h"
-#include  "c_input.h"
-#include  "c_output.h"
-#include  "c_ui.h"
-#include  "c_com.h"
-#ifndef    DISABLE_DAISYCHAIN_COM_CALL
-#include  "c_daisy.h"
-#endif
-#include  "c_memory.h"
-
-#ifdef    DEBUG_C_INPUT
-#define   DEBUG
-#define   DEBUG_TRACE_MODE_CHANGE
-#define   DEBUG_C_INPUT_DAISYCHAIN
-#endif
-
-#if (HARDWARE != SIMULATION)
-#include  <stdio.h>
-#include  <stdlib.h>
-#include  <fcntl.h>
-#include  <unistd.h>
-#include  <sys/mman.h>
-#include  <sys/ioctl.h>
-#include  <sys/stat.h>
-
+#include <string.h>
+#include <math.h>
+#include "lms2012.h"
+#include "c_input.h"
+#include "c_output.h"
+#include "c_ui.h"
+#include "c_com.h"
 #ifndef   DISABLE_DAISYCHAIN_COM_CALL
-  static  DATA8  DaisyBuf[64];
-  static  DATA8  ActLayer = 0;
-  static  DATA8  MoreLayers = 0;
+#include "c_daisy.h"
+#endif
+#include "c_memory.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
+
+
+#ifdef  DEBUG_C_INPUT
+#define DEBUG
+#define DEBUG_TRACE_MODE_CHANGE
+#define DEBUG_C_INPUT_DAISYCHAIN
 #endif
 
-
-INPUT_GLOBALS InputInstance;	
-#else
-#define snprintf _snprintf
-#include  <stdio.h>
-#include  <stdlib.h>
-
-INPUT_GLOBALS * gInputInstance;
-
-void setInputInstance(INPUT_GLOBALS * _Instance)
-{
-  gInputInstance = _Instance;
-}
-
-INPUT_GLOBALS* getInputInstance()
-{
-  return gInputInstance;
-}
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
+static  DATA8  DaisyBuf[64];
+static  DATA8  ActLayer = 0;
+static  DATA8  MoreLayers = 0;
 #endif
 
+INPUT_GLOBALS InputInstance;
 
 #ifndef DISABLE_DAISYCHAIN
 RESULT    cInputComSetDeviceType(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mode);

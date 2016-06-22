@@ -129,42 +129,24 @@ Parameters:
  */
 
 
-#include  "lms2012.h"
-#include  "c_output.h"
-#ifndef    DISABLE_DAISYCHAIN_COM_CALL
-  #include  "c_daisy.h"
+#include "lms2012.h"
+#include "c_output.h"
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
+#include "c_daisy.h"
 #endif
 
-#if (HARDWARE != SIMULATION)
+#include  <stdio.h>
+#include  <fcntl.h>
+#include  <stdlib.h>
+#include  <unistd.h>
+#include  <string.h>
+#include  <signal.h>
+#include  <sys/mman.h>
 
-  #include  <stdio.h>
-  #include  <fcntl.h>
-  #include  <stdlib.h>
-  #include  <unistd.h>
-  #include  <string.h>
-  #include  <signal.h>
-  #include  <sys/mman.h>
+OUTPUT_GLOBALS OutputInstance;
 
-  OUTPUT_GLOBALS OutputInstance;
-  #ifndef    DISABLE_DAISYCHAIN_COM_CALL
-    static  DATA8  DaisyBuf[64];
-  #endif
-
-
-#else
-
-  OUTPUT_GLOBALS * gOutputInstance;
-
-  void setOutputInstance(OUTPUT_GLOBALS * _Instance)
-  {
-    gOutputInstance= _Instance;
-  }
-
-  OUTPUT_GLOBALS* getOutputInstance()
-  {
-    return gOutputInstance;
-  }
-
+#ifndef DISABLE_DAISYCHAIN_COM_CALL
+static DATA8 DaisyBuf[64];
 #endif
 
 #ifdef Linux_X86

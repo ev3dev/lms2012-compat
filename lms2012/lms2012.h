@@ -122,21 +122,7 @@ Development with debug messages:    DEBUG defined, TERMINAL_ENABLED = 1, DEBUG_U
 #define   PLATFORM_START        FINAL   //!< Oldest supported hardware (older versions will use this)
 #define   PLATFORM_END          EP2     //!< Newest supported hardware (newer versions will use this)
 
-// Will be removed when not used anymore
-#define   A4                    -1
-#define   EVALBOARD             -2
-#define   ONE2ONE               1       //!< First real size prototype
-
-
-#ifdef LEGO_SIMULATION
-  #define HARDWARE SIMULATION
-#else
-
-#ifndef   HARDWARE
-  #define HARDWARE      FINAL           //!< Actual hardware platform (must be one of above)
-#endif
-
-#endif
+#define   HARDWARE              FINAL   //!< Actual hardware platform (must be one of above)
 
 //  Support for module parameter "HwId"
 //
@@ -1494,25 +1480,8 @@ typedef struct
   DATA8     PulseShow;
   DATA8     Pulse;
 #endif
+} GLOBALS;
 
-#if       (HARDWARE == SIMULATION)
-  class NXT * nxt;
-#endif
-}GLOBALS;
-
-
-#if       (HARDWARE == SIMULATION)
-  extern GLOBALS * gInstance;
-  #define VMInstance (*gInstance)
-  RESULT mSchedInit();
-  RESULT mSchedCtrl();
-  RESULT mSchedExit();
-
-  void setInstance(GLOBALS * _Instance);
-  GLOBALS * getInstance();
-#else
-  extern GLOBALS VMInstance;
-#endif
-
+extern GLOBALS VMInstance;
 
 #endif /* LMS2012_H_ */

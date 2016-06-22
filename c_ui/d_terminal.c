@@ -18,22 +18,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include "lms2012.h"
 
-#include  "lms2012.h"
-
-#if       (HARDWARE != SIMULATION)
-
-#include  <stdio.h>
-#include  <termios.h>
-#include  <unistd.h>
-
-#ifndef   STDIN_FILENO
-  #define STDIN_FILENO  0
-#endif
-
-#ifndef   STDOUT_FILENO
-  #define STDOUT_FILENO 1
-#endif
+#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
 
 static struct    termios TerminalAttr;
 static struct    termios TerminalSavedAttr;
@@ -131,31 +120,3 @@ RESULT    dTerminalExit(void)
 printf("dTerminalExit\n");
 	return (OK);
 }
-
-#else
-
-RESULT    dTerminalInit(void)
-{
-	return (OK);
-}
-
-
-RESULT    dTerminalRead(UBYTE *pData)
-{
-	return (FAIL);
-}
-
-
-RESULT    dTerminalWrite(UBYTE *pData,UWORD Cnt)
-{
-	return (OK);
-}
-
-
-RESULT    dTerminalExit(void)
-{
-	return (OK);
-}
-
-
-#endif

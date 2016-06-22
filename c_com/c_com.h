@@ -1551,16 +1551,8 @@ typedef struct
 
   UBYTE     BrickName[vmBRICKNAMESIZE];
 
-}COM_GLOBALS;
+} COM_GLOBALS;
 
-#if       (HARDWARE == SIMULATION)
-  extern COM_GLOBALS * gComInstance;
-  #define ComInstance (*gComInstance)
-
-  void setComInstance(COM_GLOBALS * _Instance);
-  COM_GLOBALS * getComInstance();
-#else
-  extern COM_GLOBALS ComInstance;
-#endif
+extern COM_GLOBALS ComInstance;
 
 #endif /* C_COM_H_ */
