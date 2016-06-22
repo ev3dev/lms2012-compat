@@ -345,6 +345,7 @@ typedef   struct
   GRAPH     Graph;
   TXTBOX    Txtbox;
 
+  int       ButtonFile;
   int       PowerFile;
   int       UiFile;
   int       AdcFile;

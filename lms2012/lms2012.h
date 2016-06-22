@@ -112,6 +112,8 @@ Development with debug messages:    DEBUG defined, TERMINAL_ENABLED = 1, DEBUG_U
 #ifndef   LMS2012_H_
 #define   LMS2012_H_
 
+#include <libudev.h>
+
 //  HARDWARE PLATFORM
 
 #define   EP2                   4       //!< Schematics revision D
@@ -1464,6 +1466,8 @@ typedef struct
   ULONG     UsbstickTimer;
   DATA8     UsbstickOk;
 #endif
+
+  struct udev *udev;                      //!< Global udev context
 
   LCD       LcdBuffer;                    //!< Copy of last LCD update
   DATA8     LcdUpdated;                   //!< LCD updated

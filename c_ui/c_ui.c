@@ -164,6 +164,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -179,6 +180,8 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <time.h>
+
+#include <linux/input.h>
 
 #ifdef    DEBUG_C_UI
 #define   DEBUG
@@ -619,6 +622,58 @@ void      cUiAlive(void)
   UiInstance.SleepTimer  =  0;
 }
 
+static int cUiOpenButtonFile(void)
+{
+  struct  udev_enumerate *enumerate;
+  struct  udev_list_entry *list;
+  int file = -1;
+
+  enumerate = udev_enumerate_new(VMInstance.udev);
+  udev_enumerate_add_match_subsystem(enumerate, "input");
+  udev_enumerate_add_match_sysname(enumerate, "input*");
+  // We are looking for a device that has only UP, DOWN, LEFT, RIGHT, ENTER,
+  // and BACKSPACE
+  udev_enumerate_add_match_property(enumerate, "KEY", "1680 0 0 10004000");
+  udev_enumerate_scan_devices(enumerate);
+  list = udev_enumerate_get_list_entry(enumerate);
+  if (list == NULL) {
+    fprintf(stderr, "Failed to get button input device\n");
+  } else {
+    // just taking the first match in the list
+    const char *path = udev_list_entry_get_name(list);
+    struct udev_device *input_device;
+
+    input_device = udev_device_new_from_syspath(VMInstance.udev, path);
+    udev_enumerate_unref(enumerate);
+    enumerate = udev_enumerate_new(VMInstance.udev);
+    udev_enumerate_add_match_subsystem(enumerate, "input");
+    udev_enumerate_add_match_sysname(enumerate, "event*");
+    udev_enumerate_add_match_parent(enumerate, input_device);
+    udev_enumerate_scan_devices(enumerate);
+    list = udev_enumerate_get_list_entry(enumerate);
+    if (list == NULL) {
+      fprintf(stderr, "Failed to get button event device\n");
+    } else {
+      // again, there should only be one match
+      struct udev_device *event_device;
+
+      path = udev_list_entry_get_name(list);
+      event_device = udev_device_new_from_syspath(VMInstance.udev, path);
+
+      path = udev_device_get_devnode(event_device);
+      file = open(path, O_RDONLY);
+      if (file == -1) {
+        fprintf(stderr, "Could not open %s: %s\n", path, strerror(errno));
+      }
+
+      udev_device_unref(event_device);
+    }
+    udev_device_unref(input_device);
+  }
+  udev_enumerate_unref(enumerate);
+
+  return file;
+}
 
 RESULT    cUiInit(void)
 {
@@ -682,6 +737,7 @@ RESULT    cUiInit(void)
 
   Result          =  dTerminalInit();
 
+  UiInstance.ButtonFile =  cUiOpenButtonFile();
   UiInstance.PowerFile  =  open(POWER_DEVICE_NAME,O_RDWR);
   UiInstance.AdcFile    =  open(ANALOG_DEVICE_NAME,O_RDWR | O_SYNC);
 
@@ -857,6 +913,10 @@ RESULT    cUiExit(void)
 
   Result  =  dTerminalExit();
 
+  if (UiInstance.ButtonFile >= MIN_HANDLE) {
+    close(UiInstance.ButtonFile);
+  }
+
   if (UiInstance.AdcFile >= MIN_HANDLE)
   {
     munmap(UiInstance.pAnalog,sizeof(ANALOG));
@@ -873,10 +933,51 @@ RESULT    cUiExit(void)
   return (Result);
 }
 
+// map EV3 buttons to Linux input keys
+static const int Button2KeyMap[BUTTONS] = {
+  [0] = KEY_UP,         /* UP_BUTTON */
+  [1] = KEY_ENTER,      /* ENTER_BUTTON */
+  [2] = KEY_DOWN,       /* DOWN_BUTTON */
+  [3] = KEY_RIGHT,      /* RIGHT_BUTTON */
+  [4] = KEY_LEFT,       /* LEFT_BUTTON */
+  [5] = KEY_BACKSPACE,  /* BACK_BUTTON */
+};
 
 void      cUiUpdateButtons(DATA16 Time)
 {
   DATA8   Button;
+
+  // TODO: Ideally, we would be using evdev or ev3devKit to get input events
+  // rather than manually polling the key state like we are doing here with
+  // the EVIOCGKEY ioctl
+
+  // if we have real hardware buttons, check them
+  if (UiInstance.ButtonFile >= MIN_HANDLE) {
+    unsigned char state[(KEY_MAX + 7) / 8] = { 0 };
+
+    ioctl(UiInstance.ButtonFile, EVIOCGKEY(sizeof(state)), state);
+    for (Button = 0; Button < BUTTONS; Button++) {
+      int key = Button2KeyMap[Button];
+
+      if (state[key / 8] == 1 << (key % 8)) {
+        // button is pressed
+        if (UiInstance.ButtonDebounceTimer[Button] == 0) {
+          UiInstance.ButtonState[Button] = BUTTON_ACTIVE;
+        }
+        UiInstance.ButtonDebounceTimer[Button] = BUTTON_DEBOUNCE_TIME;
+      } else {
+        // Button is not pressed
+        if (UiInstance.ButtonDebounceTimer[Button] > 0) {
+          UiInstance.ButtonDebounceTimer[Button] -= Time;
+
+          if (UiInstance.ButtonDebounceTimer[Button] <= 0) {
+            UiInstance.ButtonState[Button] &= ~BUTTON_ACTIVE;
+            UiInstance.ButtonDebounceTimer[Button] = 0;
+          }
+        }
+      }
+    }
+  }
 
   for (Button = 0;Button < BUTTONS;Button++) {
     // Check virtual buttons (hardware, direct command, PC)

@@ -2117,6 +2117,8 @@ RESULT    mSchedInit(int argc,char *argv[])
   struct  timeval tv;
 #endif
 
+  VMInstance.udev = udev_new();
+
 #ifdef ENABLE_STATUS_TEST
   VMInstance.Status  =  0x00;
 #endif
@@ -2606,6 +2608,8 @@ RESULT    mSchedExit(void)
     close(VMInstance.AdcFile);
   }
 #endif
+
+  udev_unref(VMInstance.udev);
 
   return (RESULT)(Result);
 }
