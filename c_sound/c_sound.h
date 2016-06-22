@@ -61,28 +61,6 @@ typedef enum {
 #define TONE_LEVEL_11  88  // 88%
 #define TONE_LEVEL_12  96  // 96%
 
-
-
-
-void      cSoundInitAdPcm(void);
-
-RESULT    cSoundInit(void);
-
-RESULT    cSoundOpen(void);
-
-RESULT    cSoundUpdate(void);
-
-RESULT    cSoundClose(void);
-
-RESULT    cSoundExit(void);
-
-void      cSoundEntry(void);
-
-void      cSoundReady(void);
-
-void      cSoundTest(void);
-
-
 #define FILEFORMAT_RAW_SOUND      0x0100
 #define FILEFORMAT_ADPCM_SOUND    0x0101
 #define SOUND_MODE_ONCE           0x00
@@ -119,5 +97,14 @@ typedef struct
 } SOUND_GLOBALS;
 
 extern SOUND_GLOBALS SoundInstance;
+
+RESULT cSoundInit(void);
+RESULT cSoundOpen(void);
+RESULT cSoundUpdate(void);
+RESULT cSoundClose(void);
+RESULT cSoundExit(void);
+void cSoundEntry(void);
+void cSoundReady(void);
+void cSoundTest(void);
 
 #endif /* C_SOUND_H_ */
