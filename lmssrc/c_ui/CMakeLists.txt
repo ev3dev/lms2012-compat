@@ -42,7 +42,7 @@ set (POP2_SOURCE            144x48_POP2)
 set (POP3_SOURCE            144x65_POP3)
 set (PCApp_SOURCE           24x12_PCApp)
 
-find_program (IMAGE_MAGICK_CONVERT convert)
+find_program (IMAGEMAGICK_CONVERT convert)
 
 foreach (icon ${C_UI_ICONS})
     set (source ${${icon}_SOURCE})
@@ -54,7 +54,7 @@ foreach (icon ${C_UI_ICONS})
     list (APPEND C_UI_XBM_LIST ${xbm})
 
     add_custom_command (OUTPUT ${xbm}
-        COMMAND ${IMAGE_MAGICK_CONVERT} ${bmp} ${xbm}
+        COMMAND ${IMAGEMAGICK_CONVERT} ${bmp} ${xbm}
         DEPENDS ${bmp}
     )
 endforeach ()
