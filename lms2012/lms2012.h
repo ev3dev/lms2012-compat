@@ -1179,33 +1179,6 @@ TSTUART;
 #define   TST_UART_READ           _IOWR('t',9,TSTUART)
 #define   TST_UART_WRITE          _IOWR('t',10,TSTUART)
 
-
-
-
-/*! \page UiModuleMemory
- *
- *  <b>     Shared Memory </b>
- *
- *  <hr size="1"/>
- *
- *  It is possible to get a pointer to the ui button states for use in userspace
- *  this pointer will point to a struct and the layout is following:
- *
- *  \verbatim
- */
-
-typedef   struct
-{
-  DATA8   Pressed[BUTTONS];                   //!< Pressed status
-}
-UI;
-
-/*\endverbatim
- *
- *  \n
- */
-
-
 #define   LCD_BUFFER_SIZE (((LCD_WIDTH + 7) / 8) * LCD_HEIGHT)
 #define   LCD_TOPLINE_SIZE (((LCD_WIDTH + 7) / 8) * (TOPLINE_HEIGHT + 1))
 
