@@ -12,7 +12,6 @@ target_include_directories (c_ui PUBLIC
     ${CMAKE_SOURCE_DIR}/c_input
     ${CMAKE_SOURCE_DIR}/c_memory
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${C_COM_DEPS_INCLUDE_DIRS}
 )
 
 set (C_UI_ICONS
