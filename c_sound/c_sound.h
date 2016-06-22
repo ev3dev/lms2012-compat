@@ -28,15 +28,14 @@
 
 #define STEP_SIZE_TABLE_ENTRIES 89
 #define INDEX_TABLE_ENTRIES     16
-enum
-{
+typedef enum {
   SOUND_STOPPED,
   SOUND_SETUP_FILE,
   SOUND_FILE_PLAYING,
   SOUND_FILE_LOOPING,
   SOUND_TONE_PLAYING,
   SOUND_TONE_LOOPING
-}SOUND_STATES;
+} SOUND_STATES;
 
 // Percentage to SoundLevel -
 // Adjust the percentage, if non-linear SPL response is needed
@@ -101,7 +100,7 @@ typedef struct
   int     hSoundFile;
 
   DATA8   SoundOwner;
-  DATA8   cSoundState;
+  SOUND_STATES  cSoundState;
   SOUND   Sound;
   SOUND	 	*pSound;
   UWORD	  BytesLeft;
