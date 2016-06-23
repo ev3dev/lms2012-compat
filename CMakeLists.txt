@@ -3,6 +3,15 @@ project (lms2012-compat C)
 
 add_compile_options (-Wall -Werror)
 
+find_package (PkgConfig REQUIRED)
+pkg_check_modules (LMS2012_DEPS REQUIRED
+    alsa
+    bluez
+    dbus-1
+    libudev
+    libusb-1.0
+)
+
 add_subdirectory (c_com)
 add_subdirectory (c_dynload)
 add_subdirectory (c_input)

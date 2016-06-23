@@ -1,7 +1,4 @@
 
-find_package (PkgConfig REQUIRED)
-pkg_check_modules (LMS2012_DEPS REQUIRED bluez dbus-1 libusb-1.0 libudev)
-
 set (SOURCE_FILES
     c_branch.c
     c_compare.c

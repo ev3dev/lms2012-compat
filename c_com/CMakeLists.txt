@@ -1,7 +1,4 @@
 
-find_package (PkgConfig REQUIRED)
-pkg_check_modules (C_COM_DEPS REQUIRED bluez dbus-1 libusb-1.0)
-
 set (SOURCE_FILES
     c_bt.c
     c_com.c
@@ -20,5 +17,5 @@ target_include_directories (c_com PUBLIC
     ${CMAKE_SOURCE_DIR}/c_input
     ${CMAKE_SOURCE_DIR}/c_memory
     ${CMAKE_SOURCE_DIR}/c_output
-    ${C_COM_DEPS_INCLUDE_DIRS}
+    ${LMS2012_DEPS_INCLUDE_DIRS}
 )
