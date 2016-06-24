@@ -38,7 +38,7 @@ RESULT    dTerminalInit(void)
 	{
 		TerminalSavedAttr         =  TerminalAttr;
 
-    TerminalAttr.c_lflag     &= ~(ECHO | ICANON | IEXTEN | ISIG);
+    TerminalAttr.c_lflag     &= ~(ECHO | ICANON | IEXTEN);
     TerminalAttr.c_lflag     |= ECHO;
 		TerminalAttr.c_iflag     &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
 		TerminalAttr.c_cflag     &= ~(CSIZE | PARENB);
