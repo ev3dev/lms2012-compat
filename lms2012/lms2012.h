@@ -346,9 +346,6 @@ char      *HwId = "03";
 #define   USBHOST_DEVICE        "lms_usbhost"         //!< USB host
 #define   USBHOST_DEVICE_NAME   "/dev/lms_usbhost"    //!< USB host
 
-#define   SOUND_DEVICE          "lms_sound"           //!< SOUND device name
-#define   SOUND_DEVICE_NAME     "/dev/lms_sound"      //!< SOUND device
-
 #define   IIC_DEVICE            "lms_iic"             //!< IIC device name
 #define   IIC_DEVICE_NAME       "/dev/lms_iic"        //!< IIC device
 
@@ -521,22 +518,6 @@ char      *HwId = "03";
 #define   UPDATE_MEMORY         200                   //!< Update memory size   [mS]
 #define   UPDATE_SDCARD         500                   //!< Update sdcard size   [mS]
 #define   UPDATE_USBSTICK       500                   //!< Update usbstick size [mS]
-
-
-// Per start of (polution) defines
-#define   MAX_SOUND_DATA_SIZE   250
-#define   SOUND_CHUNK           250
-#define SOUND_ADPCM_CHUNK       125
-#define SOUND_MASTER_CLOCK  132000000
-#define SOUND_TONE_MASTER_CLOCK 1031250
-#define SOUND_MIN_FRQ       250
-#define SOUND_MAX_FRQ       10000
-#define SOUND_MAX_LEVEL     8
-#define SOUND_FILE_BUFFER_SIZE  SOUND_CHUNK + 2 // 12.8 mS @ 8KHz
-#define SOUND_BUFFER_COUNT  3
-#define SOUND_FILE_FORMAT_NORMAL    0x0100  // RSO-file
-#define SOUND_FILE_FORMAT_COMPRESSED  0x0101  // RSO-file compressed
-// Per end of defines
 
 
 /*!
@@ -1205,31 +1186,6 @@ LCD;
  *
  *  \n
  */
-
-
-/*! \page SoundModuleMemory
- *
- *  <b>     Shared Memory </b>
- *
- *  <hr size="1"/>
- *
- *  It is possible to get a pointer to the sound ready flag for use in userspace
- *  this pointer will point to a struct and the layout is following:
- *
- *  \verbatim
- */
-
-typedef   struct
-{
-  DATA8   Status;                       //!< Status
-}
-SOUND;
-
-/*\endverbatim
- *
- *  \n
- */
-
 
 /*! \page UsbModuleMemory
  *

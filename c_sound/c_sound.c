@@ -2,6 +2,7 @@
  * LEGO® MINDSTORMS EV3
  *
  * Copyright (C) 2010-2013 The LEGO Group
+ * Copyright (C) 2016 David Lechner <david@lechnology.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,70 +35,247 @@
  *
  */
 
-#include "c_sound.h"
 #include "lms2012.h"
+#include "c_sound.h"
 
-#include <stdio.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <sys/mman.h>
 
-SOUND_GLOBALS SoundInstance;
+#include <asoundlib.h>
+#include <linux/input.h>
 
 #ifdef    DEBUG_C_SOUND
 #define   DEBUG
 #endif
 
-static const SWORD StepSizeTable[STEP_SIZE_TABLE_ENTRIES] = {
-    7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
-    19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
-    50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
-    130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
-    337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
-    876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
-    2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
-    5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
-    15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
-};
+#define DEFAULT_SOUND_CARD          "default"
+#define SOUND_FILE_BUFFER_SIZE      128
 
-static const SWORD IndexTable[INDEX_TABLE_ENTRIES] = {
-    -1, -1, -1, -1, 2, 4, 6, 8,
-    -1, -1, -1, -1, 2, 4, 6, 8
-};
+#define SCALE_VOLUME(vol,min,max)   ((vol) * ((max) - (min)) / 100 + (min))
 
-RESULT    cSoundInit(void)
+typedef enum {
+    SOUND_STOPPED,
+    SOUND_FILE_PLAYING,
+    SOUND_FILE_LOOPING,
+    SOUND_TONE_PLAYING,
+} SOUND_STATES;
+
+typedef struct {
+    int hSoundFile;
+    int event_fd;
+    snd_pcm_t *pcm;
+    snd_mixer_t *mixer;
+    snd_mixer_elem_t *pcm_mixer_elem;
+    snd_mixer_elem_t *tone_mixer_elem;
+    long save_pcm_volume;
+    long save_tone_volume;
+
+    DATA8 SoundOwner;
+    SOUND_STATES cSoundState;
+    ULONG ToneStartTime;
+    UWORD ToneDuration;
+    UWORD SoundFileFormat;
+    UWORD SoundDataLength;
+    UWORD SoundSampleRate;
+    UWORD SoundPlayMode;
+    SWORD ValPrev;
+    SWORD Index;
+    SWORD Step;
+    size_t BytesToWrite;
+    char PathBuffer[MAX_FILENAME_SIZE];
+    UBYTE SoundData[SOUND_FILE_BUFFER_SIZE];
+} SOUND_GLOBALS;
+
+SOUND_GLOBALS SoundInstance;
+
+// TODO: this function is duplicated from cUiOpenButtonFile - it can be shared
+static int cSoundOpenEventFile(void)
 {
-  RESULT  Result = FAIL;
-  SOUND  *pSoundTmp;
-  int    SndFile;
+    struct udev_enumerate *enumerate;
+    struct udev_list_entry *list;
+    int file = -1;
 
-  SoundInstance.SoundDriverDescriptor = -1;
-  SoundInstance.hSoundFile            = -1;
-  SoundInstance.pSound  =  &SoundInstance.Sound;
+    enumerate = udev_enumerate_new(VMInstance.udev);
+    udev_enumerate_add_match_subsystem(enumerate, "input");
+    udev_enumerate_add_match_sysname(enumerate, "input*");
+    // We are looking for a device that has SND_BELL and SND_TONE
+    udev_enumerate_add_match_property(enumerate, "SND", "6");
+    udev_enumerate_scan_devices(enumerate);
+    list = udev_enumerate_get_list_entry(enumerate);
+    if (list == NULL) {
+        fprintf(stderr, "Failed to get sound input device\n");
+    } else {
+        // just taking the first match in the list
+        const char *path = udev_list_entry_get_name(list);
+        struct udev_device *input_device;
 
-  // Create a Shared Memory entry for signaling the driver state BUSY or NOT BUSY
+        input_device = udev_device_new_from_syspath(VMInstance.udev, path);
+        udev_enumerate_unref(enumerate);
+        enumerate = udev_enumerate_new(VMInstance.udev);
+        udev_enumerate_add_match_subsystem(enumerate, "input");
+        udev_enumerate_add_match_sysname(enumerate, "event*");
+        udev_enumerate_add_match_parent(enumerate, input_device);
+        udev_enumerate_scan_devices(enumerate);
+        list = udev_enumerate_get_list_entry(enumerate);
+        if (list == NULL) {
+            fprintf(stderr, "Failed to get sound event device\n");
+        } else {
+            // again, there should only be one match
+            struct udev_device *event_device;
 
-  SndFile = open(SOUND_DEVICE_NAME,O_RDWR | O_SYNC);
+            path = udev_list_entry_get_name(list);
+            event_device = udev_device_new_from_syspath(VMInstance.udev, path);
 
-  if(SndFile >= 0)
-  {
-    pSoundTmp  =  (SOUND*)mmap(0, sizeof(UWORD), PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, SndFile, 0);
+            path = udev_device_get_devnode(event_device);
+            file = open(path, O_WRONLY);
+            if (file == -1) {
+                fprintf(stderr, "Could not open %s: %s\n", path, strerror(errno));
+            }
 
-    if(pSoundTmp == MAP_FAILED)
-    {
-      LogErrorNumber(SOUND_SHARED_MEMORY);
+            udev_device_unref(event_device);
+        }
+        udev_device_unref(input_device);
     }
-    else
+    udev_enumerate_unref(enumerate);
+
+    return file;
+}
+
+/*
+ * cSoundPlayTone:
+ *
+ * Plays a tone using the Linux input event device.
+ *
+ * Specifying a frequency of 0 stops tone
+ *
+ * returns -1 if there was an error
+ */
+static int cSoundPlayTone(DATA16 frequency)
+{
+    struct input_event event = {
+        .time   = { 0 },
+        .type   = EV_SND,
+        .code   = SND_TONE,
+        .value  = frequency,
+    };
+
+    return write(SoundInstance.event_fd, &event, sizeof(event));
+}
+
+/*
+ * cSoundIsTonePlaying:
+ *
+ * returns a non-zero value if a tone is playing
+ */
+static int cSoundIsTonePlaying(void)
+{
+    unsigned char status = 0;
+
+    ioctl(SoundInstance.event_fd, EVIOCGSND(sizeof(status)), &status);
+
+    return status;
+}
+
+static void cSoundGetMixer()
+{
+    snd_mixer_t *mixer;
+    snd_mixer_elem_t *element;
+    const char *name;
+    int err;
+
+    err = snd_mixer_open(&mixer, 0);
+    if (err <  0) {
+        fprintf(stderr, "Failed to open mixer: %s\n", snd_strerror(err));
+        return;
+    }
+    err = snd_mixer_attach(mixer, DEFAULT_SOUND_CARD);
+    if (err < 0) {
+        fprintf(stderr, "Failed to attach mixer: %s\n", snd_strerror(err));
+        goto err1;
+    }
+    err = snd_mixer_selem_register(mixer, NULL, NULL);
+    if (err < 0) {
+        fprintf(stderr, "Failed to register mixer: %s\n", snd_strerror(err));
+        goto err1;
+    }
+    err = snd_mixer_load(mixer);
+    if (err < 0) {
+        fprintf(stderr, "Failed to load mixer: %s\n", snd_strerror(err));
+        goto err1;
+    }
+    for (element = snd_mixer_first_elem(mixer); element != NULL;
+         element = snd_mixer_elem_next(element))
     {
-      SoundInstance.pSound = pSoundTmp;
-      Result  =  OK;
+        name = snd_mixer_selem_get_name(element);
+        if (strcmp(name, "PCM") == 0) {
+            SoundInstance.pcm_mixer_elem = element;
+            snd_mixer_selem_get_playback_volume(element, SND_MIXER_SCHN_MONO,
+                                                &SoundInstance.save_pcm_volume);
+        } else if (strcmp(name, "Beep") == 0) {
+            SoundInstance.tone_mixer_elem = element;
+            snd_mixer_selem_get_playback_volume(element, SND_MIXER_SCHN_MONO,
+                                                &SoundInstance.save_tone_volume);
+        }
     }
 
-    close(SndFile);
-  }
+    if (!SoundInstance.pcm_mixer_elem) {
+        fprintf(stderr, "Could not find 'PCM' volume control\n");
+    }
+    if (!SoundInstance.tone_mixer_elem) {
+        fprintf(stderr, "Could not find 'Beep' volume control\n");
+    }
 
-  return (Result);
+    if (SoundInstance.pcm_mixer_elem || SoundInstance.tone_mixer_elem) {
+        // We only need to hang on to the mixer if we found one of the elements
+        // that we were looking for.
+        SoundInstance.mixer = mixer;
+        return;
+    }
+
+err1:
+    snd_mixer_free(mixer);
+}
+
+static snd_pcm_t *cSoundGetPcm(void)
+{
+    snd_pcm_t *pcm;
+    snd_pcm_format_t format;
+    int err;
+
+    err = snd_pcm_open(&pcm, DEFAULT_SOUND_CARD, SND_PCM_STREAM_PLAYBACK, 0);
+    if (err < 0) {
+        fprintf(stderr, "Failed to open PCM playback: %s\n", snd_strerror(err));
+        return NULL;
+    }
+
+    format = (SoundInstance.SoundFileFormat == SOUND_FILEFORMAT_ADPCM)
+        ? SND_PCM_FORMAT_IMA_ADPCM : SND_PCM_FORMAT_U8;
+    err = snd_pcm_set_params(pcm, format, SND_PCM_ACCESS_RW_INTERLEAVED,
+                             1, SoundInstance.SoundSampleRate, 1, 500000);
+    if (err < 0) {
+        fprintf(stderr, "Failed to set PCM hwparams: %s\n", snd_strerror(err));
+        goto err1;
+    }
+
+    return pcm;
+
+err1:
+    snd_pcm_close(pcm);
+
+    return NULL;
+}
+
+RESULT cSoundInit(void)
+{
+    SoundInstance.event_fd = cSoundOpenEventFile();
+    cSoundGetMixer();
+    SoundInstance.hSoundFile = -1;
+
+    return OK;
 }
 
 RESULT cSoundOpen(void)
@@ -107,94 +285,28 @@ RESULT cSoundOpen(void)
 
 RESULT cSoundClose(void)
 {
-    UWORD   BytesToWrite;
-    DATA8   SoundData[SOUND_FILE_BUFFER_SIZE + 1]; // Add up for CMD
-
-    SoundData[0] = BREAK;
-    BytesToWrite = 1;
-    SoundInstance.SoundDriverDescriptor = open(SOUND_DEVICE_NAME, O_WRONLY);
-    if (SoundInstance.SoundDriverDescriptor >= 0) {
-        write(SoundInstance.SoundDriverDescriptor, SoundData, BytesToWrite);
-        close(SoundInstance.SoundDriverDescriptor);
-        SoundInstance.SoundDriverDescriptor = -1;
-    }
     SoundInstance.cSoundState = SOUND_STOPPED;
+
+    cSoundPlayTone(0);
+
+    if (SoundInstance.pcm) {
+        snd_pcm_close(SoundInstance.pcm);
+        SoundInstance.pcm = NULL;
+    }
 
     if (SoundInstance.hSoundFile >= 0) {
         close(SoundInstance.hSoundFile);
-        SoundInstance.hSoundFile  = -1;
+        SoundInstance.hSoundFile = -1;
     }
 
     return OK;
 }
 
-static void cSoundInitAdPcm(void)
-{
-    // Reset ADPCM values to a known and initial value
-    SoundInstance.ValPrev = SOUND_ADPCM_INIT_VALPREV;
-    SoundInstance.Index = SOUND_ADPCM_INIT_INDEX;
-    SoundInstance.Step = StepSizeTable[SoundInstance.Index];
-}
-
-// Call ONLY when cSoundInitAdPcm has been called :-)
-static UBYTE cSoundGetAdPcmValue(UBYTE Delta)
-{
-    SWORD VpDiff;
-    UBYTE Sign;
-
-    SoundInstance.Step = StepSizeTable[SoundInstance.Index];
-    SoundInstance.Index += IndexTable[Delta]; // Find new index value (for later)
-
-    if (SoundInstance.Index < 0) {
-        SoundInstance.Index = 0;
-    } else {
-        if(SoundInstance.Index > (STEP_SIZE_TABLE_ENTRIES - 1)) {
-            SoundInstance.Index = STEP_SIZE_TABLE_ENTRIES - 1;
-        }
-    }
-
-    Sign = Delta & 8;                     // Separate sign
-    Delta = Delta & 7;                    // Separate magnitude
-
-    VpDiff = SoundInstance.Step >> 3;     // Compute difference and new predicted value
-
-    if (Delta & 4) {
-        VpDiff += SoundInstance.Step;
-    }
-    if (Delta & 2) {
-        VpDiff += SoundInstance.Step >> 1;
-    }
-    if (Delta & 1) {
-        VpDiff += SoundInstance.Step >> 2;
-    }
-
-    if (Sign) {
-        SoundInstance.ValPrev -= VpDiff;    // "Add" with sign
-    } else {
-        SoundInstance.ValPrev += VpDiff;
-    }
-
-    if (SoundInstance.ValPrev > 255) {       // Clamp value to 8-bit unsigned
-        SoundInstance.ValPrev = 255;
-    } else {
-        if (SoundInstance.ValPrev < 0) {
-            SoundInstance.ValPrev = 0;
-        }
-    }
-
-    SoundInstance.Step = StepSizeTable[SoundInstance.Index];  // Update step value
-
-    // Return decoded byte (nibble xlated -> 8 bit)
-    return (UBYTE)SoundInstance.ValPrev;
-}
-
 RESULT cSoundUpdate(void)
 {
     int     BytesRead;
-    int     i;
-    UBYTE   AdPcmData[SOUND_ADPCM_CHUNK]; // Temporary ADPCM input buffer
     UWORD   BytesToRead;
-    UBYTE   BytesWritten = 0;
+    // UBYTE   BytesWritten = 0;
     RESULT  Result = FAIL;
 
     switch(SoundInstance.cSoundState) {
@@ -202,153 +314,85 @@ RESULT cSoundUpdate(void)
         // Do nothing
         break;
 
-    case SOUND_SETUP_FILE:
-        // Keep hands off - should only appear, when needed... but...
-        break;
-
     case SOUND_FILE_LOOPING:
     case SOUND_FILE_PLAYING:
-        if (SoundInstance.BytesToWrite > 0) { // Do we have "NOT WRITTEN DATA"
-            // Yes, write the pending stuff to Driver
-            SoundInstance.SoundDriverDescriptor = open(SOUND_DEVICE_NAME, O_WRONLY);
-            if (SoundInstance.SoundDriverDescriptor >= 0) {
-                BytesWritten = write(SoundInstance.SoundDriverDescriptor,
-                                     SoundInstance.SoundData,
-                                     SoundInstance.BytesToWrite);
-                close(SoundInstance.SoundDriverDescriptor);
-                SoundInstance.SoundDriverDescriptor = -1;
-                Result = OK;
-                // Adjust BytesToWrite with Bytes actually written
-                if (BytesWritten > 1) {
-                    if(SoundInstance.SoundFileFormat == FILEFORMAT_ADPCM_SOUND) {
-                        SoundInstance.SoundDataLength -= (UBYTE)(BytesWritten / 2); // nibbles in file
-                        SoundInstance.BytesToWrite -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
-                    } else {
-                        SoundInstance.SoundDataLength -= BytesWritten;
-                        SoundInstance.BytesToWrite -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
-                    }
-                }
+        if (SoundInstance.BytesToWrite > 0) {
+            if (SoundInstance.BytesToWrite > SOUND_FILE_BUFFER_SIZE) {
+                BytesToRead = SOUND_FILE_BUFFER_SIZE;
             } else {
-                // ERROR!!!!! in writing to driver
-                SoundInstance.cSoundState = SOUND_STOPPED;  // Couldn't do the job :-(
-                if (SoundInstance.hSoundFile >= 0) {
-                    close(SoundInstance.hSoundFile);
-                    SoundInstance.hSoundFile = -1;
-                }
-            }
-        } else { // Get new sound data
-            // No pending stuff
-            if (SoundInstance.SoundDataLength > 0) { // Any new data?
-                SoundInstance.SoundData[0] = SERVICE;
-
-                if (SoundInstance.SoundFileFormat == FILEFORMAT_ADPCM_SOUND) {
-                    // Adjust the chunk size for ADPCM (nibbles) if necessary
-                    if (SoundInstance.SoundDataLength > SOUND_ADPCM_CHUNK) {
-                        BytesToRead = SOUND_ADPCM_CHUNK;
-                    } else {
-                        BytesToRead = SoundInstance.SoundDataLength;
-                    }
-
-                    if(SoundInstance.hSoundFile >= 0) { // Valid file
-                        BytesRead = read(SoundInstance.hSoundFile,AdPcmData,BytesToRead);
-
-                        for (i = 0; i < BytesRead; i++) {
-                            SoundInstance.SoundData[2*i + 1] = cSoundGetAdPcmValue((AdPcmData[i] >> 4) & 0x0F);
-                            SoundInstance.SoundData[2*i + 2] = cSoundGetAdPcmValue(AdPcmData[i] & 0x0F);
-                        }
-
-                        SoundInstance.BytesToWrite = (UBYTE) (1 + BytesRead * 2);
-                    }
-                } else { // Non compressed data
-                    // Adjust the chunk size if necessary
-                    if (SoundInstance.SoundDataLength > SOUND_CHUNK) {
-                        BytesToRead = SOUND_CHUNK;
-                    } else {
-                        BytesToRead = SoundInstance.SoundDataLength;
-                    }
-
-                    if(SoundInstance.hSoundFile >= 0) { // Valid file
-                        BytesRead = read(SoundInstance.hSoundFile,
-                                         &(SoundInstance.SoundData[1]),BytesToRead);
-
-                        SoundInstance.BytesToWrite = BytesRead + 1;
-                    }
-                }
-                // Now we have or should have some bytes to write down into the driver
-                SoundInstance.SoundDriverDescriptor = open(SOUND_DEVICE_NAME, O_WRONLY);
-                if (SoundInstance.SoundDriverDescriptor >= 0) {
-                    BytesWritten = write(SoundInstance.SoundDriverDescriptor,
-                                         SoundInstance.SoundData,
-                                         SoundInstance.BytesToWrite);
-                    close(SoundInstance.SoundDriverDescriptor);
-                    SoundInstance.SoundDriverDescriptor = -1;
-                    Result = OK;
-
-                    // Adjust BytesToWrite with Bytes actually written
-                    if (BytesWritten > 1) {
-                        if(SoundInstance.SoundFileFormat == FILEFORMAT_ADPCM_SOUND) {
-                            SoundInstance.SoundDataLength -= (UBYTE)(BytesWritten / 2); // nibbles in file
-                            SoundInstance.BytesToWrite -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
-                        } else {
-                            SoundInstance.SoundDataLength -= BytesWritten;
-                            SoundInstance.BytesToWrite -= (UBYTE)(BytesWritten + 1);   // Buffer data incl. CMD
-                        }
-                    }
-                } else {
-                  // ERROR!!!!! in writing to driver
-                  SoundInstance.cSoundState = SOUND_STOPPED;  // Couldn't do the job :-(
-                  if (SoundInstance.hSoundFile >= 0) {
-                      close(SoundInstance.hSoundFile);
-                      SoundInstance.hSoundFile = -1;
-                  }
-                }
-            } // end new data
-            else  // Shut down the SOUND stuff until new request/data i.e.
-            {     // SoundDataLength > 0
-                if (SoundInstance.cSoundState == SOUND_FILE_LOOPING) {
-                    lseek(SoundInstance.hSoundFile, 0, SEEK_SET);
-                    stat(SoundInstance.PathBuffer, &SoundInstance.FileStatus);
-                    SoundInstance.SoundDataLength = SoundInstance.FileStatus.st_size;
-                    // TODO make a new write here, so no zero-"sound"
-                } else {
-                    SoundInstance.cSoundState = SOUND_STOPPED;
-
-                    if (SoundInstance.hSoundFile >= 0) {
-                        close(SoundInstance.hSoundFile);
-                        SoundInstance.hSoundFile = -1;
-                    }
-
-                    if (SoundInstance.SoundDriverDescriptor >= 0) {
-                        close(SoundInstance.SoundDriverDescriptor);
-                        SoundInstance.SoundDriverDescriptor = -1;
-                    }
-                }
-            }
-        }   // No pending write
-        break;
-
-    case  SOUND_TONE_PLAYING:
-        // Check for duration done in d_sound :-)
-
-        if (SoundInstance.pSound->Status == OK) {
-            // DO the finished stuff
-            SoundInstance.cSoundState = SOUND_STOPPED;
-            if (SoundInstance.SoundDriverDescriptor >= 0) {
-                close(SoundInstance.SoundDriverDescriptor);
-                SoundInstance.SoundDriverDescriptor = -1;
+                BytesToRead = SoundInstance.BytesToWrite;
             }
 
             if (SoundInstance.hSoundFile >= 0) {
-                close(SoundInstance.hSoundFile);
-                SoundInstance.hSoundFile = -1;
-            }
+                int frames;
 
-            Result = OK;
+                // TODO: convert bytes to frames and vice versa in case of ADPCM
+
+                frames = snd_pcm_avail(SoundInstance.pcm);
+                if (frames < 0) {
+                    fprintf(stderr, "Error getting available frames: %s\n",
+                            snd_strerror(frames));
+                    break;
+                }
+                if (frames <= BytesToRead) {
+                    // if there not enough room, wait for the next loop
+                    Result = OK;
+                    break;
+                }
+
+                BytesRead = read(SoundInstance.hSoundFile,
+                                 SoundInstance.SoundData, BytesToRead);
+                frames = snd_pcm_writei(SoundInstance.pcm,
+                                        SoundInstance.SoundData,
+                                        BytesRead);
+                if (frames < 0) {
+                    frames = snd_pcm_recover(SoundInstance.pcm, frames, 0);
+                }
+                if (frames < 0) {
+                    fprintf(stderr, "Failed to write sound data to PCM: %s\n",
+                            snd_strerror(frames));
+                    cSoundClose();
+                    // Result != OK
+                    break;
+                } else {
+                    SoundInstance.BytesToWrite -= BytesRead;
+                }
+            }
+        } else {
+            // We have finished writing the file, so if we are looping, start
+            // over, otherwise wait for the sound to finish playing.
+
+            if (SoundInstance.cSoundState == SOUND_FILE_LOOPING) {
+                lseek(SoundInstance.hSoundFile, 8, SEEK_SET);
+                SoundInstance.BytesToWrite = SoundInstance.SoundDataLength;
+            } else {
+                snd_pcm_state_t state = snd_pcm_state(SoundInstance.pcm);
+
+                if (state != SND_PCM_STATE_RUNNING) {
+                    cSoundClose();
+                }
+            }
         }
+
+        Result = OK;
+
         break;
 
-    default:
-        // Do nothing
+    case SOUND_TONE_PLAYING:
+        if (cSoundIsTonePlaying()) {
+            ULONG elapsed = VMInstance.NewTime - SoundInstance.ToneStartTime;
+
+            if (elapsed >= SoundInstance.ToneDuration) {
+                // stop the tone
+                cSoundPlayTone(0);
+            } else {
+                // keep playing
+                break;
+            }
+        }
+        SoundInstance.cSoundState = SOUND_STOPPED;
+        Result = OK;
+
         break;
     }
 
@@ -357,6 +401,20 @@ RESULT cSoundUpdate(void)
 
 RESULT cSoundExit(void)
 {
+    // restore the system volume levels
+
+    if (SoundInstance.pcm_mixer_elem) {
+        snd_mixer_selem_set_playback_volume_all(SoundInstance.pcm_mixer_elem,
+                                                SoundInstance.save_pcm_volume);
+    }
+    if (SoundInstance.tone_mixer_elem) {
+        snd_mixer_selem_set_playback_volume_all(SoundInstance.tone_mixer_elem,
+                                                SoundInstance.save_tone_volume);
+    }
+    if (SoundInstance.mixer) {
+        snd_mixer_free(SoundInstance.mixer);
+    }
+
     return OK;
 }
 
@@ -398,210 +456,118 @@ RESULT cSoundExit(void)
 void cSoundEntry(void)
 {
     int     Cmd;
-    UWORD   Temp1;
-    UBYTE   Loop = FALSE;
+    UWORD   Volume;
     UWORD   Frequency;
     UWORD   Duration;
-
-    UWORD   BytesToWrite;
-    UWORD   BytesWritten = 0;
-    DATA8   SoundData[SOUND_FILE_BUFFER_SIZE + 1]; // Add up for CMD
-
     DATA8   *pFileName;
     char    PathName[MAX_FILENAME_SIZE];
     UBYTE   Tmp1;
     UBYTE   Tmp2;
+    UBYTE   Loop = FALSE;
 
-
-    Cmd =  *(DATA8*)PrimParPointer();
-
-    SoundData[0] = Cmd;  // General for all commands :-)
-    BytesToWrite = 0;
+    Cmd = *(DATA8*)PrimParPointer();
 
     switch(Cmd) {
     case TONE:
-        SoundInstance.pSound->Status = BUSY;
+        cSoundClose();
+
         SoundInstance.SoundOwner = CallingObjectId();
-        Temp1 = *(DATA8*)PrimParPointer();   // Volume level
 
-      // Scale the volume from 1-100% into 13 level steps
-      // Could be linear but prepared for speaker and -box adjustments... :-)
-      if (Temp1 > TONE_LEVEL_12) {
-          SoundData[1] = 13;
-      } else if (Temp1 > TONE_LEVEL_11) {
-          SoundData[1] = 12;
-      } else if (Temp1 > TONE_LEVEL_10) {
-          SoundData[1] = 11;
-      } else if (Temp1 > TONE_LEVEL_9) {
-          SoundData[1] = 10;
-      } else if (Temp1 > TONE_LEVEL_8) {
-          SoundData[1] = 9;
-      } else if (Temp1 > TONE_LEVEL_7) {
-          SoundData[1] = 8;
-      } else if (Temp1 > TONE_LEVEL_6) {
-          SoundData[1] = 7;
-      } else if (Temp1 > TONE_LEVEL_5) {
-          SoundData[1] = 6;
-      } else if (Temp1 > TONE_LEVEL_4) {
-          SoundData[1] = 5;
-      } else if (Temp1 > TONE_LEVEL_3) {
-          SoundData[1] = 4;
-      } else if (Temp1 > TONE_LEVEL_2) {
-          SoundData[1] = 3;
-      } else if (Temp1 > TONE_LEVEL_1) {
-          SoundData[1] = 2;
-      } else if (Temp1 > 0) {
-          SoundData[1] = 1;
-      } else {
-          SoundData[1] = 0;
-      }
+        Volume = *(DATA8*)PrimParPointer();
+        Frequency = *(DATA16*)PrimParPointer();
+        Duration = *(DATA16*)PrimParPointer();
 
-      Frequency    = *(DATA16*)PrimParPointer();
-      Duration     = *(DATA16*)PrimParPointer();
-      SoundData[2] = (UBYTE)(Frequency);
-      SoundData[3] = (UBYTE)(Frequency >> 8);
-      SoundData[4] = (UBYTE)(Duration);
-      SoundData[5] = (UBYTE)(Duration >> 8);
-      BytesToWrite = 6;
-      SoundInstance.cSoundState = SOUND_TONE_PLAYING;
-      break;
+        if (SoundInstance.tone_mixer_elem) {
+            long min, max;
+
+            snd_mixer_selem_get_playback_volume_range(SoundInstance.tone_mixer_elem,
+                                                      &min, &max);
+            snd_mixer_selem_set_playback_volume_all(SoundInstance.tone_mixer_elem,
+                                                    SCALE_VOLUME(Volume, min, max));
+        }
+
+        SoundInstance.ToneStartTime = VMInstance.NewTime;
+        SoundInstance.ToneDuration = Duration;
+        if (cSoundPlayTone(Frequency) != -1) {
+            SoundInstance.cSoundState = SOUND_TONE_PLAYING;
+        }
+
+        break;
 
     case BREAK:
-        //SoundData[0] = Cmd;
-        BytesToWrite = 1;
-        SoundInstance.cSoundState = SOUND_STOPPED;
-
-        if (SoundInstance.hSoundFile >= 0) {
-          close(SoundInstance.hSoundFile);
-          SoundInstance.hSoundFile = -1;
-        }
+        cSoundClose();
 
         break;
 
     case REPEAT:
         Loop = TRUE;
-        SoundData[0] = PLAY;  // Yes, but looping :-)
         // Fall through
     case PLAY:
-        // If SoundFile is Flood filled, we must politely
-        // close the active handle - else we acts as a "BUG"
-        // eating all the crops (handles) ;-)
-
-        SoundInstance.cSoundState = SOUND_STOPPED;  // Yes but only shortly
-
-        if (SoundInstance.hSoundFile >= 0) { // An active handle?
-          close(SoundInstance.hSoundFile);   // No more use
-          SoundInstance.hSoundFile = -1;     // Signal it
-        }
+        cSoundClose();
 
         SoundInstance.SoundOwner = CallingObjectId();
 
-        Temp1 = *(DATA8*)PrimParPointer();  // Volume level
-        // Scale the volume from 1-100% into 1 - 8 level steps
-        // Could be linear but prepared for speaker and -box adjustments... :-)
-        if (Temp1 > SND_LEVEL_7) {
-            SoundData[1] = 8;
-        } else if (Temp1 > SND_LEVEL_6) {
-            SoundData[1] = 7;
-        } else if (Temp1 > SND_LEVEL_5) {
-            SoundData[1] = 6;
-        } else if (Temp1 > SND_LEVEL_4) {
-            SoundData[1] = 5;
-        } else if (Temp1 > SND_LEVEL_3) {
-            SoundData[1] = 4;
-        } else if (Temp1 > SND_LEVEL_2) {
-            SoundData[1] = 3;
-        } else if (Temp1 > SND_LEVEL_1) {
-            SoundData[1] = 2;
-        } else if (Temp1 > 0) {
-            SoundData[1] = 1;
-        } else {
-            SoundData[1] = 0;
+        Volume = *(DATA8*)PrimParPointer();
+        pFileName = (DATA8*)PrimParPointer();
+
+        if (SoundInstance.pcm_mixer_elem) {
+            long min, max;
+
+            snd_mixer_selem_get_playback_volume_range(SoundInstance.pcm_mixer_elem,
+                                                      &min, &max);
+            snd_mixer_selem_set_playback_volume_all(SoundInstance.pcm_mixer_elem,
+                                                    SCALE_VOLUME(Volume, min, max));
         }
 
-        // Get filename
-        pFileName    = (DATA8*)PrimParPointer();
-
-        if (pFileName != NULL) { // We should have a valid filename
+        if (pFileName != NULL) {
             // Get Path and concatenate
 
-            PathName[0]  =  0;
+            PathName[0] = 0;
             if (pFileName[0] != '.') {
-              GetResourcePath(PathName, MAX_FILENAME_SIZE);
-              sprintf(SoundInstance.PathBuffer, "%s%s.rsf", (char*)PathName, (char*)pFileName);
+                GetResourcePath(PathName, MAX_FILENAME_SIZE);
+                sprintf(SoundInstance.PathBuffer, "%s%s.rsf", (char*)PathName,
+                        (char*)pFileName);
             } else {
-              sprintf(SoundInstance.PathBuffer, "%s.rsf", (char*)pFileName);
+                sprintf(SoundInstance.PathBuffer, "%s.rsf", (char*)pFileName);
             }
 
             // Open SoundFile
 
-            SoundInstance.hSoundFile = open(SoundInstance.PathBuffer,O_RDONLY,0666);
+            SoundInstance.hSoundFile = open(SoundInstance.PathBuffer, O_RDONLY,
+                                            0666);
 
             if (SoundInstance.hSoundFile >= 0) {
-              // Get actual FileSize
-              stat(SoundInstance.PathBuffer, &SoundInstance.FileStatus);
-              SoundInstance.SoundFileLength = SoundInstance.FileStatus.st_size;
+                // BIG Endianess
 
-              // BIG Endianess
+                read(SoundInstance.hSoundFile, &Tmp1, 1);
+                read(SoundInstance.hSoundFile, &Tmp2, 1);
+                SoundInstance.SoundFileFormat = (UWORD)Tmp1 << 8 | (UWORD)Tmp2;
 
-              read(SoundInstance.hSoundFile, &Tmp1, 1);
-              read(SoundInstance.hSoundFile, &Tmp2, 1);
-              SoundInstance.SoundFileFormat = (UWORD)Tmp1 << 8 | (UWORD)Tmp2;
+                read(SoundInstance.hSoundFile, &Tmp1, 1);
+                read(SoundInstance.hSoundFile, &Tmp2, 1);
+                SoundInstance.SoundDataLength = (UWORD)Tmp1 << 8 | (UWORD)Tmp2;
 
-              read(SoundInstance.hSoundFile, &Tmp1, 1);
-              read(SoundInstance.hSoundFile, &Tmp2, 1);
-              SoundInstance.SoundDataLength = (UWORD)Tmp1 << 8 | (UWORD)Tmp2;
+                read(SoundInstance.hSoundFile, &Tmp1, 1);
+                read(SoundInstance.hSoundFile, &Tmp2, 1);
+                SoundInstance.SoundSampleRate = (UWORD)Tmp1 << 8 | (UWORD)Tmp2;
 
-              read(SoundInstance.hSoundFile, &Tmp1, 1);
-              read(SoundInstance.hSoundFile, &Tmp2, 1);
-              SoundInstance.SoundSampleRate   =  (UWORD)Tmp1 << 8 | (UWORD)Tmp2;
+                read(SoundInstance.hSoundFile, &Tmp1, 1);
+                read(SoundInstance.hSoundFile, &Tmp2, 1);
+                SoundInstance.SoundPlayMode = (UWORD)Tmp1 << 8 | (UWORD)Tmp2;
 
-              read(SoundInstance.hSoundFile, &Tmp1, 1);
-              read(SoundInstance.hSoundFile, &Tmp2, 1);
-              SoundInstance.SoundPlayMode = (UWORD)Tmp1 << 8 | (UWORD)Tmp2;
-
-              SoundInstance.cSoundState = SOUND_SETUP_FILE;
-
-              if (SoundInstance.SoundFileFormat == FILEFORMAT_ADPCM_SOUND) {
-                cSoundInitAdPcm();
-              }
-
-              SoundInstance.pSound->Status = BUSY;
-              BytesToWrite = 2;
+                SoundInstance.pcm = cSoundGetPcm();
+                if (SoundInstance.pcm) {
+                    SoundInstance.cSoundState = Loop ? SOUND_FILE_LOOPING
+                                                     : SOUND_FILE_PLAYING;
+                    SoundInstance.BytesToWrite = SoundInstance.SoundDataLength;
+                }
+            } else {
+                fprintf(stderr, "Failed to open sound file: %s\n", strerror(errno));
             }
         } else {
-            //Do some ERROR-handling :-)
-            //NOT a valid name from above :-(
+            fprintf(stderr, "Sound file name was NULL\n");
         }
         break;
-
-      default:
-          BytesToWrite = 0; // An non-valid entry
-          break;
-    }
-
-    if (BytesToWrite > 0) {
-        SoundInstance.SoundDriverDescriptor = open(SOUND_DEVICE_NAME, O_WRONLY);
-        if (SoundInstance.SoundDriverDescriptor >= 0) {
-            BytesWritten = write(SoundInstance.SoundDriverDescriptor, SoundData, BytesToWrite);
-            close(SoundInstance.SoundDriverDescriptor);
-            SoundInstance.SoundDriverDescriptor = -1;
-
-            if (SoundInstance.cSoundState == SOUND_SETUP_FILE) { // The one and only situation
-              SoundInstance.BytesToWrite = 0;                    // Reset
-              if (Loop) {
-                SoundInstance.cSoundState = SOUND_FILE_LOOPING;
-              } else {
-                SoundInstance.cSoundState = SOUND_FILE_PLAYING;
-              }
-            }
-        } else {
-            SoundInstance.cSoundState = SOUND_STOPPED;           // Couldn't do the job :-(
-            SoundInstance.pSound->Status = OK;
-        }
-    } else {
-        BytesToWrite = BytesWritten;
-        BytesToWrite = 0;
     }
 }
 
@@ -621,7 +587,13 @@ void cSoundEntry(void)
 
 void cSoundTest(void)
 {
-    *(DATA8*)PrimParPointer() = (SoundInstance.pSound->Status == BUSY) ? 1 : 0;
+    DATA8 busy = 0;
+
+    if (SoundInstance.pcm || cSoundIsTonePlaying()) {
+        busy = 1;
+    }
+
+    *(DATA8*)PrimParPointer() = busy;
 }
 
 /*! \page   cSound
@@ -643,9 +615,7 @@ void cSoundReady(void)
 
     TmpIp = GetObjectIp();
 
-    if (SoundInstance.pSound->Status == BUSY) {
-        // If BUSY check for OVERRULED
-
+    if (SoundInstance.pcm || cSoundIsTonePlaying()) {
         // Rewind IP and set status
         DspStat = BUSYBREAK; // break the interpreter and waits busy
         SetDispatchStatus(DspStat);
