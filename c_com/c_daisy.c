@@ -433,7 +433,7 @@ RESULT cDaisyMotorDownStream(DATA8 *pData, DATA8 Length, DATA8 Layer, DATA8 Port
 			  printf("DaisyBusyFlags =\n\r");
 			  for(ii = 0; ii < 16; ii++)
 			            printf("%X, ",DaisyBusyFlags[ii]);
-			  printf("\r\n");
+			  printf("\n");
       #endif
 
 		}
@@ -848,13 +848,13 @@ void cDaisyCmd(RXBUF *pRxBuf, TXBUF *pTxBuf)
 
     		  	  	  	  	  	     int DebugP;
 
-    		  	  	  	  	  	     printf("DaisyBusyFlags DOWN:\r\n");
+    		  	  	  	  	  	     printf("DaisyBusyFlags DOWN:\n");
 
     		  	  	  	  	  	     for(DebugP = 0; DebugP < 16; DebugP++)
     		  	  	  	  	  	       printf("%X, ", DaisyBusyFlags[DebugP]);
 
-    		  	  	  	  	  	     printf("\r\nCookie setting done..(*pDaisyCmd).Layer == %d OwnLayer == %d\r\n", (*pDaisyCmd).Layer, cDaisyOwnLayer);
-    		  	  	  	  	  	     printf("\r\n");
+    		  	  	  	  	  	     printf("\nCookie setting done..(*pDaisyCmd).Layer == %d OwnLayer == %d\n", (*pDaisyCmd).Layer, cDaisyOwnLayer);
+    		  	  	  	  	  	     printf("\n");
                                  #endif
 
     		  	  	  	  	  	     if((*pDaisyCmd).Layer == 1)
@@ -971,7 +971,7 @@ RESULT cDaisyCreateSpeedInfo(void)
   UsbFile = open(USBDEV_DEVICE_NAME,O_RDWR | O_SYNC);
 
   #ifdef DEBUG
-    printf("UsbFile = %d\r\n", UsbFile);
+    printf("UsbFile = %d\n", UsbFile);
   #endif
 
   if(UsbFile >= 0)
@@ -1007,7 +1007,7 @@ RESULT cDaisyWriteTypeDownstream(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mode)
 	int ReturnValue = DAISY_WR_ERROR;
 
 	#ifdef DEBUG
-		printf("Writing TYPE/MODE to SLAVE - Layer = %d, Port = %d, Type = %d, Mode = %d\r\n", Layer, Port, Type, Mode);
+		printf("Writing TYPE/MODE to SLAVE - Layer = %d, Port = %d, Type = %d, Mode = %d\n", Layer, Port, Type, Mode);
 	#endif
 
 	cDaisyResetBusyTiming();  // Make new prioritized access to channel
@@ -1246,7 +1246,7 @@ RESULT cDaisyInit(void)
 int cDaisyWriteUnlockToSlave()
 {
   #ifdef DEBUG
-    printf("Writing UNLOCK to SLAVE\r\n");
+    printf("Writing UNLOCK to SLAVE\n");
   #endif
 
   DataOut[LEN1]   = 4;
@@ -1291,7 +1291,7 @@ RESULT    cDaisyGetDeviceInfo(DATA8 Length,UBYTE *pInfo)
     if(Length > MAX_DEVICE_INFOLENGTH) Length = MAX_DEVICE_INFOLENGTH;
 
 	  #ifdef DEBUG
-			printf("%s\r\n", &(DaisyInfoBuffer[0]));
+			printf("%s\n", &(DaisyInfoBuffer[0]));
 	  #endif
 
     memcpy(pInfo, DaisyInfoBuffer, Length);
@@ -1326,7 +1326,7 @@ RESULT    cDaisySetDeviceInfo(DATA8 Length,UBYTE *pInfo)
 				int loop;
 				for(loop = 0; loop < Length; loop++)
 				{
-					printf("DaisyInfoBuffer[%d] = 0x%x\r\n", loop, DaisyInfoBuffer[loop]);
+					printf("DaisyInfoBuffer[%d] = 0x%x\n", loop, DaisyInfoBuffer[loop]);
 				}
 			#endif
 
@@ -1412,7 +1412,7 @@ void cDaisyPushUpStream(void)
 
 			#ifdef DEBUG
 			  if(DeviceNo == 1)
-				  printf("Self DATA (PUSH) collected here: ReadLayerP: %d, ReadSensorP: %d, DeviceNo: %d, Status %d\r\n", ReadLayerPointer, ReadSensorPointer, DeviceNo, SensorResult);
+				  printf("Self DATA (PUSH) collected here: ReadLayerP: %d, ReadSensorP: %d, DeviceNo: %d, Status %d\n", ReadLayerPointer, ReadSensorPointer, DeviceNo, SensorResult);
 			#endif
 
 		}
@@ -1422,7 +1422,7 @@ void cDaisyPushUpStream(void)
 			// Remember layer is 1 offset (i.e. 0 == Layer 1, 1 == 2, so Read Array Layer 1 == read[1 - 1]
 
 	  	#ifdef DEBUG
-    	  printf("Array Data (PUSH) are collected here: ReadLayerPointer > 0: %d, ReadSensorPointer: %d, DeviceNo: %d - STATUS = %d\r\n", ReadLayerPointer, ReadSensorPointer, DeviceNo, DaisyBuffers[ReadLayerPointer - 1][ReadSensorPointer][0]);
+    	  printf("Array Data (PUSH) are collected here: ReadLayerPointer > 0: %d, ReadSensorPointer: %d, DeviceNo: %d - STATUS = %d\n", ReadLayerPointer, ReadSensorPointer, DeviceNo, DaisyBuffers[ReadLayerPointer - 1][ReadSensorPointer][0]);
 	  	#endif
 
     	memcpy(&(pDaisyReply->Status), (&(DaisyBuffers[ReadLayerPointer - 1][ReadSensorPointer])), DAISY_DEVICE_PAYLOAD_SIZE);
@@ -1613,7 +1613,7 @@ void DaisyAsyncWriteCallBack(struct libusb_transfer *WriteUsbTransfer)
   if( WriteUsbTransfer->status == LIBUSB_TRANSFER_COMPLETED )
   {
 	  #ifdef DEBUG
-	    printf("Did I reach callback?? 01\r\n");
+	    printf("Did I reach callback?? 01\n");
 	  #endif
 
 	  LastWriteResult = DAISY_WR_COMPLETED; // Done with Success
@@ -1628,7 +1628,7 @@ void DaisyAsyncWriteCallBack(struct libusb_transfer *WriteUsbTransfer)
 
       case LIBUSB_TRANSFER_TIMED_OUT:
     	  	  	  	  	  	  	  	    #ifdef DEBUG
-    	  	  	  	  	  	  	  	      printf("Did I reach callback?? 02\r\n");
+    	  	  	  	  	  	  	  	      printf("Did I reach callback?? 02\n");
 										                  #endif
 
     	  	  	  	  	  	  	  	    LastWriteResult = DAISY_WR_TIMEDOUT;
@@ -1638,7 +1638,7 @@ void DaisyAsyncWriteCallBack(struct libusb_transfer *WriteUsbTransfer)
 
       case LIBUSB_TRANSFER_NO_DEVICE:
     	  	  	  	  	  	  	  	  	#ifdef DEBUG
-    	  	  	  	  	  	  	  	  	  printf("Did I reach callback?? 03\r\n");
+    	  	  	  	  	  	  	  	  	  printf("Did I reach callback?? 03\n");
 										                  #endif
 
     	  	  	  	  	  	  	  	  	DownConnectionState = DAISY_DOWN_DISCONNECTED;
@@ -1656,7 +1656,7 @@ void DaisyAsyncWriteCallBack(struct libusb_transfer *WriteUsbTransfer)
       	  	  	  	  	  	  	  	  DaisyReadyState = FAIL;
 
 										                  #ifdef DEBUG
-      	  	  	  	  	  	  	  	  	printf("Did I reach callback?? 04\r\n");
+      	  	  	  	  	  	  	  	  	printf("Did I reach callback?? 04\n");
 										                  #endif
 
       	  	  	  	  	  	  	  	  break;
@@ -1997,7 +1997,7 @@ int cDaisyWrite()                     // Write DOWNSTREAM
   {
 
 	  #ifdef DEBUG
-	    printf("DAISY WriteState and IDLE\r\n");
+	    printf("DAISY WriteState and IDLE\n");
 	  #endif
 
 	  // Do a start write
@@ -2188,7 +2188,7 @@ void cDaisyControl(void)
     case  DAISY_DOWN_DISCONNECTED:  // The "try and connect" is simple timed
 
     	                    		      #ifdef DEBUG
-                                      printf("DAISY_DOWN_DISCONNECTED\r\n");
+                                      printf("DAISY_DOWN_DISCONNECTED\n");
                                     #endif
 
                                     PlugAndPlay--;  // one more "loop"
@@ -2204,7 +2204,7 @@ void cDaisyControl(void)
                                         PlugAndPlay = TIME_TO_CHECK_FOR_DAISY_DOWNSTREAM;  // Another period
                                         DaisyZeroTheBuffers();
                                         #ifdef DEBUG
-                                          printf("DAISY disconnected DOWNSTREAM - No slave bricks!! \r\n");
+                                          printf("DAISY disconnected DOWNSTREAM - No slave bricks!! \n");
                                         #endif
                                       }
                                     }
@@ -2213,7 +2213,7 @@ void cDaisyControl(void)
     case  DAISY_DOWN_CONNECTED:     // Slave connected but still locked
 
                                     #ifdef DEBUG
-                                      printf("DAISY_DOWN_CONNECTED\r\n");
+                                      printf("DAISY_DOWN_CONNECTED\n");
                                     #endif
 
                                     if(cDaisyWriteUnlockToSlave() == DAISY_WR_NOT_FINISHED)
@@ -2226,7 +2226,7 @@ void cDaisyControl(void)
     case  DAISY_DOWN_UNLOCKING:     // Write Request in progress
 
                                     #ifdef DEBUG
-                                      printf("DAISY_DOWN_UNLOCKING\r\n");
+                                      printf("DAISY_DOWN_UNLOCKING\n");
                                     #endif
 
                                     if(cDaisyWriteDone() == DAISY_WR_ERROR)
@@ -2236,7 +2236,7 @@ void cDaisyControl(void)
                                     else
                                     {
                                       #ifdef DEBUG
-                                        printf("Before cDaisyStartReadUnlockAnswer()\r\n");
+                                        printf("Before cDaisyStartReadUnlockAnswer()\n");
                                       #endif
 
                                       cDaisyStartReadUnlockAnswer();
@@ -2247,7 +2247,7 @@ void cDaisyControl(void)
     case  DAISY_CHECK_UNLOCK:       // Check for a valid answer (DAISY_DOWN_UNLOCKED)
 
 									                  #ifdef DEBUG
-                                      printf("DAISY_CHECK_UNLOCK ReadState = %d\r\n", ReadState);
+                                      printf("DAISY_CHECK_UNLOCK ReadState = %d\n", ReadState);
                                     #endif
 
                                     if(ReadState == DAISY_RD_DONE)
@@ -2286,7 +2286,7 @@ void cDaisyControl(void)
     case  DAISY_DOWN_UNLOCKED:      // Initialized i.e. UNLOCKed and ready for Transfer of INFO & DATA
 
                                     #ifdef DEBUG
-                                      printf("DAISY_DOWN_UNLOCKED\r\n");
+                                      printf("DAISY_DOWN_UNLOCKED\n");
                                     #endif
 
                                     // Poll as fast as possible and even faster.....

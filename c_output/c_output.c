@@ -449,13 +449,13 @@ void      cOutputSetType(void)
         if ((Type == TYPE_NONE) || (Type == TYPE_ERROR))
         {
           #ifdef DEBUG
-            printf("                Output %c Disable\r\n",'A' + No);
+            printf("                Output %c Disable\n",'A' + No);
           #endif
         }
         else
         {
           #ifdef DEBUG
-            printf("                Output %c Enable\r\n",'A' + No);
+            printf("                Output %c Enable\n",'A' + No);
           #endif
         }
       }

@@ -443,7 +443,7 @@ void      LogErrorNumber(ERR Err)
     }
     else
     {
-      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"\r\n#### %s ####\r\n\n",ErrString[TOO_MANY_ERRORS_TO_BUFFER]);
+      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"\n#### %s ####\n\n",ErrString[TOO_MANY_ERRORS_TO_BUFFER]);
       VmPrint(VMInstance.PrintBuffer);
     }
   }
@@ -1377,7 +1377,7 @@ UWORD     GetChecksum(IP pI)
     Tmp--;
   }
 
-//  printf("  GetChecksum %8lu %04X\r\n",(long unsigned int)Size,Chksum);
+//  printf("  GetChecksum %8lu %04X\n",(long unsigned int)Size,Chksum);
 
   return (Chksum);
 }
@@ -1923,7 +1923,7 @@ DATA8     CheckSdcard(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force)
         sync();
         *pChanged  =  1;
 #ifdef DEBUG_SDCARD
-        printf("system(%s)\r\n",Buffer);
+        printf("system(%s)\n",Buffer);
 #endif
       }
       snprintf(Buffer,250,"/media/card");
@@ -1931,18 +1931,18 @@ DATA8     CheckSdcard(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force)
 #ifdef DEBUG_SDCARD
       if (*pChanged)
       {
-        printf("statvfs(%s)\r\n",Buffer);
+        printf("statvfs(%s)\n",Buffer);
 
-        printf("f_bsize   %ld\r\n",Status.f_bsize);
-        printf("f_frsize  %ld\r\n",Status.f_frsize);
-        printf("f_blocks  %ld\r\n",Status.f_blocks);
-        printf("f_bavail  %ld\r\n",Status.f_bavail);
-        printf("f_files   %ld\r\n",Status.f_files);
-        printf("f_ffree   %ld\r\n",Status.f_ffree);
-        printf("f_favail  %ld\r\n",Status.f_favail);
-        printf("f_fside   %ld\r\n",Status.f_fsid);
-        printf("f_flag    %ld\r\n",Status.f_flag);
-        printf("f_namemax %ld\r\n",Status.f_namemax);
+        printf("f_bsize   %ld\n",Status.f_bsize);
+        printf("f_frsize  %ld\n",Status.f_frsize);
+        printf("f_blocks  %ld\n",Status.f_blocks);
+        printf("f_bavail  %ld\n",Status.f_bavail);
+        printf("f_files   %ld\n",Status.f_files);
+        printf("f_ffree   %ld\n",Status.f_ffree);
+        printf("f_favail  %ld\n",Status.f_favail);
+        printf("f_fside   %ld\n",Status.f_fsid);
+        printf("f_flag    %ld\n",Status.f_flag);
+        printf("f_namemax %ld\n",Status.f_namemax);
       }
 #endif
       Tmp  =  (DATAF)Status.f_blocks;
@@ -1956,7 +1956,7 @@ DATA8     CheckSdcard(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force)
 #ifdef DEBUG_SDCARD
       if(VMInstance.SdcardFree != (DATA32)Tmp)
       {
-        printf("%d T=%-8d F=%-8d\r\n",VMInstance.SdcardOk,VMInstance.SdcardSize,VMInstance.SdcardFree);
+        printf("%d T=%-8d F=%-8d\n",VMInstance.SdcardOk,VMInstance.SdcardSize,VMInstance.SdcardFree);
       }
 #endif
       VMInstance.SdcardFree  =  (DATA32)Tmp;
@@ -1972,7 +1972,7 @@ DATA8     CheckSdcard(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force)
 #ifdef DEBUG_SDCARD
         if (*pChanged)
         {
-          printf("system(%s)\r\n",Buffer);
+          printf("system(%s)\n",Buffer);
         }
 #endif
       }
@@ -1982,7 +1982,7 @@ DATA8     CheckSdcard(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force)
 #ifdef DEBUG_SDCARD
     if (*pChanged)
     {
-      printf("%d T=%-8d F=%-8d\r\n",VMInstance.SdcardOk,VMInstance.SdcardSize,VMInstance.SdcardFree);
+      printf("%d T=%-8d F=%-8d\n",VMInstance.SdcardOk,VMInstance.SdcardSize,VMInstance.SdcardFree);
     }
 #endif
   }
@@ -2027,7 +2027,7 @@ DATA8     CheckUsbstick(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force
         sync();
         *pChanged  =  1;
 #ifdef DEBUG_USBSTICK
-        printf("system(%s)\r\n",Buffer);
+        printf("system(%s)\n",Buffer);
 #endif
       }
       snprintf(Buffer,250,"/media/usb");
@@ -2035,18 +2035,18 @@ DATA8     CheckUsbstick(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force
 #ifdef DEBUG_USBSTICK
       if (*pChanged)
       {
-        printf("statvfs(%s)\r\n",Buffer);
+        printf("statvfs(%s)\n",Buffer);
 
-        printf("f_bsize   %ld\r\n",Status.f_bsize);
-        printf("f_frsize  %ld\r\n",Status.f_frsize);
-        printf("f_blocks  %ld\r\n",Status.f_blocks);
-        printf("f_bavail  %ld\r\n",Status.f_bavail);
-        printf("f_files   %ld\r\n",Status.f_files);
-        printf("f_ffree   %ld\r\n",Status.f_ffree);
-        printf("f_favail  %ld\r\n",Status.f_favail);
-        printf("f_fside   %ld\r\n",Status.f_fsid);
-        printf("f_flag    %ld\r\n",Status.f_flag);
-        printf("f_namemax %ld\r\n",Status.f_namemax);
+        printf("f_bsize   %ld\n",Status.f_bsize);
+        printf("f_frsize  %ld\n",Status.f_frsize);
+        printf("f_blocks  %ld\n",Status.f_blocks);
+        printf("f_bavail  %ld\n",Status.f_bavail);
+        printf("f_files   %ld\n",Status.f_files);
+        printf("f_ffree   %ld\n",Status.f_ffree);
+        printf("f_favail  %ld\n",Status.f_favail);
+        printf("f_fside   %ld\n",Status.f_fsid);
+        printf("f_flag    %ld\n",Status.f_flag);
+        printf("f_namemax %ld\n",Status.f_namemax);
       }
 #endif
       Tmp  =  (DATAF)Status.f_blocks;
@@ -2060,7 +2060,7 @@ DATA8     CheckUsbstick(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force
 #ifdef DEBUG_USBSTICK
       if(VMInstance.UsbstickFree != (DATA32)Tmp)
       {
-        printf("%d T=%-8d F=%-8d\r\n",VMInstance.UsbstickOk,VMInstance.UsbstickSize,VMInstance.UsbstickFree);
+        printf("%d T=%-8d F=%-8d\n",VMInstance.UsbstickOk,VMInstance.UsbstickSize,VMInstance.UsbstickFree);
       }
 #endif
       VMInstance.UsbstickFree  =  (DATA32)Tmp;
@@ -2076,7 +2076,7 @@ DATA8     CheckUsbstick(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force
 #ifdef DEBUG_USBSTICK
         if (*pChanged)
         {
-          printf("system(%s)\r\n",Buffer);
+          printf("system(%s)\n",Buffer);
         }
 #endif
       }
@@ -2086,7 +2086,7 @@ DATA8     CheckUsbstick(DATA8 *pChanged,DATA32 *pTotal,DATA32 *pFree,DATA8 Force
 #ifdef DEBUG_USBSTICK
 //    if (*pChanged)
     {
-      printf("%d T=%-8d F=%-8d\r\n",VMInstance.UsbstickOk,VMInstance.UsbstickSize,VMInstance.UsbstickFree);
+      printf("%d T=%-8d F=%-8d\n",VMInstance.UsbstickOk,VMInstance.UsbstickSize,VMInstance.UsbstickFree);
     }
 #endif
   }
@@ -2314,7 +2314,7 @@ RESULT    mSchedInit(int argc,char *argv[])
 
   VMInstance.Test         =  0;
 
-  VmPrint("\r\n\n\n\n\n\nLMS2012 VM STARTED\r\n{\r\n");
+  VmPrint("\n\nLMS2012 VM STARTED\n{\n");
   VMInstance.ProgramId    =  DEBUG_SLOT;
   pImgHead                =  (IMGHEAD*)UiImage;
   (*pImgHead).ImageSize   =  sizeof(UiImage);
@@ -2361,7 +2361,7 @@ RESULT    mSchedCtrl(UBYTE *pRestart)
 #ifdef DEBUG_TRACE_TASK
   if (VMInstance.Program[USER_SLOT].Status != STOPPED)
   {
-    printf("\r\n  %d  %2d",VMInstance.ProgramId,VMInstance.ObjectId);
+    printf("\n  %d  %2d",VMInstance.ProgramId,VMInstance.ObjectId);
   }
 #endif
 
@@ -2434,12 +2434,12 @@ RESULT    mSchedCtrl(UBYTE *pRestart)
 #ifndef DISABLE_PREEMPTED_VM
     if (Time >= 3)
     {
-      printf("%-6d %-3d %-3d\r\n",Time,(*VMInstance.pAnalog).PreemptMilliSeconds,VMInstance.InstrCnt);
+      printf("%-6d %-3d %-3d\n",Time,(*VMInstance.pAnalog).PreemptMilliSeconds,VMInstance.InstrCnt);
     }
 #else
     if (Time >= 3)
     {
-      printf("%-6d %-3d\r\n",Time,VMInstance.InstrCnt);
+      printf("%-6d %-3d\n",Time,VMInstance.InstrCnt);
     }
 #endif
 #endif
@@ -2463,7 +2463,7 @@ RESULT    mSchedCtrl(UBYTE *pRestart)
       Timer -=  100;
       Addr   =  (IMINDEX)VMInstance.ObjectIp - (IMINDEX)VMInstance.pImage;
 
-      printf("%10.3f P=%-1d A=%5d \r\n",(float)VMInstance.NewTime / (float)1000,VMInstance.ProgramId,Addr);
+      printf("%10.3f P=%-1d A=%5d \n",(float)VMInstance.NewTime / (float)1000,VMInstance.ProgramId,Addr);
 
     }
 #endif
@@ -2492,14 +2492,14 @@ RESULT    mSchedCtrl(UBYTE *pRestart)
       {
         UiInstance.Warning |=  WARNING_DSPSTAT;
       }
-      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"}\r\nPROGRAM \"%d\" FAIL BREAK just before %lu!\r\n",VMInstance.ProgramId,(unsigned long)(VMInstance.ObjectIp - VMInstance.Program[VMInstance.ProgramId].pImage));
+      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"}\nPROGRAM \"%d\" FAIL BREAK just before %lu!\n",VMInstance.ProgramId,(unsigned long)(VMInstance.ObjectIp - VMInstance.Program[VMInstance.ProgramId].pImage));
       VmPrint(VMInstance.PrintBuffer);
       ProgramEnd(VMInstance.ProgramId);
       VMInstance.Program[VMInstance.ProgramId].Result          =  FAIL;
     }
     else
     {
-      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"UI FAIL BREAK just before %lu!\r\n",(unsigned long)(VMInstance.ObjectIp - VMInstance.Program[VMInstance.ProgramId].pImage));
+      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"UI FAIL BREAK just before %lu!\n",(unsigned long)(VMInstance.ObjectIp - VMInstance.Program[VMInstance.ProgramId].pImage));
       VmPrint(VMInstance.PrintBuffer);
       LogErrorNumber(VM_INTERNAL);
       *pRestart  =  1;
@@ -2515,9 +2515,9 @@ RESULT    mSchedCtrl(UBYTE *pRestart)
         LogErrorNumber(VM_PROGRAM_INSTRUCTION_BREAK);
       }
       TmpIp  =  VMInstance.ObjectIp - 1;
-      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"\r\n%4u [%2d] ",(UWORD)(((ULONG)TmpIp) - (ULONG)VMInstance.pImage),VMInstance.ObjectId);
+      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"\n%4u [%2d] ",(UWORD)(((ULONG)TmpIp) - (ULONG)VMInstance.pImage),VMInstance.ObjectId);
       VmPrint(VMInstance.PrintBuffer);
-      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"VM       ERROR    [0x%02X]\r\n",*TmpIp);
+      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"VM       ERROR    [0x%02X]\n",*TmpIp);
       VmPrint(VMInstance.PrintBuffer);
       VMInstance.Program[VMInstance.ProgramId].Result          =  FAIL;
     }
@@ -2563,7 +2563,7 @@ RESULT    mSchedExit(void)
 {
   DATA32  Result = OK;
 
-  VmPrint("}\r\nVM STOPPED\r\n\n");
+  VmPrint("}\nVM STOPPED\n\n");
 
 #ifndef DISABLE_SDCARD_SUPPORT
   char    SDBuffer[250];
@@ -3124,7 +3124,7 @@ void      ObjectTrig(void)
       OwnerId   =  VMInstance.Program[VMInstance.ProgramId].pObjHead[TmpId].OwnerObjectId;
 
 #ifdef DEBUG
-      printf("Program %-2d  Address %-8lu  Caller %-2d  Owner %-2d  Block %-2d\r\n",VMInstance.ProgramId,(unsigned long)(VMInstance.ObjectIp - VMInstance.Program[VMInstance.ProgramId].pImage),CallerId,OwnerId,TmpId);
+      printf("Program %-2d  Address %-8lu  Caller %-2d  Owner %-2d  Block %-2d\n",VMInstance.ProgramId,(unsigned long)(VMInstance.ObjectIp - VMInstance.Program[VMInstance.ProgramId].pImage),CallerId,OwnerId,TmpId);
 #endif
 
       if ((VMInstance.Program[VMInstance.ProgramId].pObjHead[OwnerId].OwnerObjectId == 0) && (VMInstance.Program[VMInstance.ProgramId].pObjHead[OwnerId].TriggerCount == 1))
@@ -3133,7 +3133,7 @@ void      ObjectTrig(void)
         if (CallerId != OwnerId)
         {
 #ifdef DEBUG
-          printf("Block owner is a sub call alias so change locals\r\n");
+          printf("Block owner is a sub call alias so change locals\n");
 #endif
           (*VMInstance.Program[VMInstance.ProgramId].pObjList[TmpId]).pLocal  =  (*VMInstance.Program[VMInstance.ProgramId].pObjList[CallerId]).Local;
         }
@@ -3295,7 +3295,7 @@ void      ObjectCall(void)
   { // Object locked - rewind IP
 
 #ifdef DEBUG
-  printf("SUBCALL %u BUSY status = %u\r\n",ObjectIdToCall,(*VMInstance.pObjList[ObjectIdToCall]).ObjStatus);
+  printf("SUBCALL %u BUSY status = %u\n",ObjectIdToCall,(*VMInstance.pObjList[ObjectIdToCall]).ObjStatus);
 #endif
     SetObjectIp(TmpIp - 1);
     SetDispatchStatus(BUSYBREAK);
@@ -3558,7 +3558,7 @@ void      Probe(void)
     }
     if (Size)
     {
-      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"    PROBE  Prg=%d Obj=%d Offs=%ld Lng=%ld\r\n    {\r\n  ",PrgId,ObjId,(long unsigned int)RamOffset,(long unsigned int)Size);
+      snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"    PROBE  Prg=%d Obj=%d Offs=%ld Lng=%ld\n    {\n  ",PrgId,ObjId,(long unsigned int)RamOffset,(long unsigned int)Size);
       VmPrint(VMInstance.PrintBuffer);
 
       for (Tmp = 0;(Tmp < Size) && (Tmp < Lng) && (Tmp < 1024);Tmp++)
@@ -3572,12 +3572,12 @@ void      Probe(void)
         VmPrint(VMInstance.PrintBuffer);
         if (((Tmp & 0x0F) == 0xF) && (Tmp < (Size - 1)))
         {
-          VmPrint("\r\n    ");
+          VmPrint("\n    ");
         }
         Ram++;
       }
 
-      VmPrint("\r\n    }\r\n");
+      VmPrint("\n    }\n");
     }
   }
 }
@@ -3675,7 +3675,7 @@ void      BreakPoint(void)
   {
     Instr  =  VMInstance.Program[VMInstance.ProgramId].InstrCnt +  VMInstance.InstrCnt;
 
-    snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"\r\nBREAKPOINT #%d (%.0f)",No & 0x03,Instr);
+    snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"\nBREAKPOINT #%d (%.0f)",No & 0x03,Instr);
     VmPrint(VMInstance.PrintBuffer);
 
     VMInstance.Debug  =  1;
@@ -4376,7 +4376,7 @@ void      MemoryWrite(void)
   Size        =  *(GBINDEX*)PrimParPointer();
   pArray      =   (DATA8*)PrimParPointer();
 
-//  printf("p=%-1d o=%-2d f=%-4d s=%-4d d=0x%02X\r\n",PrgId,ObjId,Offset,Size,*pArray);
+//  printf("p=%-1d o=%-2d f=%-4d s=%-4d d=0x%02X\n",PrgId,ObjId,Offset,Size,*pArray);
 
   if (PrgId < MAX_PROGRAMS)
   {
@@ -4677,7 +4677,7 @@ void      Monitor(void)
   {
     SavedPriority  =  VMInstance.Priority;
 
-    snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"\r\n         %d %2d IP=%08lX -> ",VMInstance.ProgramId,VMInstance.ObjectId,(unsigned long)VMInstance.ObjectIp);
+    snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"\n         %d %2d IP=%08lX -> ",VMInstance.ProgramId,VMInstance.ObjectId,(unsigned long)VMInstance.ObjectIp);
     VmPrint(VMInstance.PrintBuffer);
 
     Ln  =  16;
@@ -4692,10 +4692,10 @@ void      Monitor(void)
       }
       if (((Lv & 0xF) == 0xF) && (Lv < (Ln - 1)))
       {
-        VmPrint("\r\n");
+        VmPrint("\n");
       }
     }
-    VmPrint("\r\n");
+    VmPrint("\n");
 
     snprintf(VMInstance.PrintBuffer,PRINTBUFFERSIZE,"              GV=%08lX -> ",(unsigned long)VMInstance.pGlobal);
     VmPrint(VMInstance.PrintBuffer);
@@ -4712,10 +4712,10 @@ void      Monitor(void)
       }
       if (((Lv & 0xF) == 0xF) && (Lv < (Ln - 1)))
       {
-        VmPrint("\r\n                             ");
+        VmPrint("\n                             ");
       }
     }
-    VmPrint("\r\n");
+    VmPrint("\n");
 
     for (ObjId = 1;ObjId <= VMInstance.Objects;ObjId++)
     {
@@ -4787,14 +4787,14 @@ void      Monitor(void)
         }
         if (((Lv & 0xF) == 0xF) && (Lv < (Ln - 1)))
         {
-          VmPrint("\r\n                             ");
+          VmPrint("\n                             ");
         }
       }
-      VmPrint("\r\n");
+      VmPrint("\n");
 
     }
 
-    VmPrint("\r\n");
+    VmPrint("\n");
 
     Index  =  (IMINDEX)VMInstance.ObjectIp - (IMINDEX)VMInstance.pImage;
     cValidateDisassemble(VMInstance.pImage,&Index,VMInstance.Program[VMInstance.ProgramId].Label);
@@ -5590,7 +5590,7 @@ void      BufPrint(char Cmd,char *pFormat, ...)
         }
         if (BufIn >= (BUFPRINTSIZE - 250))
         {
-          sprintf(&Buf[BufIn],"\r\nBUFFER FULL\r\n");
+          sprintf(&Buf[BufIn],"\nBUFFER FULL\n");
         }
       }
     }
@@ -5599,13 +5599,13 @@ void      BufPrint(char Cmd,char *pFormat, ...)
     case 'w' :
     {
       Buf[BufIn]  =  0;
-      printf("\r\n------------------------------------------------------------\r\n");
+      printf("\n------------------------------------------------------------\n");
       printf("%s",Buf);
       if ((BufIn > 0) && (Buf[BufIn - 1] != '\n'))
       {
-        printf("\r\n");
+        printf("\n");
       }
-      printf("------------------------------------------------------------\r\n\n");
+      printf("------------------------------------------------------------\n\n");
       Par         =  0;
       BufIn       =  0;
       FormatOut   =  0;

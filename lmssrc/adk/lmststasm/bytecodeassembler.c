@@ -24,11 +24,11 @@ int       main(void)
 #endif
     fwrite (prg,1,FileSize,pFile);
     fclose (pFile);
-    printf("%d bytes\r\n",FileSize);
+    printf("%d bytes\n",FileSize);
   }
   else
   {
-    printf("\r\nImage file not created !!!!!\r\n");
+    printf("\nImage file not created !!!!!\n");
   }
   
   return (0);

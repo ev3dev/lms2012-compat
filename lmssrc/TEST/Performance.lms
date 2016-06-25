@@ -102,12 +102,12 @@ DontShowVersion:                                                      //    }
 
   UI_DRAW(SCROLL,8)
 
-  UI_WRITE(PUT_STRING,'\r\n    ---------------------------------------------')
-  UI_WRITE(PUT_STRING,'\r\n    Performance test (average over ')
+  UI_WRITE(PUT_STRING,'\n    ---------------------------------------------')
+  UI_WRITE(PUT_STRING,'\n    Performance test (average over ')
   UI_WRITE(VALUE32,TIMES)
   UI_WRITE(PUT_STRING,' inst.)')
-  UI_WRITE(PUT_STRING,'\r\n    ---------------------------------------------')
-  UI_WRITE(PUT_STRING,'\r\n    Byte code                        Time [uS]\r\n\n')
+  UI_WRITE(PUT_STRING,'\n    ---------------------------------------------')
+  UI_WRITE(PUT_STRING,'\n    Byte code                        Time [uS]\n\n')
   UI_FLUSH()
 
   CALL(Test_REF)
@@ -140,7 +140,7 @@ DontShowVersion:                                                      //    }
   CALL(Test_SLEEP)
 
 
-  UI_WRITE(PUT_STRING,'\r\n    ---------------------------------------------\r\n')
+  UI_WRITE(PUT_STRING,'\n    ---------------------------------------------\n')
   UI_FLUSH()
 
 Loop:
@@ -708,7 +708,7 @@ subcall   ShowResult
   MOVE32_F(TIMES,Tmp2)
   DIVF(Tmp1,Tmp2,Tmp1)
   UI_WRITE(FLOATVALUE,Tmp1,6,0)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   UI_DRAW(SELECT_FONT,TINY_FONT)

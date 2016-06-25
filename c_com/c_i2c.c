@@ -311,7 +311,7 @@ void*     I2cCtrl(void *ptr)
                 // to mode2 decoding
                 Status = MODE2_FALIURE;
                 #ifdef DEBUG
-                  printf("\r\nERROR - OVERRUN\r\n");
+                  printf("\nERROR - OVERRUN\n");
                 #endif
               }
               break;
@@ -319,7 +319,7 @@ void*     I2cCtrl(void *ptr)
               {
                 Status = MODE2_FALIURE;
                 #ifdef DEBUG
-                  printf("\r\nERROR - CRC\r\n");
+                  printf("\nERROR - CRC\n");
                 #endif
               }
               break;
@@ -327,7 +327,7 @@ void*     I2cCtrl(void *ptr)
               {
                 Status = MODE2_FALIURE;
                 #ifdef DEBUG
-                  printf("\r\nERROR - INCORRECT_ACTION\r\n");
+                  printf("\nERROR - INCORRECT_ACTION\n");
                 #endif
               }
               break;
@@ -335,7 +335,7 @@ void*     I2cCtrl(void *ptr)
               {
                 Status = MODE2_FALIURE;
                 #ifdef DEBUG
-                  printf("\r\nERROR - UNEXPECTED\r\n");
+                  printf("\nERROR - UNEXPECTED\n");
                 #endif
               }
               break;
@@ -343,7 +343,7 @@ void*     I2cCtrl(void *ptr)
               {
                 Status = MODE2_FALIURE;
                 #ifdef DEBUG
-                  printf("\r\nERROR - RAW_OVERRUN\r\n");
+                  printf("\nERROR - RAW_OVERRUN\n");
                 #endif
               }
               break;
@@ -352,7 +352,7 @@ void*     I2cCtrl(void *ptr)
                 // Unknown Error
                 Status = MODE2_FALIURE;
                 #ifdef DEBUG
-                  printf("\r\nERROR - UNKNOWN\r\n");
+                  printf("\nERROR - UNKNOWN\n");
                 #endif
               }
               break;
@@ -379,15 +379,15 @@ void*     I2cCtrl(void *ptr)
                 {
                   // Error
                   #ifdef DEBUG
-                    printf("\r\n'A' Read error \r\n");
+                    printf("\n'A' Read error \n");
                   #endif
                 }
 
                 #ifdef DEBUG
-                  printf("\r\nA - Reading mode2 data from decoding to Tx on Bluetooth\r\n");
+                  printf("\nA - Reading mode2 data from decoding to Tx on Bluetooth\n");
                   for(Test = 0; Test < Size; Test++)
                   {
-                    printf("Buf[%d] = %02X\r\n",Test,Buf[Test]);
+                    printf("Buf[%d] = %02X\n",Test,Buf[Test]);
                   }
                 #endif
 
@@ -405,7 +405,7 @@ void*     I2cCtrl(void *ptr)
 
             // More data for mode2 decoding is needed at address 0x54
             #ifdef DEBUG
-              printf("\r\nW - Waiting for more mode2 data\r\n");
+              printf("\nW - Waiting for more mode2 data\n");
             #endif
 
             BytesToTx = BUFBytesAvail;
@@ -418,7 +418,7 @@ void*     I2cCtrl(void *ptr)
               }
 
               #ifdef DEBUG
-                printf("\r\n Remote data:");
+                printf("\n Remote data:");
               #endif
               for (TmpCnt = 0; TmpCnt < BytesToTx; TmpCnt++)
               {
@@ -433,7 +433,7 @@ void*     I2cCtrl(void *ptr)
               {
                 // Error
                 #ifdef DEBUG
-                  printf("\r\n'W' write error \r\n");
+                  printf("\n'W' write error \n");
                 #endif
               }
             }
@@ -452,7 +452,7 @@ void*     I2cCtrl(void *ptr)
             {
               // Minimum msg length coming from remote device has been received
               #ifdef DEBUG
-                printf("\r\nData to decoding from Bluetooth = %d, Inptr = %d, OutPtr = %d\r\n",BytesAvail,Mode2InBuf.InPtr,Mode2InBuf.OutPtr);
+                printf("\nData to decoding from Bluetooth = %d, Inptr = %d, OutPtr = %d\n",BytesAvail,Mode2InBuf.InPtr,Mode2InBuf.OutPtr);
               #endif
 
               // Send minimum msg length + 0xFF header
@@ -471,7 +471,7 @@ void*     I2cCtrl(void *ptr)
               else
               {
                 #ifdef DEBUG
-                  printf("\r\n.... Remote data to the Pic, Bytes transferred %d\r\n",ByteCnt);
+                  printf("\n.... Remote data to the Pic, Bytes transferred %d\n",ByteCnt);
                 #endif
               }
             }
@@ -508,14 +508,14 @@ void*     I2cCtrl(void *ptr)
                 else
                 {
                   #ifdef DEBUG
-                    printf("\r\n.... Application data to the Pic, Bytes to send %d\r\n",ByteCnt);
+                    printf("\n.... Application data to the Pic, Bytes to send %d\n",ByteCnt);
                   #endif
                 }
 
               }
             }
             #ifdef DEBUG
-              printf("\r\nI - Idle state\r\n");
+              printf("\nI - Idle state\n");
             #endif
           }
           break;
@@ -538,10 +538,10 @@ void*     I2cCtrl(void *ptr)
                 pReadBuf->Status = READ_BUF_FULL;
 
                 #ifdef DEBUG
-                  printf("\r\nR - %d bytes of App data read \r\n",Size);
+                  printf("\nR - %d bytes of App data read \n",Size);
                   for(Test = 0; Test < Size; Test++)
                   {
-                    printf("AppData[%d] = %02X\r\n",Test,pReadBuf->Buf[Test]);
+                    printf("AppData[%d] = %02X\n",Test,pReadBuf->Buf[Test]);
                   }
                 #endif
 
@@ -578,7 +578,7 @@ void*     I2cCtrl(void *ptr)
           case 'S':
           {
             #ifdef DEBUG
-              printf("\r\nS - Reset source = %02X, Status = %02X\r\n",Buf[1], Buf[2]);
+              printf("\nS - Reset source = %02X, Status = %02X\n",Buf[1], Buf[2]);
             #endif
 
             if (0 == Buf[2])
@@ -586,7 +586,7 @@ void*     I2cCtrl(void *ptr)
               Status = MODE2_FALIURE;
               DISCONNDueToErr;
               #ifdef DEBUG
-                printf("\r\nERROR - failure on reset\r\n");
+                printf("\nERROR - failure on reset\n");
               #endif
             }
           }
@@ -596,7 +596,7 @@ void*     I2cCtrl(void *ptr)
           {
             Status = MODE2_FALIURE;
             #ifdef DEBUG
-              printf("\r\nStatus return not recognized....\r\n");
+              printf("\nStatus return not recognized....\n");
             #endif
           }
           break;
@@ -720,7 +720,7 @@ int I2cRead(int fd, unsigned int addr, unsigned char *buf, unsigned char len)
   if(len > I2CBUF_SIZE)
   {
     #ifdef DEBUG
-      fprintf(stderr,"I can only write I2CBUF_SIZE bytes at a time!\r\n");
+      fprintf(stderr,"I can only write I2CBUF_SIZE bytes at a time!\n");
     #endif
     Status = MODE2_FALIURE;
     return -1;
@@ -737,7 +737,7 @@ int I2cRead(int fd, unsigned int addr, unsigned char *buf, unsigned char len)
   if((i=ioctl(fd, I2C_RDWR, &msg_rdwr)) < 0)
   {
     #ifdef DEBUG
-      printf("\r\nIOCTL Read error, Len = %d, i2cmsg.len = %d \r\n",len, i2cmsg.len);
+      printf("\nIOCTL Read error, Len = %d, i2cmsg.len = %d \n",len, i2cmsg.len);
     #endif
 
     Status = MODE2_FALIURE;
@@ -762,7 +762,7 @@ int I2cWrite(int fd, unsigned int addr, unsigned char *buf, unsigned char len)
   if((i = ioctl(fd,I2C_RDWR,&msg_rdwr)) < 0)
   {
     #ifdef DEBUG
-      printf("\r\nIOCTL write error, Len = %d, i2cmsg.len = %d \r\n",len, i2cmsg.len);
+      printf("\nIOCTL write error, Len = %d, i2cmsg.len = %d \n",len, i2cmsg.len);
     #endif
 
     Status = MODE2_FALIURE;

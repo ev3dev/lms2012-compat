@@ -352,7 +352,7 @@ subcall   ShowArray
   UI_WRITE(PUT_STRING,' cont = ')  
   UI_WRITE(PUT_STRING,@hArray)
 Zero:
-  UI_WRITE(PUT_STRING,'\r\n')  
+  UI_WRITE(PUT_STRING,'\n')  
 
   UI_WRITE(WRITE_FLUSH)
 }
@@ -382,9 +382,9 @@ subcall   Test
   
   MOVEF_F(DataF,TestF)
   UI_WRITE(VALUE8,Data8)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(VALUEF,TestF)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 }
 */
@@ -498,7 +498,7 @@ vmthread  MAIN
   MOVE16_16(POP3_ABSABS,Test)
 
   UI_WRITE(VALUE16,Test)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
 
@@ -543,7 +543,7 @@ vmthread  MAIN
   ARRAY(READ_CONTENT,CURRENT_SLOT,hArray,2,4,Name)
 
   UI_WRITE(PUT_STRING,Name)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
   
 
@@ -656,7 +656,7 @@ vmthread  MAIN
   DATA16  hName
   
   UI_WRITE(PUT_STRING,'GET_LOG_NAME test')
-  UI_WRITE(PUT_STRING,'\r\n\n')
+  UI_WRITE(PUT_STRING,'\n\n')
   UI_WRITE(WRITE_FLUSH)
 
   ARRAY(CREATE8,0,hName)
@@ -664,7 +664,7 @@ vmthread  MAIN
   FILE(GET_LOG_NAME,FILENAMESIZE,@hName)
   UI_WRITE(PUT_STRING,'[')
   UI_WRITE(PUT_STRING,@hName)
-  UI_WRITE(PUT_STRING,']\r\n')
+  UI_WRITE(PUT_STRING,']\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(OPEN_LOG,'testlog',0,0,0,1000,0,'sensor',File)
@@ -672,7 +672,7 @@ vmthread  MAIN
   FILE(GET_LOG_NAME,FILENAMESIZE,@hName)
   UI_WRITE(PUT_STRING,'[')
   UI_WRITE(PUT_STRING,@hName)
-  UI_WRITE(PUT_STRING,']\r\n')
+  UI_WRITE(PUT_STRING,']\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(CLOSE_LOG,File,'testlog')
@@ -680,7 +680,7 @@ vmthread  MAIN
   FILE(GET_LOG_NAME,FILENAMESIZE,@hName)
   UI_WRITE(PUT_STRING,'[')
   UI_WRITE(PUT_STRING,@hName)
-  UI_WRITE(PUT_STRING,']\r\n')
+  UI_WRITE(PUT_STRING,']\n')
   UI_WRITE(WRITE_FLUSH)
 
 }
@@ -701,13 +701,13 @@ vmthread  MAIN
   DATAS   Name FILENAMESIZE
 
   UI_WRITE(PUT_STRING,'GET_LOG_NAME test')
-  UI_WRITE(PUT_STRING,'\r\n\n')
+  UI_WRITE(PUT_STRING,'\n\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(GET_LOG_NAME,FILENAMESIZE,Name)
   UI_WRITE(PUT_STRING,'[')
   UI_WRITE(PUT_STRING,Name)
-  UI_WRITE(PUT_STRING,']\r\n')
+  UI_WRITE(PUT_STRING,']\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(OPEN_LOG,'testlog',0,0,0,1000,0,'sensor',File)
@@ -715,7 +715,7 @@ vmthread  MAIN
   FILE(GET_LOG_NAME,FILENAMESIZE,Name)
   UI_WRITE(PUT_STRING,'[')
   UI_WRITE(PUT_STRING,Name)
-  UI_WRITE(PUT_STRING,']\r\n')
+  UI_WRITE(PUT_STRING,']\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(CLOSE_LOG,File,'testlog')
@@ -723,7 +723,7 @@ vmthread  MAIN
   FILE(GET_LOG_NAME,FILENAMESIZE,Name)
   UI_WRITE(PUT_STRING,'[')
   UI_WRITE(PUT_STRING,Name)
-  UI_WRITE(PUT_STRING,']\r\n')
+  UI_WRITE(PUT_STRING,']\n')
   UI_WRITE(WRITE_FLUSH)
 
 }
@@ -901,7 +901,7 @@ Loop:
 
   TST(TST_READ_ADC,4,Value)
   UI_WRITE(VALUE16,Value)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   TIMER_WAIT(500,Timer)
@@ -1060,7 +1060,7 @@ Loop:
 
   TST(TST_READ_ADC,4,Value)
   UI_WRITE(VALUE16,Value)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   TIMER_WAIT(500,Timer)
@@ -1240,7 +1240,7 @@ vmthread  MAIN
   UI_WRITE(PUT_STRING,'ARRAY_APPEND TEST = ');
   UI_WRITE(VALUEF,DataF)
 
-  UI_WRITE(PUT_STRING,'\r\n');
+  UI_WRITE(PUT_STRING,'\n');
   UI_WRITE(WRITE_FLUSH)
 
   ARRAY(DESTROY,hTest)
@@ -1573,7 +1573,7 @@ subcall   TestTextFileReadWrite
   ARRAY8  Text 32
 
 
-  UI_WRITE(PUT_STRING,'\r\nTesting textfile write/read\r\n')
+  UI_WRITE(PUT_STRING,'\nTesting textfile write/read\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(OPEN_WRITE,'tst.txt',Handle)
@@ -1591,28 +1591,28 @@ subcall   TestTextFileReadWrite
 
   FILE(READ_TEXT,Handle,DEL_TAB,32,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_TEXT,Handle,DEL_CRLF,32,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_VALUE,Handle,DEL_TAB,Data2)
   UI_WRITE(VALUEF,Data2)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_VALUE,Handle,DEL_CRLF,Data2)
   UI_WRITE(VALUEF,Data2)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_BYTES,Handle,6,Text)
   WRITE8(0,6,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(CLOSE,Handle)
@@ -1629,7 +1629,7 @@ subcall   TestTextFileReadWrite
   FILE(GET_HANDLE,'tst.txt',Handle,Open)
   UI_WRITE(PUT_STRING,'Open for write = ')
   UI_WRITE(VALUE8,Open)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(CLOSE,Handle)
@@ -1637,7 +1637,7 @@ subcall   TestTextFileReadWrite
   FILE(GET_HANDLE,'tst.txt',Handle,Open)
   UI_WRITE(PUT_STRING,'Open for write = ')
   UI_WRITE(VALUE8,Open)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(OPEN_READ,'tst.txt',Handle,Data32)
@@ -1645,59 +1645,59 @@ subcall   TestTextFileReadWrite
   FILE(GET_HANDLE,'tst.txt',Handle,Open)
   UI_WRITE(PUT_STRING,'Open for write = ')
   UI_WRITE(VALUE8,Open)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_TEXT,Handle,DEL_TAB,32,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_TEXT,Handle,DEL_CRLF,32,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_VALUE,Handle,DEL_TAB,Data2)
   UI_WRITE(VALUEF,Data2)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_VALUE,Handle,DEL_CRLF,Data2)
   UI_WRITE(VALUEF,Data2)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_BYTES,Handle,6,Text)
   WRITE8(0,6,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_TEXT,Handle,DEL_TAB,32,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_TEXT,Handle,DEL_CRLF,32,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_VALUE,Handle,DEL_TAB,Data2)
   UI_WRITE(VALUEF,Data2)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_VALUE,Handle,DEL_CRLF,Data2)
   UI_WRITE(VALUEF,Data2)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(READ_BYTES,Handle,6,Text)
   WRITE8(0,6,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   FILE(CLOSE,Handle)
@@ -1787,7 +1787,7 @@ subcall   TestTextFileReadWrite
   DATAS   Text 32
 
 
-  UI_WRITE(PUT_STRING,'\r\nTesting textfile write/read\r\n')
+  UI_WRITE(PUT_STRING,'\nTesting textfile write/read\n')
 
   FILE(OPEN_WRITE,'tst.txt',Handle)
   FILE(WRITE_TEXT,Handle,DEL_TAB,'[TAB]')
@@ -1806,23 +1806,23 @@ subcall   TestTextFileReadWrite
 
   FILE(READ_TEXT,Handle,DEL_TAB,32,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   FILE(READ_TEXT,Handle,DEL_CRLF,32,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   FILE(READ_VALUE,Handle,DEL_TAB,Data2)
   UI_WRITE(VALUEF,Data2)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   FILE(READ_VALUE,Handle,DEL_CRLF,Data2)
   UI_WRITE(VALUEF,Data2)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   FILE(READ_BYTES,Handle,6,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   FILE(CLOSE,Handle)
 
@@ -1840,7 +1840,7 @@ subcall   TestArrayCopy
   DATA32  Data32
   DATAF   DataF
 
-  UI_WRITE(PUT_STRING,'\r\nTesting array copy\r\n')
+  UI_WRITE(PUT_STRING,'\nTesting array copy\n')
 
 // DATA8
 
@@ -1862,7 +1862,7 @@ subcall   TestArrayCopy
   ARRAY(SIZE,hDest,Data32)
   UI_WRITE(PUT_STRING,'Size ')
   UI_WRITE(VALUE32,Data32)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   ARRAY(DESTROY,hDest)
@@ -1882,7 +1882,7 @@ subcall   TestArrayCopy
   ARRAY_READ(hDest,10,Data16)
 
   UI_WRITE(VALUE16,Data16)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   ARRAY(DESTROY,hDest)
@@ -1902,7 +1902,7 @@ subcall   TestArrayCopy
   ARRAY_READ(hDest,5,Data32)
 
   UI_WRITE(VALUE32,Data32)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   ARRAY(DESTROY,hDest)
@@ -1922,7 +1922,7 @@ subcall   TestArrayCopy
   ARRAY_READ(hDest,8,DataF)
 
   UI_WRITE(VALUEF,DataF)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   ARRAY(DESTROY,hDest)
@@ -1969,7 +1969,7 @@ Loop1:
 Loop2:
   ARRAY_READ(hStringArray,Cnt,hTmp)
   UI_WRITE(PUT_STRING,@hTmp)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   ADD32(1,Cnt,Cnt)
   JR_LT32(Cnt,3,Loop2)
   UI_FLUSH()

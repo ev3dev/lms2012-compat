@@ -494,36 +494,36 @@ void      cUiInitTemp(void)
   {
     if (Tmp)
     {
-      BufferSize  =  snprintf(Buffer,250,"* TempConst.rtf ************************\r\n");
+      BufferSize  =  snprintf(Buffer,250,"* TempConst.rtf ************************\n");
     }
     else
     {
-      BufferSize  =  snprintf(Buffer,250,"* Build in *****************************\r\n");
+      BufferSize  =  snprintf(Buffer,250,"* Build in *****************************\n");
     }
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  R_bat_init           = %13.9f\r\n",R_bat_init);
+    BufferSize  =  snprintf(Buffer,250,"  R_bat_init           = %13.9f\n",R_bat_init);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  heat_cap_bat         = %13.9f\r\n",heat_cap_bat);
+    BufferSize  =  snprintf(Buffer,250,"  heat_cap_bat         = %13.9f\n",heat_cap_bat);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_bat_loss_to_elec   = %13.9f\r\n",K_bat_loss_to_elec);
+    BufferSize  =  snprintf(Buffer,250,"  K_bat_loss_to_elec   = %13.9f\n",K_bat_loss_to_elec);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_bat_gain_from_elec = %13.9f\r\n",K_bat_gain_from_elec);
+    BufferSize  =  snprintf(Buffer,250,"  K_bat_gain_from_elec = %13.9f\n",K_bat_gain_from_elec);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_bat_to_room        = %13.9f\r\n",K_bat_to_room);
+    BufferSize  =  snprintf(Buffer,250,"  K_bat_to_room        = %13.9f\n",K_bat_to_room);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  battery_power_boost  = %13.9f\r\n",battery_power_boost);
+    BufferSize  =  snprintf(Buffer,250,"  battery_power_boost  = %13.9f\n",battery_power_boost);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  R_bat_neg_gain       = %13.9f\r\n",R_bat_neg_gain);
+    BufferSize  =  snprintf(Buffer,250,"  R_bat_neg_gain       = %13.9f\n",R_bat_neg_gain);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_elec_heat_slope    = %13.9f\r\n",K_elec_heat_slope);
+    BufferSize  =  snprintf(Buffer,250,"  K_elec_heat_slope    = %13.9f\n",K_elec_heat_slope);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_elec_loss_to_bat   = %13.9f\r\n",K_elec_loss_to_bat);
+    BufferSize  =  snprintf(Buffer,250,"  K_elec_loss_to_bat   = %13.9f\n",K_elec_loss_to_bat);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_elec_gain_from_bat = %13.9f\r\n",K_elec_gain_from_bat);
+    BufferSize  =  snprintf(Buffer,250,"  K_elec_gain_from_bat = %13.9f\n",K_elec_gain_from_bat);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_elec_to_room       = %13.9f\r\n",K_elec_to_room);
+    BufferSize  =  snprintf(Buffer,250,"  K_elec_to_room       = %13.9f\n",K_elec_to_room);
     write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"****************************************\r\n");
+    BufferSize  =  snprintf(Buffer,250,"****************************************\n");
     write(TempFile,Buffer,BufferSize);
   }
   UiInstance.TempTimer  =  (UiInstance.MilliSeconds - CALL_INTERVAL);
@@ -2447,7 +2447,7 @@ void      cUiCheckTemp(void)
 
     if (TempFile >= MIN_HANDLE)
     {
-      BufferSize  =  snprintf(Buffer,250,"%8.1f,%9.6f,%9.6f,%11.6f\r\n",(float)UiInstance.MilliSeconds / (float)1000,UiInstance.Vbatt,UiInstance.Ibatt,UiInstance.Tbatt);
+      BufferSize  =  snprintf(Buffer,250,"%8.1f,%9.6f,%9.6f,%11.6f\n",(float)UiInstance.MilliSeconds / (float)1000,UiInstance.Vbatt,UiInstance.Ibatt,UiInstance.Tbatt);
       write(TempFile,Buffer,BufferSize);
     }
 #endif
@@ -3234,7 +3234,7 @@ RESULT    cUiIconQuestion(DATA8 Color,DATA16 X,DATA16 Y,DATA8 *pState,DATA32 *pI
       (*pQ).SelectSpaceX  =  (*pQ).IconSpaceX;
     }
 #ifdef DEBUG
-    printf("Shown icons %d -> 0x%08X\r\n",(*pQ).NoOfIcons,(*pQ).Icons);
+    printf("Shown icons %d -> 0x%08X\n",(*pQ).NoOfIcons,(*pQ).Icons);
 #endif
 
     (*pQ).NeedUpdate    =  1;
@@ -3324,7 +3324,7 @@ RESULT    cUiIconQuestion(DATA8 Color,DATA16 X,DATA16 Y,DATA8 *pState,DATA32 *pI
     Result  =  OK;
     *pState =  0;
 #ifdef DEBUG
-    printf("Selecting icon %d -> 0x%08X\r\n",(*pQ).PointerX,*pIcons);
+    printf("Selecting icon %d -> 0x%08X\n",(*pQ).PointerX,*pIcons);
 #endif
   }
   if (cUiGetShortPress(BACK_BUTTON))
@@ -3829,7 +3829,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
       Result              =  OK;
       *pType              =  0;
 #ifdef DEBUG
-      printf("Browser interrupted\r\n");
+      printf("Browser interrupted\n");
 #endif
     }
   }
@@ -3854,7 +3854,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
 //    pAnswer[0]          =  0;
     *pType              =  0;
 #ifdef DEBUG
-    printf("Restarting browser\r\n");
+    printf("Restarting browser\n");
 #endif
   }
 
@@ -3926,7 +3926,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
     {
       UiInstance.UiUpdate  =  0;
 #ifdef DEBUG
-    printf("Refreshing browser\r\n");
+    printf("Refreshing browser\n");
 #endif
 
       if ((*pB).hFiles)
@@ -3950,14 +3950,14 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
           if (cMemoryOpenFolder(PrgId,TYPE_FOLDER,(*pB).TopFolder,&(*pB).hFolders) == OK)
           {
       #ifdef DEBUG
-            printf("\r\n%d %d Opening browser in %s\r\n",PrgId,ObjId,(char*)(*pB).TopFolder);
+            printf("\n%d %d Opening browser in %s\n",PrgId,ObjId,(char*)(*pB).TopFolder);
       #endif
 //******************************************************************************************************
             if ((*pB).OpenFolder)
             {
               cMemoryGetItem((*pB).PrgId,(*pB).hFolders,(*pB).OpenFolder,FOLDERNAME_SIZE + SUBFOLDERNAME_SIZE,(*pB).SubFolder,&TmpType);
   #ifdef DEBUG
-              printf("Open  folder %3d (%s)\r\n",(*pB).OpenFolder,(*pB).SubFolder);
+              printf("Open  folder %3d (%s)\n",(*pB).OpenFolder,(*pB).SubFolder);
   #endif
               if (strcmp((char*)(*pB).SubFolder,SDCARD_FOLDER) == 0)
               {
@@ -3991,7 +3991,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
           else
           {
       #ifdef DEBUG
-            printf("\r\n%d %d Open error\r\n",PrgId,ObjId);
+            printf("\n%d %d Open error\n",PrgId,ObjId);
       #endif
             (*pB).PrgId         =  0;
             (*pB).ObjId         =  0;
@@ -4009,14 +4009,14 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
           if (cMemoryOpenFolder(PrgId,FILETYPE_UNKNOWN,(*pB).TopFolder,&(*pB).hFiles) == OK)
           {
       #ifdef DEBUG
-            printf("\r\n%d %d Opening browser in %s\r\n",PrgId,ObjId,(char*)(*pB).TopFolder);
+            printf("\n%d %d Opening browser in %s\n",PrgId,ObjId,(char*)(*pB).TopFolder);
       #endif
 
           }
           else
           {
       #ifdef DEBUG
-            printf("\r\n%d %d Open error\r\n",PrgId,ObjId);
+            printf("\n%d %d Open error\n",PrgId,ObjId);
       #endif
             (*pB).PrgId         =  0;
             (*pB).ObjId         =  0;
@@ -4086,7 +4086,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
       {
         // Close folder
   #ifdef DEBUG
-        printf("Close folder %3d\r\n",(*pB).OpenFolder);
+        printf("Close folder %3d\n",(*pB).OpenFolder);
   #endif
 
         cMemoryCloseFolder((*pB).PrgId,&(*pB).hFiles);
@@ -4108,7 +4108,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
         {
           // Collapse sdcard
     #ifdef DEBUG
-          printf("Collapse sdcard\r\n");
+          printf("Collapse sdcard\n");
     #endif
           if ((*pB).hFiles)
           {
@@ -4136,7 +4136,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
         {
           // Collapse usbstick
     #ifdef DEBUG
-          printf("Collapse usbstick\r\n");
+          printf("Collapse usbstick\n");
     #endif
           if ((*pB).hFiles)
           {
@@ -4176,7 +4176,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
 
 
 #ifdef DEBUG
-          printf("Select file %3d\r\n",Item);
+          printf("Select file %3d\n",Item);
 #endif
         }
         else
@@ -4188,14 +4188,14 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
             Item    =  (*pB).OpenFolder;
             Result  =  cMemoryGetItem((*pB).PrgId,(*pB).hFolders,Item,Lng,pAnswer,pType);
 #ifdef DEBUG
-            printf("Select folder %3d\r\n",Item);
+            printf("Select folder %3d\n",Item);
 #endif
           }
           else
           { // Close folder
 
 #ifdef DEBUG
-            printf("Close folder %3d\r\n",(*pB).OpenFolder);
+            printf("Close folder %3d\n",(*pB).OpenFolder);
 #endif
 
             cMemoryCloseFolder((*pB).PrgId,&(*pB).hFiles);
@@ -4223,7 +4223,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
             snprintf((char*)pAnswer,Lng,"%s/%s",(char*)(*pB).FullPath,(char*)(*pB).Filename);
             *pType  =  TYPE_BYTECODE;
 #ifdef DEBUG
-            printf("Select folder %3d\r\n",Item);
+            printf("Select folder %3d\n",Item);
 #endif
           }
           break;
@@ -4234,7 +4234,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
             (*pB).OpenFolder  =  (*pB).ItemPointer;
             cMemoryGetItem((*pB).PrgId,(*pB).hFolders,(*pB).OpenFolder,FOLDERNAME_SIZE + SUBFOLDERNAME_SIZE,(*pB).SubFolder,&TmpType);
 #ifdef DEBUG
-            printf("Open  folder %3d (%s)\r\n",(*pB).OpenFolder,(*pB).SubFolder);
+            printf("Open  folder %3d (%s)\n",(*pB).OpenFolder,(*pB).SubFolder);
 #endif
             if (strcmp((char*)(*pB).SubFolder,SDCARD_FOLDER) == 0)
             {
@@ -4276,7 +4276,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
             snprintf((char*)pAnswer,Lng,"%s",(char*)(*pB).FullPath);
             Result  =  OK;
 #ifdef DEBUG
-            printf("Select folder %3d\r\n",Item);
+            printf("Select folder %3d\n",Item);
 #endif
           }
           break;
@@ -4294,7 +4294,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
               snprintf((char*)pAnswer,Lng,"%s",(char*)(*pB).FullPath);
               Result  =  OK;
   #ifdef DEBUG
-              printf("Select file %3d\r\n",Item);
+              printf("Select file %3d\n",Item);
   #endif
             }
           }
@@ -4381,16 +4381,16 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
 #ifndef DISABLE_SDCARD_SUPPORT
       if ((*pB).Sdcard)
       {
-        printf("SDCARD\r\n");
+        printf("SDCARD\n");
       }
 #endif
 #ifndef DISABLE_USBSTICK_SUPPORT
       if ((*pB).Usbstick)
       {
-        printf("USBSTICK\r\n");
+        printf("USBSTICK\n");
       }
 #endif
-      printf("Folders = %3d, OpenFolder = %3d, Files = %3d, ItemStart = %3d, ItemPointer = %3d, TotalItems = %3d\r\n\n",(*pB).Folders,(*pB).OpenFolder,(*pB).Files,(*pB).ItemStart,(*pB).ItemPointer,TotalItems);
+      printf("Folders = %3d, OpenFolder = %3d, Files = %3d, ItemStart = %3d, ItemPointer = %3d, TotalItems = %3d\n\n",(*pB).Folders,(*pB).OpenFolder,(*pB).Files,(*pB).ItemStart,(*pB).ItemPointer,TotalItems);
 #endif
 
       // clear screen
@@ -4617,7 +4617,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
             }
 
 #ifdef DEBUG
-            printf("%s %d %d %d\r\n",(char*)(*pB).Filename,Item,(*pB).OpenFolder,Priority);
+            printf("%s %d %d %d\n",(char*)(*pB).Filename,Item,(*pB).OpenFolder,Priority);
 #endif
           }
           else
@@ -4649,7 +4649,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
             }
 
 #ifdef DEBUG
-            printf(" | %s\r\n",(char*)(*pB).Filename);
+            printf(" | %s\n",(char*)(*pB).Filename);
 #endif
 
           }
@@ -4659,13 +4659,13 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
 #ifdef DEBUG
         else
         {
-          printf("\r\n");
+          printf("\n");
         }
 #endif
         OldPriority  =  Priority;
       }
 #ifdef DEBUG
-      printf("\r\n");
+      printf("\n");
 #endif
 
       cUiDrawBar(1,(*pB).ScrollStartX,(*pB).ScrollStartY,(*pB).ScrollWidth,(*pB).ScrollHeight,0,TotalItems,(*pB).ItemPointer);
@@ -4707,7 +4707,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
         *pType              =  0;
 
   #ifdef DEBUG
-        printf("%d %d Closing browser with [%s] type [%d]\r\n",PrgId,ObjId,(char*)pAnswer,*pType);
+        printf("%d %d Closing browser with [%s] type [%d]\n",PrgId,ObjId,(char*)pAnswer,*pType);
   #endif
         Result  =  OK;
       }
@@ -4745,7 +4745,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
 //* EXIT *****************************************************************************************************
 
 #ifdef DEBUG
-    printf("%d %d Return from browser with [%s] type [0x%02X]\r\n\n",PrgId,ObjId,(char*)pAnswer,*pType);
+    printf("%d %d Return from browser with [%s] type [0x%02X]\n\n",PrgId,ObjId,(char*)pAnswer,*pType);
 #endif
   }
 
@@ -5281,7 +5281,7 @@ void      cUiGraphDraw(DATA8 View,DATAF *pActual,DATAF *pLowest,DATAF *pHighest,
               Value  =  0;
             }
 /*
-            printf("S=%-3d V=%3.0f L=%3.0f H=%3.0f A=%3.0f v=%3.0f ^=%3.0f O=%3d S=%3d Y=%d\r\n",Samples,*pActual,*pLowest,*pHighest,*pAverage,UiInstance.Graph.pMin[Item],UiInstance.Graph.pMax[Item],UiInstance.Graph.pOffset[Item],UiInstance.Graph.pSpan[Item],Value);
+            printf("S=%-3d V=%3.0f L=%3.0f H=%3.0f A=%3.0f v=%3.0f ^=%3.0f O=%3d S=%3d Y=%d\n",Samples,*pActual,*pLowest,*pHighest,*pAverage,UiInstance.Graph.pMin[Item],UiInstance.Graph.pMax[Item],UiInstance.Graph.pOffset[Item],UiInstance.Graph.pSpan[Item],Value);
 */
             Y2  =  (UiInstance.Graph.pOffset[Item] + UiInstance.Graph.pSpan[Item]) - Value;
             if (Pointer > 1)
@@ -7309,7 +7309,7 @@ void      cUiWrite(void)
     { // write time, prgid, objid, ip
 
       pSource  =  (DATA8*)PrimParPointer();
-      snprintf((char*)Buffer,50,"####[ %09u %01u %03u %06u %s]####\r\n",GetTime(),CurrentProgramId(),CallingObjectId(),CurrentObjectIp(),pSource);
+      snprintf((char*)Buffer,50,"####[ %09u %01u %03u %06u %s]####\n",GetTime(),CurrentProgramId(),CallingObjectId(),CurrentObjectIp(),pSource);
       cUiWriteString(Buffer);
       cUiFlush();
       DspStat  =  NOBREAK;

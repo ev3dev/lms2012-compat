@@ -369,11 +369,11 @@ static void write_data_to_the_host(struct usb_ep *ep, struct usb_request *req)
 	  u8    *buf = req->buf;
 
 	  #ifdef DEBUG
-	    printk("WR to HOST req->length = %d\r\n", req->length);
+	    printk("WR to HOST req->length = %d\n", req->length);
 	  #endif
 
 	      #ifdef DEBUG
-	        	printk("USB = %d, %d\r\n", usb_char_buffer_in[2], usb_char_buffer_in[3]);
+	        	printk("USB = %d, %d\n", usb_char_buffer_in[2], usb_char_buffer_in[3]);
 	  #endif
 
 	  for (i = 0; i < req->length; i++)

@@ -43,7 +43,6 @@ RESULT    dTerminalInit(void)
 		TerminalAttr.c_iflag     &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
 		TerminalAttr.c_cflag     &= ~(CSIZE | PARENB);
 		TerminalAttr.c_cflag     |=  CS8;
-		TerminalAttr.c_oflag     &= ~(OPOST);
 
 		TerminalAttr.c_cc[VMIN]   =  0;
 		TerminalAttr.c_cc[VTIME]  =  0;

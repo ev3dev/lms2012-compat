@@ -640,7 +640,7 @@ static int ModuleInit(void)
 {
 
   #ifdef DEBUG
-    printk("%s Module init started\r\n",MODULE_NAME);
+    printk("%s Module init started\n",MODULE_NAME);
   #endif
 
   #ifdef DEBUG

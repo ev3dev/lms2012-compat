@@ -3141,7 +3141,7 @@ static enum hrtimer_restart Device3TimerInterrupt1(struct hrtimer *pTimer)
 #ifdef DEBUG
             if (OutputPort[Port].Connected)
             {
-              printk("\r\no    %d Type = %c, Float = %u, Low = %u\r\n",Port,(char)(*pAnalog).OutDcm[Port],(unsigned int)OutputPort[Port].Value5Float,(unsigned int)OutputPort[Port].Value5Low);
+              printk("\no    %d Type = %c, Float = %u, Low = %u\n",Port,(char)(*pAnalog).OutDcm[Port],(unsigned int)OutputPort[Port].Value5Float,(unsigned int)OutputPort[Port].Value5Low);
             }
 #endif
           }
@@ -3175,7 +3175,7 @@ static enum hrtimer_restart Device3TimerInterrupt1(struct hrtimer *pTimer)
               }
               OutputPort[Port].Connected    =  1;
 #ifdef DEBUG
-              printk("\r\no   %d Type = %03u, Float = %u, Low = %u\r\n",Port,(char)(*pAnalog).OutDcm[Port],(unsigned int)OutputPort[Port].Value5Float,(unsigned int)OutputPort[Port].Value5Low);
+              printk("\no   %d Type = %03u, Float = %u, Low = %u\n",Port,(char)(*pAnalog).OutDcm[Port],(unsigned int)OutputPort[Port].Value5Float,(unsigned int)OutputPort[Port].Value5Low);
 #endif
               OutputPort[Port].State        =  DCM_CONNECTED_WAITING_FOR_PORT_OPEN;
             }

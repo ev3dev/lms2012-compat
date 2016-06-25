@@ -67,12 +67,12 @@ ARRAY8    DataS 10
 vmthread  MAIN
 {
 
-  UI_WRITE(PUT_STRING,'\r\n    ---------------------------------------------')
-  UI_WRITE(PUT_STRING,'\r\n    Performance test (average over ')
+  UI_WRITE(PUT_STRING,'\n    ---------------------------------------------')
+  UI_WRITE(PUT_STRING,'\n    Performance test (average over ')
   UI_WRITE(VALUE32,TIMES)
   UI_WRITE(PUT_STRING,' inst.)')
-  UI_WRITE(PUT_STRING,'\r\n    ---------------------------------------------')
-  UI_WRITE(PUT_STRING,'\r\n    Byte code                        Time [uS]\r\n\n')
+  UI_WRITE(PUT_STRING,'\n    ---------------------------------------------')
+  UI_WRITE(PUT_STRING,'\n    Byte code                        Time [uS]\n\n')
   UI_FLUSH()
 
   // Test_REF
@@ -108,7 +108,7 @@ Loop1:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   // Test_CALL_4x32
@@ -133,7 +133,7 @@ Loop2:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
 
@@ -159,7 +159,7 @@ Loop3:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   // Test_MOVE32_F
@@ -184,7 +184,7 @@ Loop4:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   // Test_MOVEF_F
@@ -209,7 +209,7 @@ Loop5:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   // Test_ADD32
@@ -234,7 +234,7 @@ Loop6:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   // Test_ADDF
@@ -259,7 +259,7 @@ Loop7:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   // Test_INPUT_READ
@@ -284,7 +284,7 @@ Loop8:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   // Test_INPUT_DEVICE_READY_PCT
@@ -309,7 +309,7 @@ Loop9:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   // Test_ARRAY_READ
@@ -335,7 +335,7 @@ Loop10:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   // Test_READ8
@@ -360,7 +360,7 @@ Loop11:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
 
@@ -390,7 +390,7 @@ Loop12:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   // Test_JR
@@ -416,7 +416,7 @@ Next:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
 
@@ -457,7 +457,7 @@ Loop39:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 */
   // Test_NOP
@@ -482,7 +482,7 @@ Loop40:
   MOVE32_F(TIMES,DataF)
   DIVF(InstTime,DataF,InstTime)
   UI_WRITE(FLOATVALUE,InstTime,6,1)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
 }
@@ -532,7 +532,7 @@ vmthread  MAIN
 
   STRINGS(VALUE_TO_STRING,100.0F,4,0,@hString)
   UI_WRITE(PUT_STRING,@hString)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_FLUSH()
 
   ARRAY(DESTROY,hString)
@@ -577,7 +577,7 @@ vmthread  MAIN
   ARRAY8  String1 10
   ARRAY8  String2 10
 
-  STRINGS(DUPLICATE,'TP\r\n',String1)
+  STRINGS(DUPLICATE,'TP\n',String1)
 
   READ8(String1,0,Tmp)
   WRITE8(Tmp,0,String2)
@@ -596,19 +596,19 @@ vmthread  MAIN
   WRITE16(1000,5,Array16)
   READ16(Array16,5,Data16)
   UI_WRITE(VALUE16,Data16)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   WRITE32(100000,6,Array32)
   READ32(Array32,6,Data32)
   UI_WRITE(VALUE32,Data32)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   WRITEF(10000000F,7,ArrayF)
   READF(ArrayF,7,DataF)
   UI_WRITE(VALUEF,DataF)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 }
 */
@@ -634,7 +634,7 @@ subcall   TestTextFileReadWrite
   DATAS   Text 32
 
 
-  UI_WRITE(PUT_STRING,'\r\nTesting textfile write/read\r\n')
+  UI_WRITE(PUT_STRING,'\nTesting textfile write/read\n')
 
   FILE(OPEN_WRITE,'tst.txt',Handle)
   FILE(WRITE_TEXT,Handle,DEL_TAB,'[TAB]')
@@ -651,23 +651,23 @@ subcall   TestTextFileReadWrite
 
   FILE(READ_TEXT,Handle,DEL_TAB,32,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   FILE(READ_TEXT,Handle,DEL_CRLF,32,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   FILE(READ_VALUE,Handle,DEL_TAB,Data2)
   UI_WRITE(VALUEF,Data2)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   FILE(READ_VALUE,Handle,DEL_CRLF,Data2)
   UI_WRITE(VALUEF,Data2)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   FILE(READ_BYTES,Handle,6,Text)
   UI_WRITE(PUT_STRING,Text)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   FILE(CLOSE,Handle)
 
@@ -685,7 +685,7 @@ subcall   TestArrayCopy
   DATA32  Data32
   DATAF   DataF
 
-  UI_WRITE(PUT_STRING,'\r\nTesting array copy\r\n')
+  UI_WRITE(PUT_STRING,'\nTesting array copy\n')
 
 // DATA8
 
@@ -721,7 +721,7 @@ subcall   TestArrayCopy
   ARRAY_READ(hDest,10,Data16)
 
   UI_WRITE(VALUE16,Data16)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   ARRAY(DESTROY,hDest)
@@ -741,7 +741,7 @@ subcall   TestArrayCopy
   ARRAY_READ(hDest,5,Data32)
 
   UI_WRITE(VALUE32,Data32)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   ARRAY(DESTROY,hDest)
@@ -761,7 +761,7 @@ subcall   TestArrayCopy
   ARRAY_READ(hDest,8,DataF)
 
   UI_WRITE(VALUEF,DataF)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   ARRAY(DESTROY,hDest)
@@ -780,7 +780,7 @@ vmthread  MAIN
   DATAS   String1 10
   DATAS   String2 10
 
-  STRINGS(DUPLICATE,'TP\r\n',String1)
+  STRINGS(DUPLICATE,'TP\n',String1)
 
   READ8(String1,0,Tmp)
   WRITE8(Tmp,0,String2)

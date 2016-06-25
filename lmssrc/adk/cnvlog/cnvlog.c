@@ -115,7 +115,7 @@ int       main(int argc,char *argv[])
   }
   else
   {
-    printf("\r\nUsage cnvlog filein fileout\r\n\n");
+    printf("\nUsage cnvlog filein fileout\n\n");
   }
   return (0);
 }

@@ -629,7 +629,7 @@ void      BtSetup(UBYTE State)
       if (hci_send_cmd (BtInstance.HciSocket.Socket, OGF_LINK_CTL, OCF_INQUIRY, INQUIRY_CP_SIZE, &cp) < 0)
       {
         #ifdef DEBUG
-          printf("\r\n Can't start inquiry \r\n");
+          printf("\nCan't start inquiry\n");
         #endif
         return;
       }
@@ -759,7 +759,7 @@ UWORD     cBtReadCh0(UBYTE *pBuf, UWORD Length)
   if (MSG_BUF_FULL == pMsgBuf->Status)
   {
     #ifdef DEBUG
-      printf("\r\n MSG_BUF_FULL - Reading from cCom on Bt Channel 0 number of bytes = %d\r\n",pMsgBuf->InPtr);
+      printf("\n MSG_BUF_FULL - Reading from cCom on Bt Channel 0 number of bytes = %d\n",pMsgBuf->InPtr);
     #endif
 
     memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
@@ -781,7 +781,7 @@ UWORD     cBtReadCh1(UBYTE *pBuf, UWORD Length)
   {
 
     #ifdef DEBUG
-      printf("\r\n MSG_BUF_FULL on Bt Channel 1 %d bytes copied\r\n",pMsgBuf->InPtr);
+      printf("\n MSG_BUF_FULL on Bt Channel 1 %d bytes copied\n",pMsgBuf->InPtr);
     #endif
 
     memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
@@ -803,7 +803,7 @@ UWORD     cBtReadCh2(UBYTE *pBuf, UWORD Length)
   {
 
     #ifdef DEBUG
-      printf("\r\n MSG_BUF_FULL on Bt Channel 1\r\n");
+      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
     #endif
 
     memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
@@ -825,7 +825,7 @@ UWORD      cBtReadCh3(UBYTE *pBuf, UWORD Length)
   {
 
     #ifdef DEBUG
-      printf("\r\n MSG_BUF_FULL on Bt Channel 1\r\n");
+      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
     #endif
 
     memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
@@ -847,7 +847,7 @@ UWORD      cBtReadCh4(UBYTE *pBuf, UWORD Length)
   {
 
     #ifdef DEBUG
-      printf("\r\n MSG_BUF_FULL on Bt Channel 1\r\n");
+      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
     #endif
 
     memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
@@ -869,7 +869,7 @@ UWORD      cBtReadCh5(UBYTE *pBuf, UWORD Length)
   {
 
     #ifdef DEBUG
-      printf("\r\n MSG_BUF_FULL on Bt Channel 1\r\n");
+      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
     #endif
 
     memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
@@ -891,7 +891,7 @@ UWORD      cBtReadCh6(UBYTE *pBuf, UWORD Length)
   {
 
     #ifdef DEBUG
-      printf("\r\n MSG_BUF_FULL on Bt Channel 1\r\n");
+      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
     #endif
 
     memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
@@ -912,7 +912,7 @@ UWORD      cBtReadCh7(UBYTE *pBuf, UWORD Length)
   {
 
     #ifdef DEBUG
-      printf("\r\n MSG_BUF_FULL on Bt Channel 1\r\n");
+      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
     #endif
 
     memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
@@ -980,7 +980,7 @@ void      DecodeMode1(UBYTE BufNo)
   AvailBytes = (pReadBuf->InPtr - pReadBuf->OutPtr);          /* How many bytes is ready to be read */
   
   #ifdef DEBUG
-    printf("\r\nDecode mode 1: Avail bytes = %d MsgBuf status = %d\r\n",AvailBytes,pMsgBuf->Status);
+    printf("\nDecode mode 1: Avail bytes = %d MsgBuf status = %d\n",AvailBytes,pMsgBuf->Status);
   #endif
 
   switch(pMsgBuf->Status)
@@ -1025,7 +1025,7 @@ void      DecodeMode1(UBYTE BufNo)
                 {
                   printf("%02X ", pMsgBuf->Buf[Test]);
                 }
-                printf(" \r\n");
+                printf("\n");
               #endif
 
               if (0 == AvailBytes)
@@ -1110,7 +1110,7 @@ void      DecodeMode1(UBYTE BufNo)
             {
               printf("%02X ", pMsgBuf->Buf[Test]);
             }
-            printf(" \r\n");
+            printf("\n");
           #endif
 
           if (0 == AvailBytes)
@@ -1207,7 +1207,7 @@ void      DecodeMode1(UBYTE BufNo)
             {
               printf("%02X ", pMsgBuf->Buf[Test]);
             }
-            printf(" \r\n");
+            printf("\n");
           #endif
 
           if (0 == AvailBytes)
@@ -1632,7 +1632,7 @@ void      BtUpdate(void)
 
         #ifdef DEBUG
           ba2str((const bdaddr_t*)(&(BtInstance.ListenSocket.rem_addr.rc_bdaddr)), tmpbuf);
-          printf("Remote connection accepted, address: %s \r\n",tmpbuf);
+          printf("Remote connection accepted, address: %s\n",tmpbuf);
         #endif
 
         if (OK == cBtFindDevAdr(&(pBtSocket->Addr), &Index))
@@ -1693,12 +1693,12 @@ void      BtUpdate(void)
               {
                 #ifdef DEBUG
                   int Cnt;
-                  printf("\r\nData received on BT in Slave mode");
+                  printf("\nData received on BT in Slave mode");
                   for (Cnt = 0; Cnt < BytesRead; Cnt++)
                   {
-                    printf("\r\n Rx byte nr %02d = %02X",Cnt,pReadBuf->Buf[Cnt]);
+                    printf("\n Rx byte nr %02d = %02X",Cnt,pReadBuf->Buf[Cnt]);
                   }
-                  printf("\r\n");
+                  printf("\n");
                 #endif
 
                 pReadBuf->OutPtr = 0;
@@ -1885,7 +1885,7 @@ void    create_paired_device_reply(DBusPendingCall *pending, void *user_data)
   if (dbus_set_error_from_message(&err, message))
   {
 
-//    printf("\r\nPending information: %s \r\n",err.name);
+//    printf("\nPending information: %s\n",err.name);
     if (0 != strcmp("org.bluez.Error.AlreadyExists", err.name))
     {
       Status = FALSE;
@@ -2249,7 +2249,7 @@ UBYTE     Connect(bdaddr_t BdAddr, UBYTE PortNo)
   {
     // State allows to connect to other devices
     #ifdef DEBUG
-      printf("Connecting from IDLE... \r\n");
+      printf("Connecting from IDLE...\n");
     #endif
 
     BtSetup(I_AM_MASTER);
@@ -2271,7 +2271,7 @@ UBYTE     Connect(bdaddr_t BdAddr, UBYTE PortNo)
       // Can be the master of up to 7 units
       #ifdef DEBUG
         ba2str(&BdAddr, Addr);
-        printf("Connecting from MASTER PortIndex = %d, Addr = %s \r\n",PortNo,Addr);
+        printf("Connecting from MASTER PortIndex = %d, Addr = %s\n",PortNo,Addr);
       #endif
 
       RtnVal = BtConnectTo(PortNo, BdAddr);
@@ -2307,7 +2307,7 @@ UBYTE     Connect(bdaddr_t BdAddr, UBYTE PortNo)
       {
         // Mode does not allow connecting
         #ifdef DEBUG
-          printf("Wrong Mode... = %d \r\n", (int)BtInstance.State);
+          printf("Wrong Mode... = %d\n", (int)BtInstance.State);
         #endif
       }
     }
@@ -2355,14 +2355,14 @@ UBYTE     cBtConnect(UBYTE *pDevName)
           BtInstance.OutGoing.ChNo  = PortIndex;
 
           #ifdef DEBUG
-            printf("\r\n ..... c_bt_connect....Name = %s\r\n",pDevName);
+            printf("\n ..... c_bt_connect....Name = %s\n",pDevName);
           #endif
 
           // First look in the known list
           if (TRUE == cBtFindDevName(&Index, pDevName, 0))
           {
             #ifdef DEBUG
-              printf("\r\nFound in dev table: index = %d, name = %s, Port no = %d\r\n", Index, pDevName, PortIndex);
+              printf("\nFound in dev table: index = %d, name = %s, Port no = %d\n", Index, pDevName, PortIndex);
             #endif
 
             pBdAddr = &(BtInstance.NonVol.DevList[Index].Adr);
@@ -2373,7 +2373,7 @@ UBYTE     cBtConnect(UBYTE *pDevName)
             if (TRUE == cBtFindSearchName(&Index, pDevName))
             {
               #ifdef DEBUG
-                printf("\r\n ..... Found in search table index = %d.... name = %s\r\n", Index, pDevName);
+                printf("\n ..... Found in search table index = %d.... name = %s\n", Index, pDevName);
               #endif
 
               pBdAddr = &(BtInstance.SearchList[Index].Adr);
@@ -2490,7 +2490,7 @@ UBYTE     cBtDisconnect(UBYTE *pName)
     }
 
     #ifdef DEBUG
-      printf("\r\nDisconnecting Index = %d, Socketno = %d, Name = %s",Index,BtInstance.BtCh[BtInstance.NonVol.DevList[Index].ChNo].BtSocket.Socket,pName);
+      printf("\nDisconnecting Index = %d, Socketno = %d, Name = %s",Index,BtInstance.BtCh[BtInstance.NonVol.DevList[Index].ChNo].BtSocket.Socket,pName);
     #endif
 
     RtnVal = OK;
@@ -2542,8 +2542,8 @@ void      BtTxMsgs(void)
             pWriteBuf->OutPtr += NoWritten;
 
             #ifdef DEBUG
-              printf("\r\n.... transmitted to socket = %d on chno = %d, Bytes to send %d, Bytes written = %d \r\n",pBtSocket->Socket, Cnt, ByteCnt, NoWritten);
-              printf("\r\n errno = %d\r\n", errno);
+              printf("\n.... transmitted to socket = %d on chno = %d, Bytes to send %d, Bytes written = %d\n",pBtSocket->Socket, Cnt, ByteCnt, NoWritten);
+              printf("\n errno = %d\n", errno);
             #endif
 
             if (pWriteBuf->OutPtr == pWriteBuf->InPtr)
@@ -2947,7 +2947,7 @@ UWORD     cBtHandleHCI(void)
             // Connection from the outside - coming from the listen socket
             // Need to add it to the dev list and search list if possible
             #ifdef DEBUG
-              printf("EVT_CONN_REQUEST from outside this is slave..... \r\n");
+              printf("EVT_CONN_REQUEST from outside this is slave.....\n");
             #endif
 
             // Save information regarding incoming connection
@@ -2976,7 +2976,7 @@ UWORD     cBtHandleHCI(void)
             }
 
             #ifdef DEBUG
-              printf("EVT_CONN_COMPLETE - FAIL !!!!! Status = %d \r\n",((evt_conn_complete*)ptr)->status);
+              printf("EVT_CONN_COMPLETE - FAIL !!!!! Status = %d\n",((evt_conn_complete*)ptr)->status);
             #endif
             BtInstance.HciSocket.Busy &= ~HCI_CONNECT;
           }
@@ -3071,7 +3071,7 @@ UWORD     cBtHandleHCI(void)
             {
               // No devices found
               #ifdef DEBUG
-                printf("inquiry done - no devices found.... exiting \r\n");
+                printf("inquiry done - no devices found.... exiting\n");
               #endif
 
               STOPScanning;
@@ -3084,7 +3084,7 @@ UWORD     cBtHandleHCI(void)
               BtInstance.ScanState = SCAN_NAME_STATE;
               BtRequestName();
               #ifdef DEBUG
-                printf("inquiry done - requesting names ... exiting \r\n");
+                printf("inquiry done - requesting names ... exiting\n");
               #endif
             }
             else
@@ -3104,7 +3104,7 @@ UWORD     cBtHandleHCI(void)
           UBYTE                         Exit;
 
           #ifdef DEBUG
-            printf("EVT_REMOTE_NAME_REQ_COMPLETE\r\n");
+            printf("EVT_REMOTE_NAME_REQ_COMPLETE\n");
             char    TmpAddr[16];
           #endif
 
@@ -3128,7 +3128,7 @@ UWORD     cBtHandleHCI(void)
                   {
 
                     #ifdef DEBUG
-                      printf("\r\nUpdated name in favourite list \r\n");
+                      printf("\nUpdated name in favourite list\n");
                     #endif
 
                     strcpy(BtInstance.NonVol.DevList[Cnt].Name, (char*)rn->name);
@@ -3141,14 +3141,14 @@ UWORD     cBtHandleHCI(void)
 
             #ifdef DEBUG
               ba2str((const bdaddr_t *)(&BtInstance.SearchList[BtInstance.SearchIndex].Adr), TmpAddr);
-              printf("Dev Table[%d]: Addr = %s, Name = %s \r\n", BtInstance.SearchIndex, TmpAddr, BtInstance.SearchList[BtInstance.SearchIndex].Name);
+              printf("Dev Table[%d]: Addr = %s, Name = %s\n", BtInstance.SearchIndex, TmpAddr, BtInstance.SearchList[BtInstance.SearchIndex].Name);
             #endif
 
             if (BtInstance.SearchIndex >= (BtInstance.NoOfFoundDev - 1))
             {
               // All devices found
               #ifdef DEBUG
-                printf("inquiry done.... exiting \r\n");
+                printf("inquiry done.... exiting\n");
               #endif
 
               STOPScanning;
@@ -3181,7 +3181,7 @@ UWORD     cBtHandleHCI(void)
                   {
 
                     #ifdef DEBUG
-                      printf("\r\nUpdated name in favourite list \r\n");
+                      printf("\nUpdated name in favourite list\n");
                     #endif
                     strcpy(BtInstance.NonVol.DevList[Cnt].Name, (char*)rn->name);
 
@@ -3195,7 +3195,7 @@ UWORD     cBtHandleHCI(void)
               {
 
                 #ifdef DEBUG
-                  printf("\r\nUpdated name in favourite list \r\n");
+                  printf("\nUpdated name in favourite list\n");
                 #endif
                 strcpy(BtInstance.Incoming.Name, (char*)rn->name);
               }
@@ -3265,7 +3265,7 @@ UWORD     cBtHandleHCI(void)
               if (I_AM_MASTER == BtInstance.State)
               {
                 #ifdef DEBUG
-                  printf("\r\nEVT_CONN_COMPLETE in master mode: DevIndex = %d, ChNo = %d\r\n",DevIndex, BtInstance.OutGoing.ChNo);
+                  printf("\nEVT_CONN_COMPLETE in master mode: DevIndex = %d, ChNo = %d\n",DevIndex, BtInstance.OutGoing.ChNo);
                 #endif
 
                 BtInstance.NonVol.DevList[DevIndex].ChNo = BtInstance.OutGoing.ChNo;
@@ -3938,7 +3938,7 @@ static DBusHandlerResult request_pincode_message(DBusConnection *conn, DBusMessa
     if (!reply)
     {
       #ifdef DEBUG
-        fprintf(stderr, "Can't create reply message\r\n");
+        fprintf(stderr, "Can't create reply message\n");
       #endif
       Result = DBUS_HANDLER_RESULT_NEED_MEMORY;
     }
@@ -4051,12 +4051,12 @@ static int RemoveDevice(DBusConnection *conn, char *Device)
     if (!reply)
     {
       #ifdef DEBUG
-        fprintf(stderr, "Can't register agent\r\n");
+        fprintf(stderr, "Can't register agent\n");
       #endif
       if (dbus_error_is_set(&err))
       {
         #ifdef DEBUG
-          fprintf(stderr, "%s \r\n", err.message);
+          fprintf(stderr, "%s\n", err.message);
         #endif
         dbus_error_free(&err);
       }

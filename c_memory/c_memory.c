@@ -125,7 +125,7 @@ void      cMemoryGetUsage(DATA32 *pTotal,DATA32 *pFree,DATA8 Force)
 #ifdef DEBUG_C_MEMORY_LOW
   if (Force)
   {
-    printf("  cMemoryGetUsage               T=%10luKB F=%10luKB U=%10luKB\r\n",(long unsigned int)VMInstance.MemorySize,(long unsigned int)VMInstance.MemoryFree,(long unsigned int)Used);
+    printf("  cMemoryGetUsage               T=%10luKB F=%10luKB U=%10luKB\n",(long unsigned int)VMInstance.MemorySize,(long unsigned int)VMInstance.MemoryFree,(long unsigned int)Used);
   }
 #endif
 }
@@ -143,11 +143,11 @@ RESULT    cMemoryRealloc(void *pOldMemory,void **ppMemory,DATA32 Size)
 #ifdef DEBUG_MEMORY_USAGE
   if (Result == OK)
   {
-    printf("  cMemoryRealloc       %-8p S=%8lu\r\n",*ppMemory,(long unsigned int)Size);
+    printf("  cMemoryRealloc       %-8p S=%8lu\n",*ppMemory,(long unsigned int)Size);
   }
   else
   {
-    printf("  cMemoryRealloc ERROR        - S=%8lu\r\n",(long unsigned int)Size);
+    printf("  cMemoryRealloc ERROR        - S=%8lu\n",(long unsigned int)Size);
   }
 #endif
 
@@ -160,7 +160,7 @@ RESULT    cMemoryFree(void *pMemory)
   RESULT  Result = FAIL;
 
 #ifdef DEBUG_MEMORY_USAGE
-  printf("  cMemoryFree          %-8p\r\n",pMemory);
+  printf("  cMemoryFree          %-8p\n",pMemory);
 #endif
   free(pMemory);
   Result  =  OK;
@@ -200,11 +200,11 @@ RESULT    cMemoryAlloc(PRGID PrgId,DATA8 Type,GBINDEX Size,void **ppMemory,HANDL
 #ifdef DEBUG
   if (Result == OK)
   {
-    printf("  cMemoryAlloc         %-8p S=%8lu P=%1u H=%1u T=%1u\r\n",*ppMemory,(long unsigned int)Size,(unsigned int)PrgId,(unsigned int)TmpHandle,(unsigned int)Type);
+    printf("  cMemoryAlloc         %-8p S=%8lu P=%1u H=%1u T=%1u\n",*ppMemory,(long unsigned int)Size,(unsigned int)PrgId,(unsigned int)TmpHandle,(unsigned int)Type);
   }
   else
   {
-    printf("  cMemoryAlloc ERROR          - S=%8lu P=%1u\r\n",(long unsigned int)Size,(unsigned int)PrgId);
+    printf("  cMemoryAlloc ERROR          - S=%8lu P=%1u\n",(long unsigned int)Size,(unsigned int)PrgId);
   }
 #endif
 
@@ -231,11 +231,11 @@ void*     cMemoryReallocate(PRGID PrgId,HANDLER Handle,GBINDEX Size)
 #ifdef DEBUG
   if (pTmp != NULL)
   {
-    printf("  cMemoryReallocate    %-8p S=%8lu P=%1u H=%1u\r\n",MemoryInstance.pPoolList[PrgId][Handle].pPool,(long unsigned int)Size,(unsigned int)PrgId,(unsigned int)Handle);
+    printf("  cMemoryReallocate    %-8p S=%8lu P=%1u H=%1u\n",MemoryInstance.pPoolList[PrgId][Handle].pPool,(long unsigned int)Size,(unsigned int)PrgId,(unsigned int)Handle);
   }
   else
   {
-    printf("  cMemoryReallocate ERROR     - S=%8lu P=%1u H=%1u\r\n",(long unsigned int)Size,(unsigned int)PrgId,(unsigned int)Handle);
+    printf("  cMemoryReallocate ERROR     - S=%8lu P=%1u H=%1u\n",(long unsigned int)Size,(unsigned int)PrgId,(unsigned int)Handle);
   }
 #endif
 
@@ -260,7 +260,7 @@ RESULT    cMemoryGetPointer(PRGID PrgId,HANDLER Handle,void **pMemory)
 #ifdef DEBUG
   if (Result != OK)
   {
-    printf("  Get pointer error P=%1u H=%1u\r\n",(unsigned int)PrgId,(unsigned int)Handle);
+    printf("  Get pointer error P=%1u H=%1u\n",(unsigned int)PrgId,(unsigned int)Handle);
   }
 #endif
 
@@ -303,7 +303,7 @@ DSPSTAT   cMemoryFreeHandle(PRGID PrgId,HANDLER Handle)
           Result  =  NOBREAK;
         }
 #ifdef DEBUG
-        printf("  Close file %d\r\n",(*pFDescr).hFile);
+        printf("  Close file %d\n",(*pFDescr).hFile);
 #endif
       }
       else
@@ -312,7 +312,7 @@ DSPSTAT   cMemoryFreeHandle(PRGID PrgId,HANDLER Handle)
       }
 
 #ifdef DEBUG
-      printf("  cMemoryFreeHandle    %-8p S=%8lu H=%1u\r\n",MemoryInstance.pPoolList[PrgId][Handle].pPool,(long unsigned int)MemoryInstance.pPoolList[PrgId][Handle].Size,Handle);
+      printf("  cMemoryFreeHandle    %-8p S=%8lu H=%1u\n",MemoryInstance.pPoolList[PrgId][Handle].pPool,(long unsigned int)MemoryInstance.pPoolList[PrgId][Handle].Size,Handle);
 #endif
       cMemoryFree(MemoryInstance.pPoolList[PrgId][Handle].pPool);
       MemoryInstance.pPoolList[PrgId][Handle].pPool  =  NULL;
@@ -485,7 +485,7 @@ void*     cMemoryResize(PRGID PrgId,HANDLER TmpHandle,DATA32 Elements)
     }
 
 #ifdef DEBUG
-    printf("  Resize P=%1u H=%1u T=%1u S=%8lu A=%8p\r\n",(unsigned int)PrgId,(unsigned int)TmpHandle,(unsigned int)MemoryInstance.pPoolList[PrgId][TmpHandle].Type,(unsigned long)MemoryInstance.pPoolList[PrgId][TmpHandle].Size,MemoryInstance.pPoolList[PrgId][TmpHandle].pPool);
+    printf("  Resize P=%1u H=%1u T=%1u S=%8lu A=%8p\n",(unsigned int)PrgId,(unsigned int)TmpHandle,(unsigned int)MemoryInstance.pPoolList[PrgId][TmpHandle].Type,(unsigned long)MemoryInstance.pPoolList[PrgId][TmpHandle].Size,MemoryInstance.pPoolList[PrgId][TmpHandle].pPool);
 #endif
   }
   if (pTmp != NULL)
@@ -619,7 +619,7 @@ RESULT    cMemoryCheckFilename(char *pFilename,char *pPath,char *pName,char *pEx
   if (Result != OK)
   {
 #ifdef DEBUG_TRACE_FILENAME
-    printf("Filename error in [%s]\r\n",pFilename);
+    printf("Filename error in [%s]\n",pFilename);
 #endif
     if (!LogErrorNumberExists(FILE_NAME_ERROR))
     {
@@ -659,7 +659,7 @@ RESULT    ConstructFilename(PRGID PrgId,char *pFilename,char *pName,const char *
     snprintf(pName,vmFILENAMESIZE,"%s%s%s",Path,Name,Ext);
 
 #ifdef DEBUG_TRACE_FILENAME
-    printf("c_memory  ConstructFilename:       [%s]\r\n",pName);
+    printf("c_memory  ConstructFilename:       [%s]\n",pName);
 #endif
 
   }
@@ -691,7 +691,7 @@ void      cMemoryDeleteCacheFile(char *pFileName)
   DATA8   Tmp;
 
 #ifdef DEBUG
-  printf("DEL_CACHE_FILE %s\r\n",(char*)pFileName);
+  printf("DEL_CACHE_FILE %s\n",(char*)pFileName);
 #endif
 
   Item  =  0;
@@ -922,7 +922,7 @@ void      cMemoryDeleteSubFolders(char *pFolderName)
       while((d = readdir(dir)))
       {
 #ifdef DEBUG
-        printf("%s\r\n",d->d_name);
+        printf("%s\n",d->d_name);
 #endif
 
         sprintf(buf, "%s/%s", pFolderName, d->d_name);
@@ -1118,7 +1118,7 @@ void      cMemoryFilename(PRGID PrgId,char *pName,char *pExt,DATA8 Length,char *
     snprintf(pResult,Length,"%s%s%s",(char*)MemoryInstance.PathList[PrgId],pName,pExt);
   }
 #ifdef DEBUG
-  printf("Filename = [%s]\r\n",pResult);
+  printf("Filename = [%s]\n",pResult);
 #endif
 }
 
@@ -1172,7 +1172,7 @@ DSPSTAT   cMemoryGetFileHandle(PRGID PrgId,char *pFileName,HANDLER *pHandle,DATA
   }
 
 #ifdef DEBUG_C_MEMORY_FILE
-  printf("Handle for file %5d %s\r\n",*pHandle,pFileName);
+  printf("Handle for file %5d %s\n",*pHandle,pFileName);
 #endif
   Result  =  NOBREAK;
 
@@ -1217,7 +1217,7 @@ DSPSTAT   cMemoryOpenFile(PRGID PrgId,DATA8 Access,char *pFileName,HANDLER *pHan
       hFile  =  open(pFileName,O_CREAT | O_WRONLY | O_TRUNC,FILEPERMISSIONS);
       chmod(pFileName,FILEPERMISSIONS);
 #ifdef DEBUG_C_MEMORY_FILE
-      printf("Open for write  %5d %s\r\n",hFile,pFileName);
+      printf("Open for write  %5d %s\n",hFile,pFileName);
 #endif
     }
     break;
@@ -1227,7 +1227,7 @@ DSPSTAT   cMemoryOpenFile(PRGID PrgId,DATA8 Access,char *pFileName,HANDLER *pHan
       hFile  =  open(pFileName,O_CREAT | O_WRONLY | O_APPEND,FILEPERMISSIONS);
       chmod(pFileName,FILEPERMISSIONS);
 #ifdef DEBUG_C_MEMORY_FILE
-      printf("Open for append %5d %s\r\n",hFile,pFileName);
+      printf("Open for append %5d %s\n",hFile,pFileName);
 #endif
     }
     break;
@@ -1237,7 +1237,7 @@ DSPSTAT   cMemoryOpenFile(PRGID PrgId,DATA8 Access,char *pFileName,HANDLER *pHan
       hFile  =  open(pFileName,O_RDONLY);
       Result  =  NOBREAK;
 #ifdef DEBUG_C_MEMORY_FILE
-      printf("Open for read   %5d %s\r\n",hFile,pFileName);
+      printf("Open for read   %5d %s\n",hFile,pFileName);
 #endif
     }
     break;
@@ -1247,7 +1247,7 @@ DSPSTAT   cMemoryOpenFile(PRGID PrgId,DATA8 Access,char *pFileName,HANDLER *pHan
       hFile  =  open(pFileName,O_CREAT | O_WRONLY | O_APPEND,FILEPERMISSIONS);
       chmod(pFileName,FILEPERMISSIONS);
 #ifdef DEBUG_C_MEMORY_FILE
-      printf("Open for append %5d %s\r\n",hFile,pFileName);
+      printf("Open for append %5d %s\n",hFile,pFileName);
 #endif
     }
     break;
@@ -1298,7 +1298,7 @@ DSPSTAT   cMemoryWriteFile(PRGID PrgId,HANDLER Handle,DATA32 Size,DATA8 Del,DATA
         if (write((*pFDescr).hFile,pSource,Size) == Size)
         {
   #ifdef DEBUG_C_MEMORY_FILE
-          printf("Write to  %-2d    %5d %s [%d]\r\n",Handle,(*pFDescr).hFile,(*pFDescr).Filename,Size);
+          printf("Write to  %-2d    %5d %s [%d]\n",Handle,(*pFDescr).hFile,(*pFDescr).Filename,Size);
   #endif
           if (Del < DELS)
           {
@@ -1344,7 +1344,7 @@ DSPSTAT   cMemoryReadFile(PRGID PrgId,HANDLER Handle,DATA32 Size,DATA8 Del,DATA8
       if (((*pFDescr).Access == OPEN_FOR_READ))
       {
   #ifdef DEBUG_C_MEMORY_FILE
-        printf("Read from %-2d    %5d %s [%d]\r\n",Handle,(*pFDescr).hFile,(*pFDescr).Filename,Size);
+        printf("Read from %-2d    %5d %s [%d]\n",Handle,(*pFDescr).hFile,(*pFDescr).Filename,Size);
   #endif
         if (VMInstance.Handle >= 0)
         {
@@ -1418,12 +1418,12 @@ DSPSTAT   cMemoryCloseFile(PRGID PrgId,HANDLER Handle)
   {
     if (cMemoryGetPointer(PrgId,Handle,(void**)&pFDescr) == OK)
     {
-      printf("Close file %-2d    %5d %s\r\n",Handle,(*pFDescr).hFile,(*pFDescr).Filename);
+      printf("Close file %-2d    %5d %s\n",Handle,(*pFDescr).hFile,(*pFDescr).Filename);
     }
   }
   else
   {
-    printf("Close pool %-2d\r\n",Handle);
+    printf("Close pool %-2d\n",Handle);
   }
 #endif
 
@@ -1664,7 +1664,7 @@ void      cMemorySortList(FOLDER *pMemory)
   for (Pointer = 0;Pointer < (*pMemory).Entries;Pointer++)
   {
 #ifdef DEBUG
-    printf("[%s](%d)(%d) %s\r\n",(char*)(*pMemory).Folder,(*pMemory).Sort,(*pMemory).Priority[Pointer],(char*)(*pMemory).Entry[Pointer]);
+    printf("[%s](%d)(%d) %s\n",(char*)(*pMemory).Folder,(*pMemory).Sort,(*pMemory).Priority[Pointer],(char*)(*pMemory).Entry[Pointer]);
 #endif
   }
 }
@@ -1760,7 +1760,7 @@ RESULT    cMemoryGetFolderItems(PRGID PrgId,HANDLER Handle,DATA16 *pItems)
 
                   cMemorySortEntry(pMemory,(*pEntry).d_type,(*pEntry).d_name);
 #ifdef DEBUG
-                  printf("[%s](%d) %s\r\n",(char*)(*pMemory).Folder,(*pMemory).Sort,(*pEntry).d_name);
+                  printf("[%s](%d) %s\n",(char*)(*pMemory).Folder,(*pMemory).Sort,(*pEntry).d_name);
 #endif
                 }
               }
@@ -1774,7 +1774,7 @@ RESULT    cMemoryGetFolderItems(PRGID PrgId,HANDLER Handle,DATA16 *pItems)
                   {
                     cMemorySortEntry(pMemory,(*pEntry).d_type,(*pEntry).d_name);
 #ifdef DEBUG
-                    printf("[%s](%d) %s\r\n",(char*)(*pMemory).Folder,(*pMemory).Sort,(*pEntry).d_name);
+                    printf("[%s](%d) %s\n",(char*)(*pMemory).Folder,(*pMemory).Sort,(*pEntry).d_name);
 #endif
                   }
                 }
@@ -2373,7 +2373,7 @@ void      cMemoryFile(void)
       {
 
 #ifdef DEBUG_TRACE_FILENAME
-        printf("c_memory  cMemoryFile: OPEN_APPEND [%s]\r\n",FilenameBuf);
+        printf("c_memory  cMemoryFile: OPEN_APPEND [%s]\n",FilenameBuf);
 #endif
         DspStat       =   cMemoryOpenFile(TmpPrgId,OPEN_FOR_APPEND,(char*)FilenameBuf,&TmpHandle,&ISize);
       }
@@ -2390,7 +2390,7 @@ void      cMemoryFile(void)
       {
 
 #ifdef DEBUG_TRACE_FILENAME
-        printf("c_memory  cMemoryFile: OPEN_READ   [%s]\r\n",FilenameBuf);
+        printf("c_memory  cMemoryFile: OPEN_READ   [%s]\n",FilenameBuf);
 #endif
         DspStat       =  cMemoryOpenFile(TmpPrgId,OPEN_FOR_READ,FilenameBuf,&TmpHandle,&ISize);
       }
@@ -2408,7 +2408,7 @@ void      cMemoryFile(void)
       {
 
 #ifdef DEBUG_TRACE_FILENAME
-        printf("c_memory  cMemoryFile: OPEN_WRITE  [%s]\r\n",FilenameBuf);
+        printf("c_memory  cMemoryFile: OPEN_WRITE  [%s]\n",FilenameBuf);
 #endif
         DspStat       =  cMemoryOpenFile(TmpPrgId,OPEN_FOR_WRITE,FilenameBuf,&TmpHandle,&ISize);
 
@@ -2514,9 +2514,9 @@ void      cMemoryFile(void)
       {
 
 #ifdef DEBUG_TRACE_FILENAME
-        printf("c_memory  cMemoryFile: OPEN_LOG    [%s]\r\n",FilenameBuf);
+        printf("c_memory  cMemoryFile: OPEN_LOG    [%s]\n",FilenameBuf);
 #endif
-        Bytes         =  snprintf(Buffer,LOGBUFFER_SIZE,"Sync data\t%d\t%d\t%d\t%d\t%d\r\n%s",STime,STick,NTick,SIIM,DIM,pSData);
+        Bytes         =  snprintf(Buffer,LOGBUFFER_SIZE,"Sync data\t%d\t%d\t%d\t%d\t%d\n%s",STime,STick,NTick,SIIM,DIM,pSData);
 
         DspStat       =  NOBREAK;
 
@@ -2544,13 +2544,13 @@ void      cMemoryFile(void)
   #ifdef DEBUG_C_MEMORY_LOG
               if (pFileName[0])
               {
-                printf("LOG_OPEN  %d into ram file %s\r\n",TmpHandle,FilenameBuf);
-                printf("  header  %d into ram file %d bytes\r\n",TmpHandle,Bytes);
+                printf("LOG_OPEN  %d into ram file %s\n",TmpHandle,FilenameBuf);
+                printf("  header  %d into ram file %d bytes\n",TmpHandle,Bytes);
               }
               else
               {
-                printf("LOG_OPEN  %d into ram\r\n",TmpHandle);
-                printf("  header  %d into ram %d bytes\r\n",TmpHandle,Bytes);
+                printf("LOG_OPEN  %d into ram\n",TmpHandle);
+                printf("  header  %d into ram %d bytes\n",TmpHandle,Bytes);
               }
   #endif
               pDescr        =  (DESCR*)pTmp;
@@ -2582,8 +2582,8 @@ void      cMemoryFile(void)
           {
             DspStat =  cMemoryWriteFile(TmpPrgId,TmpHandle,(DATA32)Bytes,DEL_NONE,(DATA8*)Buffer);
   #ifdef DEBUG_C_MEMORY_LOG
-            printf("LOG_OPEN  %d into file %s\r\n",TmpHandle,(char*)pFileName);
-            printf("  header  %d file %d bytes\r\n",TmpHandle,Bytes);
+            printf("LOG_OPEN  %d into file %s\n",TmpHandle,(char*)pFileName);
+            printf("  header  %d file %d bytes\n",TmpHandle,Bytes);
   #endif
           }
         }
@@ -2628,7 +2628,7 @@ void      cMemoryFile(void)
           }
           else
           {
-            Bytes +=  snprintf(&Buffer[Bytes],LOGBUFFER_SIZE - Bytes,"%.1f\r\n",pValue[Item]);
+            Bytes +=  snprintf(&Buffer[Bytes],LOGBUFFER_SIZE - Bytes,"%.1f\n",pValue[Item]);
           }
         }
 #endif
@@ -2672,7 +2672,7 @@ void      cMemoryFile(void)
                 UsedElements  =  (*pDescr).UsedElements;
 
   #ifdef DEBUG_C_MEMORY_LOG
-                printf("LOG_WRITE %d ram %d bytes\r\n",TmpHandle,Bytes);
+                printf("LOG_WRITE %d ram %d bytes\n",TmpHandle,Bytes);
   #endif
                 memcpy((void*)&pDestination[UsedElements],Buffer,(size_t)Bytes);
                 (*pDescr).UsedElements  =  UsedElements + (DATA32)Bytes;
@@ -2691,7 +2691,7 @@ void      cMemoryFile(void)
         { // Log to file
 
 #ifdef DEBUG_C_MEMORY_LOG
-          printf("LOG_WRITE %d file %d bytes\r\n",TmpHandle,Bytes);
+          printf("LOG_WRITE %d file %d bytes\n",TmpHandle,Bytes);
 #endif
           DspStat       =  cMemoryWriteFile(TmpPrgId,TmpHandle,(DATA32)Bytes,DEL_NONE,(DATA8*)Buffer);
         }
@@ -2717,7 +2717,7 @@ void      cMemoryFile(void)
       {
         DspStat     =  cMemoryGetFileHandle(TmpPrgId,FilenameBuf,&TmpHandle2,&Tmp);
 #ifdef DEBUG_TRACE_FILENAME
-        printf("c_memory  cMemoryFile: CLOSE_LOG   [%s]\r\n",FilenameBuf);
+        printf("c_memory  cMemoryFile: CLOSE_LOG   [%s]\n",FilenameBuf);
 #endif
 
         if (MemoryInstance.pPoolList[TmpPrgId][TmpHandle].Type == POOL_TYPE_MEMORY)
@@ -2784,7 +2784,7 @@ void      cMemoryFile(void)
                 if (!Error)
                 {
 #ifdef DEBUG_C_MEMORY_LOG
-                  printf("LOG_WRITE %d ram %d log end signature\r\n",TmpHandle,Bytes);
+                  printf("LOG_WRITE %d ram %d log end signature\n",TmpHandle,Bytes);
 #endif
                   memcpy((void*)&pSource[(*pDescr).UsedElements],Buffer,(size_t)Bytes);
                 }
@@ -2795,7 +2795,7 @@ void      cMemoryFile(void)
                 }
 
   #ifdef DEBUG_C_MEMORY_LOG
-                printf("LOG_CLOSE %d ram and save %d bytes to %s\r\n",TmpHandle,UsedElements,(char*)pFileName);
+                printf("LOG_CLOSE %d ram and save %d bytes to %s\n",TmpHandle,UsedElements,(char*)pFileName);
   #endif
                 DspStat   =  cMemoryWriteFile(TmpPrgId,TmpHandle2,(DATA32)UsedElements,DEL_NONE,pSource);
               }
@@ -2811,7 +2811,7 @@ void      cMemoryFile(void)
             DspStat       =  NOBREAK;
           }
 #ifdef DEBUG_C_MEMORY_LOG
-          printf("LOG_CLOSE %d pool\r\n",TmpHandle);
+          printf("LOG_CLOSE %d pool\n",TmpHandle);
 #endif
           cMemoryFreeHandle(TmpPrgId,TmpHandle);
 
@@ -2846,12 +2846,12 @@ void      cMemoryFile(void)
 #endif
 
 #ifdef DEBUG_C_MEMORY_LOG
-          printf("LOG_WRITE %d file %d 0xFF\r\n",TmpHandle,Bytes);
+          printf("LOG_WRITE %d file %d 0xFF\n",TmpHandle,Bytes);
 #endif
           DspStat       =  cMemoryWriteFile(TmpPrgId,TmpHandle,(DATA32)Bytes,DEL_NONE,(DATA8*)Buffer);
 
 #ifdef DEBUG_C_MEMORY_LOG
-          printf("LOG_CLOSE %d file\r\n",TmpHandle);
+          printf("LOG_CLOSE %d file\n",TmpHandle);
 #endif
           DspStat       =  cMemoryCloseFile(TmpPrgId,TmpHandle);
 
@@ -2898,7 +2898,7 @@ void      cMemoryFile(void)
       {
         DspStat     =  cMemoryGetFileHandle(TmpPrgId,FilenameBuf,&TmpHandle,&Tmp);
 #ifdef DEBUG_TRACE_FILENAME
-        printf("c_memory  cMemoryFile: GET_HANDLE  [%s]\r\n",FilenameBuf);
+        printf("c_memory  cMemoryFile: GET_HANDLE  [%s]\n",FilenameBuf);
 #endif
       }
 
@@ -2915,7 +2915,7 @@ void      cMemoryFile(void)
       {
         cMemoryDeleteSubFolders(FilenameBuf);
 #ifdef DEBUG_TRACE_FILENAME
-        printf("c_memory  cMemoryFile: REMOVE      [%s]\r\n",FilenameBuf);
+        printf("c_memory  cMemoryFile: REMOVE      [%s]\n",FilenameBuf);
 #endif
         SetUiUpdate();
       }
@@ -2943,7 +2943,7 @@ void      cMemoryFile(void)
       {
         Tmp      =  1;
 #ifdef DEBUG_TRACE_FILENAME
-        printf("c_memory  cMemoryFile: MAKE_FOLDER [%s] already present\r\n",PathBuf);
+        printf("c_memory  cMemoryFile: MAKE_FOLDER [%s] already present\n",PathBuf);
 #endif
       }
       else
@@ -2953,7 +2953,7 @@ void      cMemoryFile(void)
         sync();
 
 #ifdef DEBUG_TRACE_FILENAME
-        printf("c_memory  cMemoryFile: MAKE_FOLDER [%s]\r\n",PathBuf);
+        printf("c_memory  cMemoryFile: MAKE_FOLDER [%s]\n",PathBuf);
 #endif
 
         if (stat((char*)PathBuf,&FileStatus) == 0)
@@ -2981,7 +2981,7 @@ void      cMemoryFile(void)
 
           snprintf(Buffer,LOGBUFFER_SIZE,"cp -r \"%s\" \"%s\"",SourceBuf,DestinationBuf);
 #ifdef DEBUG_TRACE_FILENAME
-          printf("c_memory  cMemoryFile: MOVE        [%s]\r\n",Buffer);
+          printf("c_memory  cMemoryFile: MOVE        [%s]\n",Buffer);
 #endif
 
           if (stat(DestinationBuf,&FileStatus) == 0)
@@ -2989,7 +2989,7 @@ void      cMemoryFile(void)
 
             cMemoryDeleteSubFolders(DestinationBuf);
 #ifdef DEBUG_TRACE_FILENAME
-            printf("  c_memory  cMemoryFile: remove    [%s]\r\n",DestinationBuf);
+            printf("  c_memory  cMemoryFile: remove    [%s]\n",DestinationBuf);
 #endif
             sync();
           }
@@ -3049,7 +3049,7 @@ void      cMemoryFile(void)
           snprintf(FilenameBuf,vmFILENAMESIZE,"%s%s%s",PathBuf,NameBuf,ExtBuf);
 
 #ifdef DEBUG_TRACE_FILENAME
-          printf("c_memory  cMemoryFile: LOAD_IMAGE  [%s]\r\n",FilenameBuf);
+          printf("c_memory  cMemoryFile: LOAD_IMAGE  [%s]\n",FilenameBuf);
 #endif
           hFile         =  open(FilenameBuf,O_RDONLY);
 
@@ -3135,7 +3135,7 @@ void      cMemoryFile(void)
 
       snprintf(PrgNameBuf,MAX_FILENAME_SIZE,"%s%s",(char*)pFolderName,PrgNamePath);
 #ifdef DEBUG
-      printf("Trying to delete %s\r\n",PrgNameBuf);
+      printf("Trying to delete %s\n",PrgNameBuf);
 #endif
       cMemoryDeleteSubFolders(PrgNameBuf);
 
@@ -3176,13 +3176,13 @@ void      cMemoryFile(void)
         Tmp++;
         cMemoryGetSubFolderName(Tmp,SUBFOLDERNAME_SIZE,(char*)pFolderName,(char*)PrgNamePath);
 #ifdef DEBUG
-        printf("%s %s\r\n",(char*)pFileName,PrgNamePath);
+        printf("%s %s\n",(char*)pFileName,PrgNamePath);
 #endif
         if (strcmp((char*)pFileName,PrgNamePath) == 0)
         {
           Item  =  Tmp;
 #ifdef DEBUG
-          printf("Found %i\r\n",Item);
+          printf("Found %i\n",Item);
 #endif
         }
         Items--;
@@ -3204,7 +3204,7 @@ void      cMemoryFile(void)
       }
       *(DATA8*)PrimParPointer()  =  Items;
 #ifdef DEBUG
-      printf("GET_CACHE_FILES %d\r\n",Items);
+      printf("GET_CACHE_FILES %d\n",Items);
 #endif
       DspStat  =  NOBREAK;
     }
@@ -3215,7 +3215,7 @@ void      cMemoryFile(void)
       pFileName       =   (DATA8*)PrimParPointer();
 
 #ifdef DEBUG
-      printf("PUT_CACHE_FILE %s\r\n",(char*)pFileName);
+      printf("PUT_CACHE_FILE %s\n",(char*)pFileName);
 #endif
       DspStat                     =  NOBREAK;
 
@@ -3290,7 +3290,7 @@ void      cMemoryFile(void)
   if (Error)
   {
 #ifdef DEBUG_TRACE_FILENAME
-    printf("c_memory  ERROR                    [%u]\r\n",Error);
+    printf("c_memory  ERROR                    [%u]\n",Error);
 #endif
     if (!LogErrorNumberExists(Error))
     {
@@ -3483,14 +3483,14 @@ void      cMemoryArray(void)
 
         DspStat   =  NOBREAK;
 #ifdef DEBUG
-        printf("ARRAY CREATE8       H=%1u A=%8p t=%d s=%d\r\n",TmpHandle,pTmp,(*(DESCR*)pTmp).Type,ISize);
+        printf("ARRAY CREATE8       H=%1u A=%8p t=%d s=%d\n",TmpHandle,pTmp,(*(DESCR*)pTmp).Type,ISize);
 #endif
       }
       else
       {
         DspStat   =  FAILBREAK;
 #ifdef DEBUG
-        printf("ARRAY CREATE8        error\r\n");
+        printf("ARRAY CREATE8        error\n");
 #endif
       }
 
@@ -3512,14 +3512,14 @@ void      cMemoryArray(void)
 
         DspStat   =  NOBREAK;
 #ifdef DEBUG
-        printf("ARRAY CREATE16      H=%1u A=%8p t=%d s=%d\r\n",TmpHandle,pTmp,(*(DESCR*)pTmp).Type,ISize);
+        printf("ARRAY CREATE16      H=%1u A=%8p t=%d s=%d\n",TmpHandle,pTmp,(*(DESCR*)pTmp).Type,ISize);
 #endif
       }
       else
       {
         DspStat   =  FAILBREAK;
 #ifdef DEBUG
-        printf("ARRAY CREATE16       error\r\n");
+        printf("ARRAY CREATE16       error\n");
 #endif
       }
 
@@ -3541,14 +3541,14 @@ void      cMemoryArray(void)
 
         DspStat   =  NOBREAK;
 #ifdef DEBUG
-        printf("ARRAY CREATE32      H=%1u A=%8p t=%d s=%d\r\n",TmpHandle,pTmp,(*(DESCR*)pTmp).Type,ISize);
+        printf("ARRAY CREATE32      H=%1u A=%8p t=%d s=%d\n",TmpHandle,pTmp,(*(DESCR*)pTmp).Type,ISize);
 #endif
       }
       else
       {
         DspStat   =  FAILBREAK;
 #ifdef DEBUG
-        printf("ARRAY CREATE32       error\r\n");
+        printf("ARRAY CREATE32       error\n");
 #endif
       }
 
@@ -3570,14 +3570,14 @@ void      cMemoryArray(void)
 
         DspStat   =  NOBREAK;
 #ifdef DEBUG
-        printf("ARRAY CREATEF       H=%1u A=%8p t=%d s=%d\r\n",TmpHandle,pTmp,(*(DESCR*)pTmp).Type,ISize);
+        printf("ARRAY CREATEF       H=%1u A=%8p t=%d s=%d\n",TmpHandle,pTmp,(*(DESCR*)pTmp).Type,ISize);
 #endif
       }
       else
       {
         DspStat   =  FAILBREAK;
 #ifdef DEBUG
-        printf("ARRAY CREATEF        error\r\n");
+        printf("ARRAY CREATEF        error\n");
 #endif
       }
 
@@ -3724,13 +3724,13 @@ void      cMemoryArray(void)
                 ISize   =  Elements * (*(DESCR*)pSource).ElementSize;
                 memcpy((*(DESCR*)pDest).pArray,(*(DESCR*)pSource).pArray,ISize);
 #ifdef DEBUG
-                printf("ARRAY COPY          sh=%d st=%d dh=%d dt=%d s=%d\r\n",hSource,(*(DESCR*)pSource).Type,hDest,(*(DESCR*)pDest).Type,ISize);
+                printf("ARRAY COPY          sh=%d st=%d dh=%d dt=%d s=%d\n",hSource,(*(DESCR*)pSource).Type,hDest,(*(DESCR*)pDest).Type,ISize);
 #endif
               }
               else
               {
 #ifdef DEBUG
-                printf("ARRAY COPY          cMemoryGetPointer error\r\n");
+                printf("ARRAY COPY          cMemoryGetPointer error\n");
 #endif
                 DspStat   =  FAILBREAK;
               }
@@ -3738,28 +3738,28 @@ void      cMemoryArray(void)
             else
             {
 #ifdef DEBUG
-              printf("ARRAY COPY          cMemoryResize error\r\n");
+              printf("ARRAY COPY          cMemoryResize error\n");
 #endif
             }
           }
           else
           {
 #ifdef DEBUG
-            printf("ARRAY COPY          type error %d=%d != %d=%d\r\n",hSource,(*(DESCR*)pSource).Type,hDest,(*(DESCR*)pDest).Type);
+            printf("ARRAY COPY          type error %d=%d != %d=%d\n",hSource,(*(DESCR*)pSource).Type,hDest,(*(DESCR*)pDest).Type);
 #endif
           }
         }
         else
         {
 #ifdef DEBUG
-          printf("ARRAY COPY          cMemoryGetPointer destination error\r\n");
+          printf("ARRAY COPY          cMemoryGetPointer destination error\n");
 #endif
         }
       }
       else
       {
 #ifdef DEBUG
-        printf("ARRAY COPY          cMemoryGetPointer source error\r\n");
+        printf("ARRAY COPY          cMemoryGetPointer source error\n");
 #endif
       }
     }
@@ -3932,7 +3932,7 @@ void      cMemoryArray(void)
       DspStat         =  FAILBREAK;
 
 #ifdef DEBUG
-      printf("ARRAY WRITE_CONTENT CP=%d PP=%d\r\n",TmpPrgId,PrgId);
+      printf("ARRAY WRITE_CONTENT CP=%d PP=%d\n",TmpPrgId,PrgId);
 #endif
 
       if (PrgId == (PRGID)CURRENT_SLOT)
@@ -4052,7 +4052,7 @@ void      cMemoryArrayWrite(void)
   {
     pDescr        =  (DESCR*)pTmp;
 #ifdef DEBUG
-    printf("  Write  P=%1u H=%1u     I=%8lu A=%8p T=%d\r\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index,(*pDescr).pArray,(*pDescr).Type);
+    printf("  Write  P=%1u H=%1u     I=%8lu A=%8p T=%d\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index,(*pDescr).pArray,(*pDescr).Type);
 #endif
     if (Index >= 0)
     {
@@ -4081,11 +4081,11 @@ void      cMemoryArrayWrite(void)
           {
             memset((pArray + Offset),0,Length);
 #ifdef DEBUG
-            printf("  Write  P=%1u H=%1u     I=%8lu A=%8p T=%d Zeroing from %8p (%d)\r\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index,pArray,(*pDescr).Type,(pArray + Offset),Length);
+            printf("  Write  P=%1u H=%1u     I=%8lu A=%8p T=%d Zeroing from %8p (%d)\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index,pArray,(*pDescr).Type,(pArray + Offset),Length);
           }
           else
           {
-            printf("  Write  P=%1u H=%1u     I=%8lu A=%8p T=%d\r\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index,pArray,(*pDescr).Type);
+            printf("  Write  P=%1u H=%1u     I=%8lu A=%8p T=%d\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index,pArray,(*pDescr).Type);
 #endif
           }
           switch ((*pDescr).Type)
@@ -4130,7 +4130,7 @@ void      cMemoryArrayWrite(void)
   if (DspStat != NOBREAK)
   {
 #ifdef DEBUG
-    printf("  WR ERR P=%1u H=%1u     I=%8lu\r\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index);
+    printf("  WR ERR P=%1u H=%1u     I=%8lu\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index);
 #endif
     SetDispatchStatus(DspStat);
   }
@@ -4178,7 +4178,7 @@ void      cMemoryArrayRead(void)
     {
       pArray      =  (*(DESCR*)pTmp).pArray;
 #ifdef DEBUG
-      printf("  Read   P=%1u H=%1u     I=%8lu A=%8p T=%d\r\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index,pArray,(*(DESCR*)pTmp).Type);
+      printf("  Read   P=%1u H=%1u     I=%8lu A=%8p T=%d\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index,pArray,(*(DESCR*)pTmp).Type);
 #endif
       switch ((*(DESCR*)pTmp).Type)
       {
@@ -4220,7 +4220,7 @@ void      cMemoryArrayRead(void)
   if (DspStat != NOBREAK)
   {
 #ifdef DEBUG
-    printf("  RD ERR P=%1u H=%1u     I=%8lu\r\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index);
+    printf("  RD ERR P=%1u H=%1u     I=%8lu\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index);
 #endif
     PrimParAdvance();
     SetDispatchStatus(DspStat);
@@ -4336,7 +4336,7 @@ void      cMemoryArrayAppend(void)
 
         }
 #ifdef DEBUG
-        printf("\r\n");
+        printf("\n");
 #endif
       }
     }
@@ -4344,7 +4344,7 @@ void      cMemoryArrayAppend(void)
   if (DspStat != NOBREAK)
   {
 #ifdef DEBUG
-    printf("  WR ERR P=%1u H=%1u     I=%8lu\r\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index);
+    printf("  WR ERR P=%1u H=%1u     I=%8lu\n",(unsigned int)TmpPrgId,(unsigned int)TmpHandle,(unsigned long)Index);
 #endif
     SetDispatchStatus(DspStat);
   }
@@ -4490,7 +4490,7 @@ void      cMemoryFileName(void)
         Tmp      =  1;
       }
 #ifdef DEBUG_TRACE_FILENAME
-      printf("c_memory  cMemoryFileName: EXIST   [%s] = %d\r\n",Filename,Tmp);
+      printf("c_memory  cMemoryFileName: EXIST   [%s] = %d\n",Filename,Tmp);
 #endif
       *(DATA8*)PrimParPointer()  =  Tmp;
     }

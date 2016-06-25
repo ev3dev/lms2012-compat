@@ -2299,7 +2299,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
         {
 
 #ifdef DEBUG_D_UART_ERROR
-          snprintf(UartBuffer,UARTBUFFERSIZE,"    %d BREAK\r\n",Port);
+          snprintf(UartBuffer,UARTBUFFERSIZE,"    %d BREAK\n",Port);
           UartWrite(UartBuffer);
 #endif
 
@@ -2409,7 +2409,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                   UartPort[Port].Type       =  UartPort[Port].InBuffer[1];
                   UartPort[Port].InfoData  |=  INFODATA_CMD_TYPE;
   #ifdef HIGHDEBUG
-                  snprintf(UartBuffer,UARTBUFFERSIZE,"    %d TYPE   = %-3u\r\n",Port,(UWORD)UartPort[Port].Type & 0xFF);
+                  snprintf(UartBuffer,UARTBUFFERSIZE,"    %d TYPE   = %-3u\n",Port,(UWORD)UartPort[Port].Type & 0xFF);
                   UartWrite(UartBuffer);
   #endif
                   UartPort[Port].State      =  UART_MESSAGE_START;
@@ -2419,7 +2419,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
   #ifdef DEBUG_D_UART_ERROR
   //                snprintf(UartBuffer,UARTBUFFERSIZE,"[%02X]",Byte);
   //                UartWrite(UartBuffer);
-  //                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d No sync %02X %02X %02X\r\n",Port,UartPort[Port].InBuffer[0],UartPort[Port].InBuffer[1],UartPort[Port].InBuffer[2]);
+  //                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d No sync %02X %02X %02X\n",Port,UartPort[Port].InBuffer[0],UartPort[Port].InBuffer[1],UartPort[Port].InBuffer[2]);
   //                UartWrite(UartBuffer);
   #endif
                   for (Tmp = 0;Tmp < 2;Tmp++)
@@ -2489,7 +2489,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                         case BYTE_ACK :
                         {
     #ifdef HIGHDEBUG
-                          snprintf(UartBuffer,UARTBUFFERSIZE,"    %d ACK RECEIVED\r\n",Port);
+                          snprintf(UartBuffer,UARTBUFFERSIZE,"    %d ACK RECEIVED\n",Port);
                           UartWrite(UartBuffer);
     #endif
                           if (UartPort[Port].Types == 0)
@@ -2579,7 +2579,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                         snprintf(UartBuffer,UARTBUFFERSIZE,"%02X",UartPort[Port].InBuffer[Tmp] & 0xFF);
                         UartWrite(UartBuffer);
                       }
-                      snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\r\n",UartPort[Port].Check & 0xFF);
+                      snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\n",UartPort[Port].Check & 0xFF);
                       UartWrite(UartBuffer);
   #endif
                       UartPort[Port].State  =  UART_CMD_ERROR;
@@ -2594,7 +2594,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                         snprintf(UartBuffer,UARTBUFFERSIZE,"%02X",UartPort[Port].InBuffer[Tmp] & 0xFF);
                         UartWrite(UartBuffer);
                       }
-                      snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\r\n",UartPort[Port].Check & 0xFF);
+                      snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\n",UartPort[Port].Check & 0xFF);
                       UartWrite(UartBuffer);
   #endif
                       switch (GET_CMD_COMMAND(UartPort[Port].Cmd))
@@ -2610,7 +2610,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                             { // Modes already given
 
   #ifdef DEBUG_D_UART_ERROR
-                              snprintf(UartBuffer,UARTBUFFERSIZE," ## %d MODES ALREADY GIVEN\r\n",Port);
+                              snprintf(UartBuffer,UARTBUFFERSIZE," ## %d MODES ALREADY GIVEN\n",Port);
                               UartWrite(UartBuffer);
   #endif
                               UartPort[Port].State  =  UART_CMD_ERROR;
@@ -2624,7 +2624,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
 
                                 UartPort[Port].Views  =  UartPort[Port].InBuffer[1] + 1;
   #ifdef HIGHDEBUG
-                                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d MODES  = %u  VIEWS  = %u\r\n",Port,(UWORD)UartPort[Port].Types & 0xFF,(UWORD)UartPort[Port].Views & 0xFF);
+                                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d MODES  = %u  VIEWS  = %u\n",Port,(UWORD)UartPort[Port].Types & 0xFF,(UWORD)UartPort[Port].Views & 0xFF);
                                 UartWrite(UartBuffer);
   #endif
                               }
@@ -2633,7 +2633,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
 
                                 UartPort[Port].Views  =  UartPort[Port].Types;
   #ifdef HIGHDEBUG
-                                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d MODES  = %u = VIEWS\r\n",Port,(UWORD)UartPort[Port].Types & 0xFF);
+                                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d MODES  = %u = VIEWS\n",Port,(UWORD)UartPort[Port].Types & 0xFF);
                                 UartWrite(UartBuffer);
   #endif
                               }
@@ -2643,7 +2643,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                           else
                           { // Number of modes invalid
   #ifdef DEBUG_D_UART_ERROR
-                            snprintf(UartBuffer,UARTBUFFERSIZE," ## %d MODES ERROR  %u\r\n",Port,(UWORD)UartPort[Port].Types & 0xFF);
+                            snprintf(UartBuffer,UARTBUFFERSIZE," ## %d MODES ERROR  %u\n",Port,(UWORD)UartPort[Port].Types & 0xFF);
                             UartWrite(UartBuffer);
   #endif
                             UartPort[Port].State  =  UART_CMD_ERROR;
@@ -2667,7 +2667,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                             { // Speed already given
 
   #ifdef DEBUG_D_UART_ERROR
-                              snprintf(UartBuffer,UARTBUFFERSIZE," ## %d SPEED ALREADY GIVEN\r\n",Port);
+                              snprintf(UartBuffer,UARTBUFFERSIZE," ## %d SPEED ALREADY GIVEN\n",Port);
                               UartWrite(UartBuffer);
   #endif
                               UartPort[Port].State  =  UART_CMD_ERROR;
@@ -2677,7 +2677,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                               if ((UartPort[Port].BitRate != LOWEST_BITRATE) && (TmpL <= MIDLE_BITRATE))
                               { // allow bit rate adjust
   #ifdef HIGHDEBUG
-                                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d SPEED ADJUST\r\n",Port);
+                                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d SPEED ADJUST\n",Port);
                                 UartWrite(UartBuffer);
   #endif
                                 UartPort[Port].BitRateMax  =  (UartPort[Port].BitRate * TmpL) / LOWEST_BITRATE;
@@ -2688,7 +2688,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                 UartPort[Port].BitRateMax  =  TmpL;
                               }
   #ifdef HIGHDEBUG
-                              snprintf(UartBuffer,UARTBUFFERSIZE,"    %d SPEED  = %lu\r\n",Port,(unsigned long)UartPort[Port].BitRateMax);
+                              snprintf(UartBuffer,UARTBUFFERSIZE,"    %d SPEED  = %lu\n",Port,(unsigned long)UartPort[Port].BitRateMax);
                               UartWrite(UartBuffer);
   #endif
                               UartPort[Port].InfoData |=  INFODATA_CMD_SPEED;
@@ -2697,7 +2697,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                           else
                           { // Speed invalid
   #ifdef DEBUG_D_UART_ERROR
-                            snprintf(UartBuffer,UARTBUFFERSIZE," ## %d SPEED ERROR\r\n",Port);
+                            snprintf(UartBuffer,UARTBUFFERSIZE," ## %d SPEED ERROR\n",Port);
                             UartWrite(UartBuffer);
   #endif
                             UartPort[Port].State  =  UART_CMD_ERROR;
@@ -2732,7 +2732,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                           if (UartPort[Port].InLength < 2)
                           {
   #ifdef DEBUG_D_UART_ERROR
-                            snprintf(UartBuffer,UARTBUFFERSIZE," ## %d FORMAT ERROR\r\n",Port);
+                            snprintf(UartBuffer,UARTBUFFERSIZE," ## %d FORMAT ERROR\n",Port);
                             UartWrite(UartBuffer);
   #endif
                             UartPort[Port].State  =  UART_INFO_ERROR;
@@ -2771,7 +2771,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                             snprintf(UartBuffer,UARTBUFFERSIZE,"%02X",UartPort[Port].InBuffer[Tmp] & 0xFF);
                             UartWrite(UartBuffer);
                           }
-                          snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\r\n",UartPort[Port].Check & 0xFF);
+                          snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\n",UartPort[Port].Check & 0xFF);
                           UartWrite(UartBuffer);
   #endif
                           UartPort[Port].State  =  UART_INFO_ERROR;
@@ -2788,7 +2788,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                             snprintf(UartBuffer,UARTBUFFERSIZE,"%02X",UartPort[Port].InBuffer[Tmp] & 0xFF);
                             UartWrite(UartBuffer);
                           }
-                          snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\r\n",UartPort[Port].Check & 0xFF);
+                          snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\n",UartPort[Port].Check & 0xFF);
                           UartWrite(UartBuffer);
   #endif
 
@@ -2805,7 +2805,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                               {
                                 snprintf((char*)UartPort[Port].Name,TYPE_NAME_LENGTH + 1,"%s",(char*)UartPort[Port].InBuffer);
   #ifdef HIGHDEBUG
-                                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d NAME   = %s\r\n",Port,UartPort[Port].Name);
+                                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d NAME   = %s\n",Port,UartPort[Port].Name);
                                 UartWrite(UartBuffer);
   #endif
                                 TypeData[Port][Mode].Mode   =  Mode;
@@ -2815,7 +2815,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                               {
   #ifdef DEBUG_D_UART_ERROR
                                 UartPort[Port].InBuffer[TYPE_NAME_LENGTH]  =  0;
-                                snprintf(UartBuffer,UARTBUFFERSIZE," f  %d NAME = %s\r\n",Port,UartPort[Port].InBuffer);
+                                snprintf(UartBuffer,UARTBUFFERSIZE," f  %d NAME = %s\n",Port,UartPort[Port].InBuffer);
                                 UartWrite(UartBuffer);
   #endif
                                 UartPort[Port].State  =  UART_INFO_ERROR;
@@ -2845,7 +2845,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                 { // Raw already given
 
   #ifdef DEBUG_D_UART_ERROR
-                                  snprintf(UartBuffer,UARTBUFFERSIZE," ## %d RAW ALREADY GIVEN\r\n",Port);
+                                  snprintf(UartBuffer,UARTBUFFERSIZE," ## %d RAW ALREADY GIVEN\n",Port);
                                   UartWrite(UartBuffer);
   #endif
                                   UartPort[Port].State  =  UART_INFO_ERROR;
@@ -2853,7 +2853,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                 else
                                 {
   #ifdef HIGHDEBUG
-                                  snprintf(UartBuffer,UARTBUFFERSIZE,"    %d RAW = Min..Max\r\n",Port);
+                                  snprintf(UartBuffer,UARTBUFFERSIZE,"    %d RAW = Min..Max\n",Port);
                                   UartWrite(UartBuffer);
   #endif
                                   UartPort[Port].InfoData |=  INFODATA_INFO_RAW;
@@ -2862,7 +2862,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                               else
                               {
   #ifdef DEBUG_D_UART_ERROR
-                                snprintf(UartBuffer,UARTBUFFERSIZE," f  %d RAW = Min..Max\r\n",Port);
+                                snprintf(UartBuffer,UARTBUFFERSIZE," f  %d RAW = Min..Max\n",Port);
                                 UartWrite(UartBuffer);
   #endif
                                 UartPort[Port].State  =  UART_INFO_ERROR;
@@ -2893,7 +2893,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                 { // Pct already given
 
   #ifdef DEBUG_D_UART_ERROR
-                                  snprintf(UartBuffer,UARTBUFFERSIZE," ## %d PCT ALREADY GIVEN\r\n",Port);
+                                  snprintf(UartBuffer,UARTBUFFERSIZE," ## %d PCT ALREADY GIVEN\n",Port);
                                   UartWrite(UartBuffer);
   #endif
                                   UartPort[Port].State  =  UART_INFO_ERROR;
@@ -2901,7 +2901,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                 else
                                 {
   #ifdef HIGHDEBUG
-                                  snprintf(UartBuffer,UARTBUFFERSIZE,"    %d PCT = Min..Max\r\n",Port);
+                                  snprintf(UartBuffer,UARTBUFFERSIZE,"    %d PCT = Min..Max\n",Port);
                                   UartWrite(UartBuffer);
   #endif
                                   UartPort[Port].InfoData |=  INFODATA_INFO_PCT;
@@ -2910,7 +2910,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                               else
                               { // Mode invalid
   #ifdef DEBUG_D_UART_ERROR
-                                snprintf(UartBuffer,UARTBUFFERSIZE," f  %d PCT = Min..Max\r\n",Port);
+                                snprintf(UartBuffer,UARTBUFFERSIZE," f  %d PCT = Min..Max\n",Port);
                                 UartWrite(UartBuffer);
   #endif
                                 UartPort[Port].State  =  UART_INFO_ERROR;
@@ -2941,7 +2941,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                 { // Si already given
 
   #ifdef DEBUG_D_UART_ERROR
-                                  snprintf(UartBuffer,UARTBUFFERSIZE," ## %d SI ALREADY GIVEN\r\n",Port);
+                                  snprintf(UartBuffer,UARTBUFFERSIZE," ## %d SI ALREADY GIVEN\n",Port);
                                   UartWrite(UartBuffer);
   #endif
                                   UartPort[Port].State  =  UART_INFO_ERROR;
@@ -2949,7 +2949,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                 else
                                 {
   #ifdef HIGHDEBUG
-                                  snprintf(UartBuffer,UARTBUFFERSIZE,"    %d SI  = Min..Max\r\n",Port);
+                                  snprintf(UartBuffer,UARTBUFFERSIZE,"    %d SI  = Min..Max\n",Port);
                                   UartWrite(UartBuffer);
   #endif
                                   UartPort[Port].InfoData |=  INFODATA_INFO_SI;
@@ -2958,7 +2958,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                               else
                               { // Mode invalid
   #ifdef DEBUG_D_UART_ERROR
-                                snprintf(UartBuffer,UARTBUFFERSIZE," f  %d SI  = Min..Max\r\n",Port);
+                                snprintf(UartBuffer,UARTBUFFERSIZE," f  %d SI  = Min..Max\n",Port);
                                 UartWrite(UartBuffer);
   #endif
                                 UartPort[Port].State  =  UART_INFO_ERROR;
@@ -2973,7 +2973,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                               { // Symbol already given
 
   #ifdef DEBUG_D_UART_ERROR
-                                snprintf(UartBuffer,UARTBUFFERSIZE," ## %d SYMBOL ALREADY GIVEN\r\n",Port);
+                                snprintf(UartBuffer,UARTBUFFERSIZE," ## %d SYMBOL ALREADY GIVEN\n",Port);
                                 UartWrite(UartBuffer);
   #endif
                                 UartPort[Port].State  =  UART_INFO_ERROR;
@@ -2982,7 +2982,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                               {
                                 snprintf((char*)TypeData[Port][Mode].Symbol,SYMBOL_LENGTH + 1,"%s",(char*)UartPort[Port].InBuffer);
   #ifdef HIGHDEBUG
-                                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d SYMBOL = %s\r\n",Port,TypeData[Port][Mode].Symbol);
+                                snprintf(UartBuffer,UARTBUFFERSIZE,"    %d SYMBOL = %s\n",Port,TypeData[Port][Mode].Symbol);
                                 UartWrite(UartBuffer);
   #endif
                                 UartPort[Port].InfoData |=  INFODATA_INFO_SYMBOL;
@@ -2997,7 +2997,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                               { // Format already given
 
   #ifdef DEBUG_D_UART_ERROR
-                                snprintf(UartBuffer,UARTBUFFERSIZE," ## %d FORMAT ALREADY GIVEN\r\n",Port);
+                                snprintf(UartBuffer,UARTBUFFERSIZE," ## %d FORMAT ALREADY GIVEN\n",Port);
                                 UartWrite(UartBuffer);
   #endif
                                 UartPort[Port].State  =  UART_INFO_ERROR;
@@ -3042,14 +3042,14 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
 
                                           Changed[Port][Mode]              =  1;
   #ifdef HIGHDEBUG
-                                          snprintf(UartBuffer,UARTBUFFERSIZE,"    %d FORMAT = %u * %u  %u.%u\r\n",Port,TypeData[Port][Mode].DataSets,TypeData[Port][Mode].Format,TypeData[Port][Mode].Figures,TypeData[Port][Mode].Decimals);
+                                          snprintf(UartBuffer,UARTBUFFERSIZE,"    %d FORMAT = %u * %u  %u.%u\n",Port,TypeData[Port][Mode].DataSets,TypeData[Port][Mode].Format,TypeData[Port][Mode].Figures,TypeData[Port][Mode].Decimals);
                                           UartWrite(UartBuffer);
   #endif
                                         }
                                         else
                                         { // Not enough info data given
   #ifdef DEBUG_D_UART_ERROR
-                                          snprintf(UartBuffer,UARTBUFFERSIZE," ## %d NOT ENOUGH INFO GIVEN\r\n",Port);
+                                          snprintf(UartBuffer,UARTBUFFERSIZE," ## %d NOT ENOUGH INFO GIVEN\n",Port);
                                           UartWrite(UartBuffer);
   #endif
                                           UartPort[Port].State  =  UART_INFO_ERROR;
@@ -3059,7 +3059,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                       else
                                       { // Format invalid
   #ifdef DEBUG_D_UART_ERROR
-                                        snprintf(UartBuffer,UARTBUFFERSIZE," ## %d FORMAT ERROR\r\n",Port);
+                                        snprintf(UartBuffer,UARTBUFFERSIZE," ## %d FORMAT ERROR\n",Port);
                                         UartWrite(UartBuffer);
   #endif
                                         UartPort[Port].State  =  UART_INFO_ERROR;
@@ -3069,7 +3069,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                     else
                                     { // Mode invalid
   #ifdef DEBUG_D_UART_ERROR
-                                      snprintf(UartBuffer,UARTBUFFERSIZE," f  %d FORMAT = %u * %u  %u.%u\r\n",Port,TypeData[Port][Mode].DataSets,TypeData[Port][Mode].Format,TypeData[Port][Mode].Figures,TypeData[Port][Mode].Decimals);
+                                      snprintf(UartBuffer,UARTBUFFERSIZE," f  %d FORMAT = %u * %u  %u.%u\n",Port,TypeData[Port][Mode].DataSets,TypeData[Port][Mode].Format,TypeData[Port][Mode].Figures,TypeData[Port][Mode].Decimals);
                                       UartWrite(UartBuffer);
   #endif
                                       UartPort[Port].State  =  UART_INFO_ERROR;
@@ -3078,7 +3078,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                   else
                                   { // No more modes left
   #ifdef DEBUG_D_UART_ERROR
-                                    snprintf(UartBuffer,UARTBUFFERSIZE," ## %d TYPES ERROR\r\n",Port);
+                                    snprintf(UartBuffer,UARTBUFFERSIZE," ## %d TYPES ERROR\n",Port);
                                     UartWrite(UartBuffer);
   #endif
                                     UartPort[Port].State  =  UART_INFO_ERROR;
@@ -3088,7 +3088,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                                 else
                                 { // Data sets invalid
   #ifdef DEBUG_D_UART_ERROR
-                                  snprintf(UartBuffer,UARTBUFFERSIZE," f  %d FORMAT = %u * %u  %u.%u\r\n",Port,TypeData[Port][Mode].DataSets,TypeData[Port][Mode].Format,TypeData[Port][Mode].Figures,TypeData[Port][Mode].Decimals);
+                                  snprintf(UartBuffer,UARTBUFFERSIZE," f  %d FORMAT = %u * %u  %u.%u\n",Port,TypeData[Port][Mode].DataSets,TypeData[Port][Mode].Format,TypeData[Port][Mode].Figures,TypeData[Port][Mode].Decimals);
                                   UartWrite(UartBuffer);
   #endif
                                   UartPort[Port].State  =  UART_INFO_ERROR;
@@ -3108,7 +3108,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                   if (UartPort[Port].Type == UartPortDefault.Type)
                   {
   #ifdef DEBUG_D_UART_ERROR
-                    snprintf(UartBuffer,UARTBUFFERSIZE," ## %d TYPE ERROR\r\n",Port);
+                    snprintf(UartBuffer,UARTBUFFERSIZE," ## %d TYPE ERROR\n",Port);
                     UartWrite(UartBuffer);
   #endif
                     UartPort[Port].State  =  UART_INFO_ERROR;
@@ -3250,14 +3250,14 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                   snprintf(UartBuffer,UARTBUFFERSIZE,"%02X",TmpBuffer[Tmp] & 0xFF);
                   UartWrite(UartBuffer);
                 }
-                snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\r\n",UartPort[Port].Check & 0xFF);
+                snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\n",UartPort[Port].Check & 0xFF);
                 UartWrite(UartBuffer);
   #endif
   #ifndef DISABLE_UART_DATA_ERROR
                 if (++UartPort[Port].DataErrors >= UART_ALLOWABLE_DATA_ERRORS)
                 {
   #ifdef DEBUG_D_UART_ERROR
-                  snprintf(UartBuffer,UARTBUFFERSIZE," ## %d No valid data in %d messages\r\n",Port,UartPort[Port].DataErrors);
+                  snprintf(UartBuffer,UARTBUFFERSIZE," ## %d No valid data in %d messages\n",Port,UartPort[Port].DataErrors);
                   UartWrite(UartBuffer);
   #endif
                   UartPort[Port].State      =  UART_DATA_ERROR;
@@ -3288,7 +3288,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                     snprintf(UartBuffer,UARTBUFFERSIZE,"%02X",TmpBuffer[Tmp] & 0xFF);
                     printk(UartBuffer);
                   }
-                  snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\r\n",UartPort[Port].Check & 0xFF);
+                  snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\n",UartPort[Port].Check & 0xFF);
                   printk(UartBuffer);
                 }
               }
@@ -3313,7 +3313,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                   snprintf(UartBuffer,UARTBUFFERSIZE,"%02X",TmpBuffer[Tmp] & 0xFF);
                   UartWrite(UartBuffer);
                 }
-                snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\r\n",UartPort[Port].Check & 0xFF);
+                snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\n",UartPort[Port].Check & 0xFF);
                 UartWrite(UartBuffer);
               }
   #endif
@@ -3342,7 +3342,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                   snprintf(UartBuffer,UARTBUFFERSIZE,"%02X",TmpBuffer[Tmp] & 0xFF);
                   UartWrite(UartBuffer);
                 }
-                snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\r\n",UartPort[Port].Check & 0xFF);
+                snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\n",UartPort[Port].Check & 0xFF);
                 UartWrite(UartBuffer);
   #endif
                 UartPort[Port].Cmd            =  UartPort[Port].Mode;
@@ -3363,7 +3363,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                   snprintf(UartBuffer,UARTBUFFERSIZE,"%02X",UartPort[Port].OutBuffer[Tmp] & 0xFF);
                   UartWrite(UartBuffer);
                 }
-                snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\r\n",UartPort[Port].OutBuffer[Tmp] & 0xFF);
+                snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\n",UartPort[Port].OutBuffer[Tmp] & 0xFF);
                 UartWrite(UartBuffer);
   #endif
               }
@@ -3384,7 +3384,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                   if (++UartPort[Port].DataErrors >= UART_ALLOWABLE_DATA_ERRORS)
                   {
   #ifdef DEBUG_D_UART_ERROR
-                    snprintf(UartBuffer,UARTBUFFERSIZE," ## %d No valid data in %d services\r\n",Port,UART_ALLOWABLE_DATA_ERRORS);
+                    snprintf(UartBuffer,UARTBUFFERSIZE," ## %d No valid data in %d services\n",Port,UART_ALLOWABLE_DATA_ERRORS);
                     UartWrite(UartBuffer);
   #endif
                     UartPort[Port].State        =  UART_DATA_ERROR;
@@ -3405,7 +3405,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                   UartPort[Port].OutPointer     =  0;
                   UartPort[Port].OutLength      =  1;
   #ifdef DEBUG
-                  snprintf(UartBuffer,UARTBUFFERSIZE," WD %d %02X\r\n",Port,UartPort[Port].OutBuffer[0]);
+                  snprintf(UartBuffer,UARTBUFFERSIZE," WD %d %02X\n",Port,UartPort[Port].OutBuffer[0]);
                   UartWrite(UartBuffer);
   #endif
                 }
@@ -3462,7 +3462,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
                   snprintf(UartBuffer,UARTBUFFERSIZE,"%02X",UartPort[Port].OutBuffer[Tmp] & 0xFF);
                   UartWrite(UartBuffer);
                 }
-                snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\r\n",UartPort[Port].OutBuffer[Tmp] & 0xFF);
+                snprintf(UartBuffer,UARTBUFFERSIZE,"]%02X\n",UartPort[Port].OutBuffer[Tmp] & 0xFF);
                 UartWrite(UartBuffer);
   #endif
               }
@@ -3602,7 +3602,7 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
             if (UartPortReceive(Port,&Byte))
             {
 #ifdef HIGHDEBUG
-              snprintf(UartBuffer,UARTBUFFERSIZE,"[0x%02X]\r\n",Byte);
+              snprintf(UartBuffer,UARTBUFFERSIZE,"[0x%02X]\n",Byte);
               UartWrite(UartBuffer);
 #endif
               if (UartPort[Port].InPointer < UART_BUFFER_SIZE)
@@ -3624,11 +3624,11 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
         UartPort[Port].OldState    =  UartPort[Port].State;
         if (UartPort[Port].State  != UART_ENABLE)
         {
-          snprintf(UartBuffer,UARTBUFFERSIZE,"    %d %s\r\n",Port,UartStateText[UartPort[Port].State]);
+          snprintf(UartBuffer,UARTBUFFERSIZE,"    %d %s\n",Port,UartStateText[UartPort[Port].State]);
         }
         else
         {
-          snprintf(UartBuffer,UARTBUFFERSIZE,"*** %d %s ***\r\n",Port,UartStateText[UartPort[Port].State]);
+          snprintf(UartBuffer,UARTBUFFERSIZE,"*** %d %s ***\n",Port,UartStateText[UartPort[Port].State]);
         }
         UartWrite(UartBuffer);
       }
@@ -3675,7 +3675,7 @@ static long Device1Ioctl(struct file *File, unsigned int Request, unsigned long 
 				              if (UartPort[Port].Mode != DevCon.Mode[Port])
 				              {
 						#ifdef DEBUG_TRACE_MODE_CHANGE
-					                snprintf(UartBuffer,UARTBUFFERSIZE,"d_uart %d   Device1Ioctl: Changing to    %c\r\n",Port,DevCon.Mode[Port] + '0');
+					                snprintf(UartBuffer,UARTBUFFERSIZE,"d_uart %d   Device1Ioctl: Changing to    %c\n",Port,DevCon.Mode[Port] + '0');
 					                UartWrite(UartBuffer);
 						#endif
 					                UartPort[Port].Mode         =  DevCon.Mode[Port];
@@ -3711,7 +3711,7 @@ static long Device1Ioctl(struct file *File, unsigned int Request, unsigned long 
 #ifdef DEBUG
       if (TypeData[Port][Mode].Name[0])
       {
-        snprintf(UartBuffer,UARTBUFFERSIZE,"d_uart %d   Device1Ioctl: READ    Type=%d Mode=%d\r\n",Port,TypeData[Port][Mode].Type,Mode);
+        snprintf(UartBuffer,UARTBUFFERSIZE,"d_uart %d   Device1Ioctl: READ    Type=%d Mode=%d\n",Port,TypeData[Port][Mode].Type,Mode);
         UartWrite(UartBuffer);
       }
 #endif
@@ -3734,7 +3734,7 @@ static long Device1Ioctl(struct file *File, unsigned int Request, unsigned long 
       Mode      =  (*pUartCtl).Mode;
 
 #ifdef DEBUG
-      snprintf(UartBuffer,UARTBUFFERSIZE,"d_uart %d   Device1Ioctl: NACK    Type=%d Mode=%d\r\n",Port,TypeData[Port][Mode].Type,Mode);
+      snprintf(UartBuffer,UARTBUFFERSIZE,"d_uart %d   Device1Ioctl: NACK    Type=%d Mode=%d\n",Port,TypeData[Port][Mode].Type,Mode);
       UartWrite(UartBuffer);
 #endif
       if ((Mode < MAX_DEVICE_MODES) && (Port < INPUTS))
@@ -3822,11 +3822,11 @@ static ssize_t Device1Read(struct file *File,char *Buffer,size_t Count,loff_t *O
     UartBuffer[7]  =  0;
     UartWrite(UartBuffer);
     UartWrite(UartBuffer);
-    snprintf(UartBuffer,UARTBUFFERSIZE,"-----------------------------------------------------------------\r\n");
+    snprintf(UartBuffer,UARTBUFFERSIZE,"-----------------------------------------------------------------\n");
     UartWrite(UartBuffer);
-    snprintf(UartBuffer,UARTBUFFERSIZE,"    UART DUMP\r\n");
+    snprintf(UartBuffer,UARTBUFFERSIZE,"    UART DUMP\n");
     UartWrite(UartBuffer);
-    snprintf(UartBuffer,UARTBUFFERSIZE,"-----------------------------------------------------------------\r\n");
+    snprintf(UartBuffer,UARTBUFFERSIZE,"-----------------------------------------------------------------\n");
     UartWrite(UartBuffer);
   }
 #else
@@ -3947,7 +3947,7 @@ static void Device1Init(void)
           				(*pUart).Status[Tmp]   |=  UART_PORT_CHANGED;
           				UartPortEnable(Tmp);
 					#ifdef DEBUG
-          					snprintf(UartBuffer,UARTBUFFERSIZE,"  %s debug uart init test\r\n",DEVICE1_NAME);
+          					snprintf(UartBuffer,UARTBUFFERSIZE,"  %s debug uart init test\n",DEVICE1_NAME);
           					UartWrite(UartBuffer);
 					#endif
         			}

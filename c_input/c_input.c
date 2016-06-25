@@ -169,27 +169,27 @@ void      cInputShowTypeData(void)
   int     Pos;
 
 
-  snprintf(Buffer,LINESIZE,"//! \\page types Known Device Types\r\n");
+  snprintf(Buffer,LINESIZE,"//! \\page types Known Device Types\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//!\r\n");
+  snprintf(Buffer,LINESIZE,"//!\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//! <hr size=\"1\"/>\r\n");
+  snprintf(Buffer,LINESIZE,"//! <hr size=\"1\"/>\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//! Following devices are supported (except devices starting with //)\\n\r\n");
+  snprintf(Buffer,LINESIZE,"//! Following devices are supported (except devices starting with //)\\n\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//! Devices marked with * means that the data is supplied by the device itself\\n\r\n");
+  snprintf(Buffer,LINESIZE,"//! Devices marked with * means that the data is supplied by the device itself\\n\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//! Devices marked with # is not supported in View and Datalog apps\r\n");
+  snprintf(Buffer,LINESIZE,"//! Devices marked with # is not supported in View and Datalog apps\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//!\r\n");
+  snprintf(Buffer,LINESIZE,"//!\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//! \\verbatim\r\n");
+  snprintf(Buffer,LINESIZE,"//! \\verbatim\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"\r\n");
+  snprintf(Buffer,LINESIZE,"\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//  Type  Mode  Name      DataSets  Format  Figures  Decimals  Views  Conn. Pins  RawMin   RawMax   PctMin  PctMax  SiMin    SiMax    Time  IdValue  Symbol\r\n");
+  snprintf(Buffer,LINESIZE,"//  Type  Mode  Name      DataSets  Format  Figures  Decimals  Views  Conn. Pins  RawMin   RawMax   PctMin  PctMax  SiMin    SiMax    Time  IdValue  Symbol\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//  ----  ----  --------  --------  ------  -------  --------  -----  ----- ----  -------  -------  ------  ------  -------  -------  ----  -------  --------\r\n");
+  snprintf(Buffer,LINESIZE,"//  ----  ----  --------  --------  ------  -------  --------  -----  ----- ----  -------  -------  ------  ------  -------  -------  ----  -------  --------\n");
   cInputPrintLine(Buffer);
 
   LastType  =  TYPE_ERROR;
@@ -207,7 +207,7 @@ void      cInputShowTypeData(void)
 
       if (Type != LastType)
       {
-        snprintf(Buffer,LINESIZE,"\r\n");
+        snprintf(Buffer,LINESIZE,"\n");
         cInputPrintLine(Buffer);
 
         LastType  =  Type;
@@ -295,21 +295,21 @@ void      cInputShowTypeData(void)
         Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"_");
       }
 
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"\r\n");
+      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"\n");
       cInputPrintLine(Buffer);
     }
     Index++;
   }
-  snprintf(Buffer,LINESIZE,"\r\n");
+  snprintf(Buffer,LINESIZE,"\n");
   cInputPrintLine(Buffer);
 
-  snprintf(Buffer,LINESIZE,"//!  \\endverbatim\r\n");
+  snprintf(Buffer,LINESIZE,"//!  \\endverbatim\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//!  See connection types \\ref connectiontypes \"Conn.\"\r\n");
+  snprintf(Buffer,LINESIZE,"//!  See connection types \\ref connectiontypes \"Conn.\"\n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//!  \r\n");
+  snprintf(Buffer,LINESIZE,"//!  \n");
   cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//!  \\n\r\n");
+  snprintf(Buffer,LINESIZE,"//!  \\n\n");
   cInputPrintLine(Buffer);
 
 }
@@ -494,7 +494,7 @@ RESULT    cInputInsertNewIicString(DATA8 Type,DATA8 Mode,DATA8 *pManufacturer,DA
           InputInstance.IicString[Index].PollLng       =  PollLng;
           InputInstance.IicString[Index].PollString    =  PollString;
           InputInstance.IicString[Index].ReadLng       =  ReadLng;
-//          printf("cInputInsertNewIicString  %-3u %01u IIC %u 0x%08X %u 0x%08X %s %s\r\n",Type,Mode,SetupLng,SetupString,PollLng,PollString,pManufacturer,pSensorType);
+//          printf("cInputInsertNewIicString  %-3u %01u IIC %u 0x%08X %u 0x%08X %s %s\n",Type,Mode,SetupLng,SetupString,PollLng,PollString,pManufacturer,pSensorType);
 
           InputInstance.IicDeviceTypes++;
           Result    =  OK;
@@ -510,7 +510,7 @@ RESULT    cInputInsertNewIicString(DATA8 Type,DATA8 Mode,DATA8 *pManufacturer,DA
   else
   { // Type or mode invalid
 
-    printf("Iic  error %d: m=%d IIC\r\n",Type,Mode);
+    printf("Iic  error %d: m=%d IIC\n",Type,Mode);
   }
 
   return (Result);
@@ -638,7 +638,7 @@ RESULT    cInputGetNewTypeDataPointer(SBYTE *pName,DATA8 Type,DATA8 Mode,DATA8 C
   else
   { // Type or mode invalid
 
-    printf("Type error %d: m=%d c=%d n=%s\r\n",Type,Mode,Connection,pName);
+    printf("Type error %d: m=%d c=%d n=%s\n",Type,Mode,Connection,pName);
   }
 
   return (Result);
@@ -688,7 +688,7 @@ RESULT    cInputInsertTypeData(char *pTypeDataString,DATA8 Force)
     Tmp.IdValue      =  (UWORD)IdValue;
 
     Result  =  cInputGetNewTypeDataPointer((SBYTE*)Name,(DATA8)Type,(DATA8)Mode,(DATA8)Connection,&pTypes);
-//            printf("cInputTypeDataInit\r\n");
+//            printf("cInputTypeDataInit\n");
     if ((Result == OK) || ((Force) && (Result == BUSY)))
     {
       (*pTypes)  =  Tmp;
@@ -739,7 +739,7 @@ RESULT    cInputInsertTypeData(char *pTypeDataString,DATA8 Force)
         if (Count == (TYPE_PARAMETERS + 7))
         {
           cInputInsertNewIicString(Type,Mode,(DATA8*)Manufacturer,(DATA8*)SensorType,(DATA8)SetupLng,(ULONG)SetupString,(DATA8)PollLng,(ULONG)PollString,(DATA8)ReadLng);
-//                  printf("%02u %01u IIC %u 0x%08X %u 0x%08X %u\r\n",Type,Mode,SetupLng,SetupString,PollLng,PollString,ReadLng);
+//                  printf("%02u %01u IIC %u 0x%08X %u 0x%08X %u\n",Type,Mode,SetupLng,SetupString,PollLng,PollString,ReadLng);
         }
       }
     }
@@ -815,7 +815,7 @@ void      cInputTypeDataInit(void)
     Index++;
   }
 
-//  printf("Search start\r\n");
+//  printf("Search start\n");
   snprintf(PrgNameBuf,vmFILENAMESIZE,"%s/%s%s",vmSETTINGS_DIR,TYPEDATE_FILE_NAME,EXT_CONFIG);
 
   if (cInputInsertTypeDataFile(PrgNameBuf) == OK)
@@ -831,7 +831,7 @@ void      cInputTypeDataInit(void)
       TypeDataFound  =  1;
     }
   }
-//  printf("Done\r\n");
+//  printf("Done\n");
 
   if (!TypeDataFound)
   {
@@ -1145,7 +1145,7 @@ void      cInputSetDeviceType(DATA8 Device,DATA8 Type, DATA8 Mode,int Line)
 
             if ((InputInstance.IicStr.SetupLng) || (InputInstance.IicStr.PollLng))
             {
-//              printf("%u %-4u %-3u %01u IIC %u 0x%08X %u 0x%08X %d\r\n",InputInstance.IicStr.Port,InputInstance.IicStr.Time,InputInstance.IicStr.Type,InputInstance.IicStr.Mode,InputInstance.IicStr.SetupLng,InputInstance.IicStr.SetupString,InputInstance.IicStr.PollLng,InputInstance.IicStr.PollString,InputInstance.IicStr.ReadLng);
+//              printf("%u %-4u %-3u %01u IIC %u 0x%08X %u 0x%08X %d\n",InputInstance.IicStr.Port,InputInstance.IicStr.Time,InputInstance.IicStr.Type,InputInstance.IicStr.Mode,InputInstance.IicStr.SetupLng,InputInstance.IicStr.SetupString,InputInstance.IicStr.PollLng,InputInstance.IicStr.PollString,InputInstance.IicStr.ReadLng);
 
               if (InputInstance.IicFile >= MIN_HANDLE)
               {
@@ -1190,7 +1190,7 @@ void      cInputSetDeviceType(DATA8 Device,DATA8 Type, DATA8 Mode,int Line)
           }
 
 #ifdef DEBUG_TRACE_MODE_CHANGE
-          printf("c_input   cInputSetDeviceType: I   D=%-3d C=%-3d Ti=%-3d N=%s\r\n",Device,InputInstance.DeviceData[Device].Connection,InputInstance.DeviceData[Device].TypeIndex,InputInstance.TypeData[InputInstance.DeviceData[Device].TypeIndex].Name);
+          printf("c_input   cInputSetDeviceType: I   D=%-3d C=%-3d Ti=%-3d N=%s\n",Device,InputInstance.DeviceData[Device].Connection,InputInstance.DeviceData[Device].TypeIndex,InputInstance.TypeData[InputInstance.DeviceData[Device].TypeIndex].Name);
 #endif
         }
       }
@@ -1225,7 +1225,7 @@ void      cInputSetDeviceType(DATA8 Device,DATA8 Type, DATA8 Mode,int Line)
           cOutputSetTypes(Buf);
 
 #ifdef DEBUG_TRACE_MODE_CHANGE
-          printf("c_input   cInputSetDeviceType: O   D=%-3d C=%-3d Ti=%-3d N=%s\r\n",Device,InputInstance.DeviceData[Device].Connection,InputInstance.DeviceData[Device].TypeIndex,InputInstance.TypeData[InputInstance.DeviceData[Device].TypeIndex].Name);
+          printf("c_input   cInputSetDeviceType: O   D=%-3d C=%-3d Ti=%-3d N=%s\n",Device,InputInstance.DeviceData[Device].Connection,InputInstance.DeviceData[Device].TypeIndex,InputInstance.TypeData[InputInstance.DeviceData[Device].TypeIndex].Name);
 #endif
         }
       }
@@ -1257,7 +1257,7 @@ void      cInputSetDeviceType(DATA8 Device,DATA8 Type, DATA8 Mode,int Line)
             cInputComSetDeviceType(Layer,Port,InputInstance.DeviceType[Device],InputInstance.DeviceMode[Device]);
 
 #ifdef DEBUG_TRACE_MODE_CHANGE
-            printf("c_input   cInputSetDeviceType: D   D=%-3d C=%-3d Ti=%-3d N=%s\r\n",Device,InputInstance.DeviceData[Device].Connection,InputInstance.DeviceData[Device].TypeIndex,InputInstance.TypeData[InputInstance.DeviceData[Device].TypeIndex].Name);
+            printf("c_input   cInputSetDeviceType: D   D=%-3d C=%-3d Ti=%-3d N=%s\n",Device,InputInstance.DeviceData[Device].Connection,InputInstance.DeviceData[Device].TypeIndex,InputInstance.TypeData[InputInstance.DeviceData[Device].TypeIndex].Name);
 #endif
 
 #ifdef ENABLE_STATUS_TEST
@@ -1288,7 +1288,7 @@ void      cInputSetDeviceType(DATA8 Device,DATA8 Type, DATA8 Mode,int Line)
         cInputResetDevice(Device,TypeIndex);
 
 #ifdef DEBUG_TRACE_MODE_CHANGE
-        printf("c_input   cInputSetDeviceType: D   D=%-3d C=%-3d Ti=%-3d N=%s\r\n",Device,InputInstance.DeviceData[Device].Connection,InputInstance.DeviceData[Device].TypeIndex,InputInstance.TypeData[InputInstance.DeviceData[Device].TypeIndex].Name);
+        printf("c_input   cInputSetDeviceType: D   D=%-3d C=%-3d Ti=%-3d N=%s\n",Device,InputInstance.DeviceData[Device].Connection,InputInstance.DeviceData[Device].TypeIndex,InputInstance.TypeData[InputInstance.DeviceData[Device].TypeIndex].Name);
 #endif
 #endif
 
@@ -1816,14 +1816,14 @@ RESULT    cInputSetChainedDeviceType(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mod
         cInputSetDeviceType(Device,Type,Mode,__LINE__);
       }
 #ifdef DEBUG_TRACE_DAISYCHAIN
-      printf("c_input   cInputSetDeviceType:     L=%-2d P=%-2d T=%-3d M=%d\r\n",Layer,Port,Type,Mode);
+      printf("c_input   cInputSetDeviceType:     L=%-2d P=%-2d T=%-3d M=%d\n",Layer,Port,Type,Mode);
 #endif
     }
   }
   else
   {
 #ifdef DEBUG_TRACE_DAISYCHAIN
-    printf("c_input   cInputSetDeviceType: FAIL  L=%-2d P=%-2d T=%-3d M=%d\r\n",Layer,Port,Type,Mode);
+    printf("c_input   cInputSetDeviceType: FAIL  L=%-2d P=%-2d T=%-3d M=%d\n",Layer,Port,Type,Mode);
 #endif
   }
 
@@ -1858,17 +1858,17 @@ RESULT    cInputComSetDeviceInfo(DATA8 Length,UBYTE *pInfo)
 
   if (Result == OK)
   {
-    printf("c_com     cComSetDeviceInfo:       l=%-2d N=%s\r\n",Length,(*pType).Name);
+    printf("c_com     cComSetDeviceInfo:       l=%-2d N=%s\n",Length,(*pType).Name);
   }
   else
   {
     if (Result == BUSY)
     {
-      printf("c_com     cComSetDeviceInfo: BUSY  l=%-2d N=%s\r\n",Length,(*pType).Name);
+      printf("c_com     cComSetDeviceInfo: BUSY  l=%-2d N=%s\n",Length,(*pType).Name);
     }
     else
     {
-      printf("c_com     cComSetDeviceInfo: FAIL  l=%-2d N=%s\r\n",Length,(*pType).Name);
+      printf("c_com     cComSetDeviceInfo: FAIL  l=%-2d N=%s\n",Length,(*pType).Name);
     }
   }
 #endif
@@ -1894,7 +1894,7 @@ RESULT    cInputComGetDeviceInfo(DATA8 Length,UBYTE *pInfo)
   if (Result == OK)
   {
     pType  =  (TYPES*)pInfo;
-    printf("c_com     cComGetDeviceInfo:       C=%-3d N=%s\r\n",(*pType).Connection,(*pType).Name);
+    printf("c_com     cComGetDeviceInfo:       C=%-3d N=%s\n",(*pType).Connection,(*pType).Name);
   }
 #endif
 
@@ -1915,17 +1915,17 @@ RESULT    cInputComSetDeviceType(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mode)
 #ifdef DEBUG_TRACE_DAISYCHAIN
   if (Result == OK)
   {
-    printf("c_com     cComSetDeviceType:       L=%-2d P=%-2d T=%-3d M=%d\r\n",Layer,Port,Type,Mode);
+    printf("c_com     cComSetDeviceType:       L=%-2d P=%-2d T=%-3d M=%d\n",Layer,Port,Type,Mode);
   }
   else
   {
     if (Result == BUSY)
     {
-      printf("c_com     cComSetDeviceType: BUSY  L=%-2d P=%-2d T=%-3d M=%d\r\n",Layer,Port,Type,Mode);
+      printf("c_com     cComSetDeviceType: BUSY  L=%-2d P=%-2d T=%-3d M=%d\n",Layer,Port,Type,Mode);
     }
     else
     {
-      printf("c_com     cComSetDeviceType: FAIL  L=%-2d P=%-2d T=%-3d M=%d\r\n",Layer,Port,Type,Mode);
+      printf("c_com     cComSetDeviceType: FAIL  L=%-2d P=%-2d T=%-3d M=%d\n",Layer,Port,Type,Mode);
     }
   }
 #endif
@@ -1944,17 +1944,17 @@ RESULT    cInputComGetDeviceData(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pTyp
 #ifdef DEBUG_TRACE_DAISYCHAIN
   if (Result == OK)
   {
-    printf("c_com     cComGetDeviceData:       L=%-2d P=%-2d T=%-3d M=%d 0x%02X\r\n",Layer,Port,*pType,*pMode,*pData);
+    printf("c_com     cComGetDeviceData:       L=%-2d P=%-2d T=%-3d M=%d 0x%02X\n",Layer,Port,*pType,*pMode,*pData);
   }
   else
   {
     if (Result == BUSY)
     {
-      printf("c_com     cComGetDeviceData: BUSY  L=%-2d P=%-2d T=%-3d M=%d\r\n",Layer,Port,*pType,*pMode);
+      printf("c_com     cComGetDeviceData: BUSY  L=%-2d P=%-2d T=%-3d M=%d\n",Layer,Port,*pType,*pMode);
     }
     else
     {
-      printf("c_com     cComGetDeviceData: FAIL  L=%-2d P=%-2d T=%-3d M=%d\r\n",Layer,Port,*pType,*pMode);
+      printf("c_com     cComGetDeviceData: FAIL  L=%-2d P=%-2d T=%-3d M=%d\n",Layer,Port,*pType,*pMode);
     }
   }
 #endif
@@ -1991,17 +1991,17 @@ RESULT    cInputGetDeviceData(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pType,D
 #ifdef DEBUG_C_INPUT_DAISYCHAIN
   if (Result == OK)
   {
-    printf("c_com     cInputGetDeviceData:    L=%-2d P=%-2d T=%-3d M=%d\r\n",Layer,Port,*pType,*pMode);
+    printf("c_com     cInputGetDeviceData:    L=%-2d P=%-2d T=%-3d M=%d\n",Layer,Port,*pType,*pMode);
   }
   else
   {
     if (Result == BUSY)
     {
-      printf("c_com     cInputGetDeviceData: BUSY L=%-2d P=%-2d T=%-3d M=%d\r\n",Layer,Port,*pType,*pMode);
+      printf("c_com     cInputGetDeviceData: BUSY L=%-2d P=%-2d T=%-3d M=%d\n",Layer,Port,*pType,*pMode);
     }
     else
     {
-      printf("c_com     cInputGetDeviceData: FAIL L=%-2d P=%-2d T=%-3d M=%d\r\n",Layer,Port,*pType,*pMode);
+      printf("c_com     cInputGetDeviceData: FAIL L=%-2d P=%-2d T=%-3d M=%d\n",Layer,Port,*pType,*pMode);
     }
   }
 #endif
@@ -2031,7 +2031,7 @@ RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 L
   { // Device valid
 
 #ifdef DEBUG_C_INPUT_DAISYCHAIN
-    printf("c_input   cInputGetDeviceData      D=%-3d L=%d P=%-2d l=%-2d\r\n",Device,Layer,Port,Length);
+    printf("c_input   cInputGetDeviceData      D=%-3d L=%d P=%-2d l=%-2d\n",Device,Layer,Port,Length);
 #endif
 
     if (Length >= MAX_DEVICE_DATALENGTH)
@@ -2088,7 +2088,7 @@ RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 L
 
                   if ((Port == 0) && ((*InputInstance.pUart).Repeat[Port][*pInit] > 1))
                   {
-                    printf("C=%-5d A=%-4d I=%-4d P=%-4d O=%-3d N=%-3d R=%-3d \r\n",Cnt,(*InputInstance.pUart).Actual[Port],(*InputInstance.pUart).LogIn[Port],Pointer,Old,New,(*InputInstance.pUart).Repeat[Port][*pInit]);
+                    printf("C=%-5d A=%-4d I=%-4d P=%-4d O=%-3d N=%-3d R=%-3d \n",Cnt,(*InputInstance.pUart).Actual[Port],(*InputInstance.pUart).LogIn[Port],Pointer,Old,New,(*InputInstance.pUart).Repeat[Port][*pInit]);
                   }
 #endif
 
@@ -2133,7 +2133,7 @@ RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 L
 #endif
                 }
 #ifdef DEBUG_C_INPUT_DATALOG
-                printf("Pointer=%-4d\r\n",Pointer);
+                printf("Pointer=%-4d\n",Pointer);
 #endif
 
               }
@@ -2200,7 +2200,7 @@ RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 L
                     Cnt++;
                     New  =  (UWORD)(*InputInstance.pIic).Raw[Device][Pointer][0];
                     New +=  (UWORD)(*InputInstance.pIic).Raw[Device][Pointer][1] << 8;
-                    printf("C=%-5d   A=%-4d I=%-4d P=%-4d O=%-5d N=%-5d R=%-3d\r\n ",Cnt,(*InputInstance.pIic).Actual[Port],InPointer,Pointer,Old,New,(*InputInstance.pIic).Repeat[Port][*pInit]);
+                    printf("C=%-5d   A=%-4d I=%-4d P=%-4d O=%-5d N=%-5d R=%-3d\n ",Cnt,(*InputInstance.pIic).Actual[Port],InPointer,Pointer,Old,New,(*InputInstance.pIic).Repeat[Port][*pInit]);
                     Old  =  New;;
                   }
 #endif
@@ -2253,7 +2253,7 @@ RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 L
                       Pointer  =  (*pInit);
                     }
 #ifdef DEBUG_C_INPUT_DATALOG
-                    printf("Pointer=%-4d\r\n",Pointer);
+                    printf("Pointer=%-4d\n",Pointer);
 #endif
                     if ((InputInstance.DeviceType[Device] == 16) && (InputInstance.DeviceMode[Device] == 1))
                     {
@@ -2333,7 +2333,7 @@ RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 L
                         Pointer  =  (*pInit);
                       }
 #ifdef DEBUG_C_INPUT_DATALOG
-                      printf("Pointer=%-4d\r\n",Pointer);
+                      printf("Pointer=%-4d\n",Pointer);
 #endif
 
                       if ((InputInstance.DeviceType[Device] == 1) && (InputInstance.DeviceMode[Device] == 1))
@@ -2400,7 +2400,7 @@ RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 L
                       Pointer  =  (*pInit);
                     }
 #ifdef DEBUG_C_INPUT_DATALOG
-                    printf("Pointer=%-4d\r\n",Pointer);
+                    printf("Pointer=%-4d\n",Pointer);
 #endif
                     Memcpy((void*)pData,(const void*)&(*InputInstance.pAnalog).Pin1[Device][Pointer],(size_t)2);
                   }
@@ -2469,7 +2469,7 @@ DATAF     cInputReadDeviceRaw(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit
   Result  =  DATAF_NAN;
 
 #ifdef DEBUG_C_INPUT_DAISYCHAIN
-  printf("c_input   cInputReadDeviceRaw:     D=%-3d I=%d B=%d\r\n",Device,Index,InputInstance.DeviceData[Device].DevStatus);
+  printf("c_input   cInputReadDeviceRaw:     D=%-3d I=%d B=%d\n",Device,Index,InputInstance.DeviceData[Device].DevStatus);
 #endif
 
   if (cInputExpandDevice(Device,&Layer,&Port,&Output) == OK)
@@ -2558,7 +2558,7 @@ DATAF     cInputReadDeviceRaw(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit
   Result  =  DATAF_NAN;
 
 #ifdef DEBUG_C_INPUT_DAISYCHAIN
-  printf("c_input   cInputReadDeviceRaw:     D=%-3d B=%d\r\n",Device,InputInstance.DeviceData[Device].DevStatus);
+  printf("c_input   cInputReadDeviceRaw:     D=%-3d B=%d\n",Device,InputInstance.DeviceData[Device].DevStatus);
 #endif
   if ((Device >= 0) && (Device < DEVICES) && (Index >= 0) && (Index < MAX_DEVICE_DATASETS))
   {
@@ -3216,13 +3216,13 @@ void      cInputDcmUpdate(UWORD Time)
       {
         (*pTmp)  =  Tmp;
 #ifdef DEBUG_TRACE_DAISYCHAIN
-        printf("c_input   cInputDcmUpdate: NEW     T=%-3d M=%d C=%-3d N=%s\r\n",Tmp.Type,Tmp.Mode,Tmp.Connection,Tmp.Name);
+        printf("c_input   cInputDcmUpdate: NEW     T=%-3d M=%d C=%-3d N=%s\n",Tmp.Type,Tmp.Mode,Tmp.Connection,Tmp.Name);
 #endif
       }
 #ifdef DEBUG_TRACE_DAISYCHAIN
       else
       {
-        printf("c_input   cInputDcmUpdate: KNOWN   T=%-3d M=%d C=%-3d N=%s\r\n",Tmp.Type,Tmp.Mode,Tmp.Connection,Tmp.Name);
+        printf("c_input   cInputDcmUpdate: KNOWN   T=%-3d M=%d C=%-3d N=%s\n",Tmp.Type,Tmp.Mode,Tmp.Connection,Tmp.Name);
       }
 #endif
     }
@@ -4460,7 +4460,7 @@ void      cInputDevice(void)
 #ifdef DEBUG_C_INPUT_DAISYCHAIN
       if (Device == TESTDEVICE)
       {
-        printf("c_input   opINPUT_DEVICE READY_XX: D=%-3d T=%-3d M=%-3d B=%d C=%-3d\r\n",Device,Type,Mode,InputInstance.DeviceData[Device].DevStatus,InputInstance.DeviceData[Device].Connection);
+        printf("c_input   opINPUT_DEVICE READY_XX: D=%-3d T=%-3d M=%-3d B=%d C=%-3d\n",Device,Type,Mode,InputInstance.DeviceData[Device].DevStatus,InputInstance.DeviceData[Device].Connection);
       }
 #endif
       if (Device < DEVICES)
@@ -4488,7 +4488,7 @@ void      cInputDevice(void)
               { // Owner is OK
 
 #ifdef DEBUG_TRACE_MODE_CHANGE
-              printf("c_input   opINPUT_DEVICE READY_XX: D=%-3d Change to type %d mode %d\r\n",Device,Type,Mode);
+              printf("c_input   opINPUT_DEVICE READY_XX: D=%-3d Change to type %d mode %d\n",Device,Type,Mode);
 #endif
                 InputInstance.DeviceData[Device].Owner  =  Owner;
                 cInputSetDeviceType(Device,Type,Mode,__LINE__);
@@ -4505,7 +4505,7 @@ void      cInputDevice(void)
               { // Another owner
 
 #ifdef DEBUG_TRACE_MODE_CHANGE
-                printf("c_input   opINPUT_DEVICE READY_XX: D=%-3d Trying to change to type %d mode %d\r\n",Device,Type,Mode);
+                printf("c_input   opINPUT_DEVICE READY_XX: D=%-3d Trying to change to type %d mode %d\n",Device,Type,Mode);
 #endif
 #ifdef ENABLE_STATUS_TEST
                 if (Device == TESTDEVICE)
@@ -4533,7 +4533,7 @@ void      cInputDevice(void)
                 if (InputInstance.DeviceData[Device].TimeoutTimer == 0)
                 {
   #ifdef DEBUG_TRACE_MODE_CHANGE
-                  printf("c_input   opINPUT_DEVICE READY_XX: D=%-3d Timeout when trying to change to type %d mode %d\r\n",Device,Type,Mode);
+                  printf("c_input   opINPUT_DEVICE READY_XX: D=%-3d Timeout when trying to change to type %d mode %d\n",Device,Type,Mode);
   #endif
                   InputInstance.DeviceData[Device].Owner  =  0;
                   InputInstance.DeviceData[Device].Busy   =  0;
@@ -4920,7 +4920,7 @@ void      cInputReadSi(void)
   Mode        =  *(DATA8*)PrimParPointer();
 
 #ifdef DEBUG_C_INPUT_DAISYCHAIN
-  printf("c_input   opINPUT_READSI:          D=%-3d B=%d\r\n",Device,InputInstance.DeviceData[Device].DevStatus);
+  printf("c_input   opINPUT_READSI:          D=%-3d B=%d\n",Device,InputInstance.DeviceData[Device].DevStatus);
 #endif
   if (Device < DEVICES)
   {
@@ -4955,7 +4955,7 @@ void      cInputTest(void)
   if (Device < DEVICES)
   {
 #ifdef DEBUG_C_INPUT_DAISYCHAIN
-    printf("c_input   opINPUT_TEST:            D=%-3d B=%d\r\n",Device,InputInstance.DeviceData[Device].DevStatus);
+    printf("c_input   opINPUT_TEST:            D=%-3d B=%d\n",Device,InputInstance.DeviceData[Device].DevStatus);
 #endif
     if (InputInstance.DeviceData[Device].DevStatus != BUSY)
     {

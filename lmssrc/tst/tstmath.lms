@@ -23,10 +23,10 @@ vmthread  MAIN
   DATAF   PI
 
 
-  UI_WRITE(PUT_STRING,'\r\n')
-  UI_WRITE(PUT_STRING,'          opMATH TEST V0.44\r\n')
-  UI_WRITE(PUT_STRING,'    ------------------------------\r\n')
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
+  UI_WRITE(PUT_STRING,'          opMATH TEST V0.44\n')
+  UI_WRITE(PUT_STRING,'    ------------------------------\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 
   MOVEF_F(0.0F,ZERO)
@@ -42,7 +42,7 @@ vmthread  MAIN
   // EXP
   CALL(Math,ONE,EXP)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // POW
   CALL(Math,4.0F,POW)
@@ -50,7 +50,7 @@ vmthread  MAIN
   CALL(Math,10.0F,POW10)
   CALL(Math,20.0F,POW10)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // MOD
 //  CALL(Math,HIGH_POS,MOD)
@@ -59,7 +59,7 @@ vmthread  MAIN
   CALL(Math,100001.0F,MOD32)
   CALL(Math,5.5F,MOD)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // FLOOR
   CALL(Math,LOW_POS,FLOOR)
@@ -67,7 +67,7 @@ vmthread  MAIN
   CALL(Math,LOW_NEG,FLOOR)
   CALL(Math,HIGH_NEG,FLOOR)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // CEIL
   CALL(Math,LOW_POS,CEIL)
@@ -75,7 +75,7 @@ vmthread  MAIN
   CALL(Math,LOW_NEG,CEIL)
   CALL(Math,HIGH_NEG,CEIL)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // ROUND
   CALL(Math,LOW_POS,ROUND)
@@ -83,19 +83,19 @@ vmthread  MAIN
   CALL(Math,LOW_NEG,ROUND)
   CALL(Math,HIGH_NEG,ROUND)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // ABS
   CALL(Math,LOW_POS,ABS)
   CALL(Math,LOW_NEG,ABS)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // NEGATE
   CALL(Math,LOW_POS,NEGATE)
   CALL(Math,LOW_NEG,NEGATE)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // TRUNC
   CALL(Math,PI,TRUNC0)
@@ -106,14 +106,14 @@ vmthread  MAIN
   CALL(Math,PI,TRUNC2)
   CALL(Math,PI,TRUNC9)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // SQRT
   CALL(Math,HUNDRED,SQRT)
   CALL(Math,LOW_NEG,SQRT)
   CALL(Math,ZERO,SQRT)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // LOG
   CALL(Math,ONE,LOG)
@@ -122,7 +122,7 @@ vmthread  MAIN
   CALL(Math,LOW_NEG,LOG)
   CALL(Math,ZERO,LOG)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // LN
   CALL(Math,ONE,LN)
@@ -131,49 +131,49 @@ vmthread  MAIN
   CALL(Math,LOW_NEG,LN)
   CALL(Math,ZERO,LN)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // SIN
   CALL(Math,ONE,SIN)
   CALL(Math,LOW_NEG,SIN)
   CALL(Math,ZERO,SIN)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // COS
   CALL(Math,ONE,COS)
   CALL(Math,LOW_NEG,COS)
   CALL(Math,ZERO,COS)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // TAN
   CALL(Math,ONE,TAN)
   CALL(Math,LOW_NEG,TAN)
   CALL(Math,ZERO,TAN)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // ASIN
   CALL(Math,ONE,ASIN)
   CALL(Math,LOW_NEG,ASIN)
   CALL(Math,ZERO,ASIN)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // ACOS
   CALL(Math,ONE,ACOS)
   CALL(Math,LOW_NEG,ACOS)
   CALL(Math,ZERO,ACOS)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
   // ATAN
   CALL(Math,ONE,ATAN)
   CALL(Math,LOW_NEG,ATAN)
   CALL(Math,ZERO,ATAN)
 
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
 
 
 
@@ -336,6 +336,6 @@ NotATan:
   UI_WRITE(PUT_STRING,')')
   UI_WRITE(PUT_STRING,' = ')
   UI_WRITE(FLOATVALUE,R,28,10)
-  UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)
 }

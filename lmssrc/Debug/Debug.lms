@@ -46,10 +46,10 @@ Loop:                                                                 //    {
   PROGRAM_INFO(GET_PRGRESULT,TERM_SLOT,Reply)                         //          PROGRAM_INFO(GET_PRGRESULT,TERM_SLOT,Reply)
   JR_NEQ8(Reply,FAIL,Ok)                                              //          if (Reply == FAIL)
                                                                       //          {              
-  UI_WRITE(PUT_STRING,'FAIL\r\n')                                     //            UI_WRITE(PUT_STRING,'FAIL\r\n')
+  UI_WRITE(PUT_STRING,'FAIL\n')                                       //            UI_WRITE(PUT_STRING,'FAIL\n')
 Ok:                                                                   //          }
   UI_WRITE(CODE,pDirectGlobals,MAX_COMMAND_GLOBALS)                   //          UI_WRITE(CODE,pDirectGlobals,MAX_COMMAND_GLOBALS)
-  UI_WRITE(PUT_STRING,'\r\n')                                         //          UI_WRITE(PUT_STRING,'\r\n')
+  UI_WRITE(PUT_STRING,'\n')                                           //          UI_WRITE(PUT_STRING,'\n')
   UI_WRITE(WRITE_FLUSH)                                               //          UI_WRITE(WRITE_FLUSH)
                                                                       //
 NotStopped:                                                           //        }
@@ -162,10 +162,10 @@ NotTrig:                                                              //      }
                                                                       //
   JR_NEQ8(Status,STOPPED,NotStopped)                                  //        if (Status == STOPPED)
                                                                       //        {
-  UI_WRITE(PUT_STRING,'\r  }\r\n  [')                                 //          UI_WRITE(PUT_STRING,'\r  }\r\n  [')
+  UI_WRITE(PUT_STRING,'\n  }\n  [')                                   //          UI_WRITE(PUT_STRING,'\n  }\n  [')
   PROGRAM_INFO(GET_SPEED,USER_SLOT,Ips)                               //          PROGRAM_INFO(GET_SPEED,USER_SLOT,Ips)
   UI_WRITE(VALUE32,Ips)                                               //          UI_WRITE(VALUE32,Ips)
-  UI_WRITE(PUT_STRING,' IPS]\r\n')                                    //          UI_WRITE(PUT_STRING,' IPS]\r\n')
+  UI_WRITE(PUT_STRING,' IPS]\n')                                      //          UI_WRITE(PUT_STRING,' IPS]\n')
                                                                       //
   UI_WRITE(WRITE_FLUSH)                                               //          UI_WRITE(WRITE_FLUSH)
   CALL(StartupScreen)                                                 //          StartupScreen()
@@ -187,26 +187,27 @@ subcall   Help                                                        //  void H
   DATAS   Version 40                                                  //
                                                                       //
   UI_READ(GET_VERSION,40,Version)                                     //
-  UI_WRITE(PUT_STRING,'\r\n')                                         //
+  UI_WRITE(PUT_STRING,'\n')                                           //
   UI_WRITE(PUT_STRING,Version)                                        //
-  UI_WRITE(PUT_STRING,'\r\n\n\n')                                     //
-  UI_WRITE(PUT_STRING,'      BYTECODE DEBUGGER      \r\n')            //
-  UI_WRITE(PUT_STRING,'  -------------------------  \r\n')            //
-  UI_WRITE(PUT_STRING,'  h      - this help screen  \r\n')            //
-  UI_WRITE(PUT_STRING,'  f      - help on file/path \r\n')            //
-  UI_WRITE(PUT_STRING,'  w      - help on debugging \r\n')            //
-  UI_WRITE(PUT_STRING,'                             \r\n')            //
-  UI_WRITE(PUT_STRING,'  rFILE  - run file          \r\n')            //
-  UI_WRITE(PUT_STRING,'  dFILE  - debug file        \r\n')            //
-  UI_WRITE(PUT_STRING,'  s      - stop              \r\n')            //
-  UI_WRITE(PUT_STRING,'                             \r\n')            //
-  UI_WRITE(PUT_STRING,'  bADDR  - set breakpoint    \r\n')            //
-  UI_WRITE(PUT_STRING,'  p      - probe             \r\n')            //
-  UI_WRITE(PUT_STRING,'  tADDR  - set triggerpoint  \r\n')            //
-  UI_WRITE(PUT_STRING,'                             \r\n')            //
-  UI_WRITE(PUT_STRING,'  cCODE  - direct command    \r\n')            //
-  UI_WRITE(PUT_STRING,'  q      - quit to Linux     \r\n')            //
-  UI_WRITE(PUT_STRING,'  -------------------------  \r\n\n')          //
+  UI_WRITE(PUT_STRING,'\n\n')                                         //
+  UI_WRITE(PUT_STRING,'      BYTECODE DEBUGGER      \n')              //
+  UI_WRITE(PUT_STRING,'  -------------------------  \n')              //
+  UI_WRITE(PUT_STRING,'  h      - this help screen  \n')              //
+  UI_WRITE(PUT_STRING,'  f      - help on file/path \n')              //
+  UI_WRITE(PUT_STRING,'  w      - help on debugging \n')              //
+  UI_WRITE(PUT_STRING,'                             \n')              //
+  UI_WRITE(PUT_STRING,'  rFILE  - run file          \n')              //
+  UI_WRITE(PUT_STRING,'  dFILE  - debug file        \n')              //
+  UI_WRITE(PUT_STRING,'  s      - stop              \n')              //
+  UI_WRITE(PUT_STRING,'                             \n')              //
+  UI_WRITE(PUT_STRING,'  bADDR  - set breakpoint    \n')              //
+  UI_WRITE(PUT_STRING,'  p      - probe             \n')              //
+  UI_WRITE(PUT_STRING,'  tADDR  - set triggerpoint  \n')              //
+  UI_WRITE(PUT_STRING,'                             \n')              //
+  UI_WRITE(PUT_STRING,'  cCODE  - direct command    \n')              //
+  UI_WRITE(PUT_STRING,'  q      - quit to Linux     \n')              //
+  UI_WRITE(PUT_STRING,'  -------------------------  \n')              //
+  UI_WRITE(PUT_STRING,'\n')                                           //
   UI_WRITE(WRITE_FLUSH)                                               //
 }                                                                     //  }
                                                                       //
@@ -218,18 +219,19 @@ subcall   Help                                                        //  void H
                                                                       //
 subcall   FilenameHelp                                                //  void FilenameHelp(void)
 {                                                                     //  {
-  UI_WRITE(PUT_STRING,'\r\n\n\n')                                     //
-  UI_WRITE(PUT_STRING,'  FILENAME / PATH HELP                    \r\n')//
-  UI_WRITE(PUT_STRING,'  ----------------------------------------\r\n')//
-  UI_WRITE(PUT_STRING,'  Run file located in specific folder use:\r\n')//
-  UI_WRITE(PUT_STRING,'                                          \r\n')//
-  UI_WRITE(PUT_STRING,'    r../prjs/prg1/prg1.rbf                \r\n')//
-  UI_WRITE(PUT_STRING,'                                          \r\n')//
-  UI_WRITE(PUT_STRING,'  Run file located in  sys/ui  folder use:\r\n')//
-  UI_WRITE(PUT_STRING,'                                          \r\n')//
-  UI_WRITE(PUT_STRING,'    rprg1                                 \r\n')//
-  UI_WRITE(PUT_STRING,'                                          \r\n')//
-  UI_WRITE(PUT_STRING,'  ----------------------------------------\r\n\n')//
+  UI_WRITE(PUT_STRING,'\n\n')                                         //
+  UI_WRITE(PUT_STRING,'  FILENAME / PATH HELP                    \n') //
+  UI_WRITE(PUT_STRING,'  ----------------------------------------\n') //
+  UI_WRITE(PUT_STRING,'  Run file located in specific folder use:\n') //
+  UI_WRITE(PUT_STRING,'                                          \n') //
+  UI_WRITE(PUT_STRING,'    r../prjs/prg1/prg1.rbf                \n') //
+  UI_WRITE(PUT_STRING,'                                          \n') //
+  UI_WRITE(PUT_STRING,'  Run file located in  sys/ui  folder use:\n') //
+  UI_WRITE(PUT_STRING,'                                          \n') //
+  UI_WRITE(PUT_STRING,'    rprg1                                 \n') //
+  UI_WRITE(PUT_STRING,'                                          \n') //
+  UI_WRITE(PUT_STRING,'  ----------------------------------------\n') //
+  UI_WRITE(PUT_STRING,'\n')                                           //
   UI_WRITE(WRITE_FLUSH)                                               //
 }                                                                     //  }
                                                                       //
@@ -241,18 +243,19 @@ subcall   FilenameHelp                                                //  void F
                                                                       //
 subcall   DebugHelp                                                   //  void DebugHelp(void)
 {                                                                     //  {
-  UI_WRITE(PUT_STRING,'\r\n\n\n')                                     //
-  UI_WRITE(PUT_STRING,'  DEBUGGING HELP                          \r\n')//
-  UI_WRITE(PUT_STRING,'  ----------------------------------------\r\n')//
-  UI_WRITE(PUT_STRING,'  Run file with the  d   command and the  \r\n')//
-  UI_WRITE(PUT_STRING,'   file will load and be ready to single  \r\n')//
-  UI_WRITE(PUT_STRING,'   step, run or breakpoint set.           \r\n')//
-  UI_WRITE(PUT_STRING,'                                          \r\n')//
-  UI_WRITE(PUT_STRING,'  spacebar - will step one byte code      \r\n')//
-  UI_WRITE(PUT_STRING,'  bADDR    - insert break point at ADDR   \r\n')//
-  UI_WRITE(PUT_STRING,'  <        - run the program              \r\n')//
-  UI_WRITE(PUT_STRING,'  s        - stop and terminate           \r\n')//
-  UI_WRITE(PUT_STRING,'  ----------------------------------------\r\n\n')//
+  UI_WRITE(PUT_STRING,'\n\n')                                         //
+  UI_WRITE(PUT_STRING,'  DEBUGGING HELP                          \n') //
+  UI_WRITE(PUT_STRING,'  ----------------------------------------\n') //
+  UI_WRITE(PUT_STRING,'  Run file with the  d   command and the  \n') //
+  UI_WRITE(PUT_STRING,'   file will load and be ready to single  \n') //
+  UI_WRITE(PUT_STRING,'   step, run or breakpoint set.           \n') //
+  UI_WRITE(PUT_STRING,'                                          \n') //
+  UI_WRITE(PUT_STRING,'  spacebar - will step one byte code      \n') //
+  UI_WRITE(PUT_STRING,'  bADDR    - insert break point at ADDR   \n') //
+  UI_WRITE(PUT_STRING,'  <        - run the program              \n') //
+  UI_WRITE(PUT_STRING,'  s        - stop and terminate           \n') //
+  UI_WRITE(PUT_STRING,'  ----------------------------------------\n') //
+  UI_WRITE(PUT_STRING,'\n')                                           //
   UI_WRITE(WRITE_FLUSH)                                               //
 }                                                                     //  }
                                                                       //
@@ -313,9 +316,9 @@ subcall   RunUserProgram                                              //  void R
                                                                       //
   JR_NEQ8(Status,STOPPED,NotStopped)                                  //    if (Status == STOPPED)
                                                                       //    {
-  UI_WRITE(PUT_STRING,'\r\n  Starting "')                             //      UI_WRITE(PUT_STRING,'\r\n  Starting "')
+  UI_WRITE(PUT_STRING,'\n  Starting "')                               //      UI_WRITE(PUT_STRING,'\n  Starting "')
   UI_WRITE(PUT_STRING,Filename)                                       //      UI_WRITE(PUT_STRING,Filename)
-  UI_WRITE(PUT_STRING,'"\r\n  {\r\n')                                 //      UI_WRITE(PUT_STRING,'"\r\n  {\r\n')
+  UI_WRITE(PUT_STRING,'"\n  {\n')                                     //      UI_WRITE(PUT_STRING,'"\n  {\n')
                                                                       //
   FILE(LOAD_IMAGE,USER_SLOT,Filename,ISize,Image)                     //      FILE(LOAD_IMAGE,USER_SLOT,Filename,ISize,Image)
   PROGRAM_START(USER_SLOT,0,Image,0)                                  //      PROGRAM_START(USER_SLOT,0,Image,0)
@@ -342,9 +345,9 @@ subcall   RunTstProgram                                               //  void R
                                                                       //
   JR_NEQ8(Status,STOPPED,NotStopped)                                  //    if (Status == STOPPED)
                                                                       //    {
-  UI_WRITE(PUT_STRING,'\r\n  Starting "')                             //      UI_WRITE(PUT_STRING,'\r\n  Starting "')
+  UI_WRITE(PUT_STRING,'\n  Starting "')                               //      UI_WRITE(PUT_STRING,'\n  Starting "')
   UI_WRITE(PUT_STRING,'performance')                                  //      UI_WRITE(PUT_STRING,'performance')
-  UI_WRITE(PUT_STRING,'"\r\n  {\r\n')                                 //      UI_WRITE(PUT_STRING,'"\r\n  {\r\n')
+  UI_WRITE(PUT_STRING,'"\n  {\n')                                     //      UI_WRITE(PUT_STRING,'"\n  {\n')
                                                                       //
   FILE(LOAD_IMAGE,USER_SLOT,'performance',ISize,Image)                //      FILE(LOAD_IMAGE,USER_SLOT,'performance',ISize,Image)
   PROGRAM_START(USER_SLOT,0,Image,0)                                  //      PROGRAM_START(USER_SLOT,0,Image,0)
@@ -420,9 +423,9 @@ subcall   Debug                                                       //  void D
                                                                       //
   JR_NEQ8(Status,STOPPED,NotStopped)                                  //    if (Status == STOPPED)
                                                                       //    {
-  UI_WRITE(PUT_STRING,'\r\n  Debugging "')                            //      UI_WRITE(PUT_STRING,'\r\n  Debugging "')
+  UI_WRITE(PUT_STRING,'\n  Debugging "')                              //      UI_WRITE(PUT_STRING,'\n  Debugging "')
   UI_WRITE(PUT_STRING,Filename)                                       //      UI_WRITE(PUT_STRING,Filename)
-  UI_WRITE(PUT_STRING,'"\r\n  {\r\n')                                 //      UI_WRITE(PUT_STRING,'"\r\n  {\r\n')
+  UI_WRITE(PUT_STRING,'"\n  {\n')                                     //      UI_WRITE(PUT_STRING,'"\n  {\n')
                                                                       //
   UI_WRITE(WRITE_FLUSH)                                               //      UI_WRITE(WRITE_FLUSH)
                                                                       //

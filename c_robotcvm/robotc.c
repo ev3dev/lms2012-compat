@@ -69,7 +69,7 @@ void vm_update()
 #ifdef DEBUG_DYNLOAD
 	static unsigned long updateCounter = 0;
 	if ((updateCounter++ % 1000) == 0)
-	fprintf(stderr, "ROBOTC: vm_update called: %lu!\r\n", updateCounter);
+	fprintf(stderr, "ROBOTC: vm_update called: %lu!\n", updateCounter);
 #endif
 }
 

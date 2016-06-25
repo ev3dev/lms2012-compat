@@ -74,7 +74,7 @@ void      ShowOpcode(UBYTE OpCode,char *Buf,int Lng)
             }
             else
             {
-              Size   +=  snprintf(&Buf[Size],Lng - Size,"\r\n");
+              Size   +=  snprintf(&Buf[Size],Lng - Size,"\n");
               Size   +=  snprintf(&Buf[Size],Lng - Size,"%s",TmpBuf);
             }
             Flag  =  1;
@@ -135,7 +135,7 @@ void      ShowOpcode(UBYTE OpCode,char *Buf,int Lng)
       }
     }
     while (ParType);
-    Size +=  snprintf(&Buf[Size],Lng - Size,"\r\n");
+    Size +=  snprintf(&Buf[Size],Lng - Size,"\n");
   }
 }
 
@@ -149,22 +149,22 @@ RESULT    cValidateInit(void)
   char    Buffer[8000];
 
   pFile  =  fopen("../../../bytecodeassembler/o.c","w");
-  fprintf(pFile,"//******************************************************************************\r\n");
-  fprintf(pFile,"//Test Supported Opcodes in V%4.2f\r\n",VERS);
-  fprintf(pFile,"//******************************************************************************\r\n\n");
-  fprintf(pFile,"#define DATA8          LC0(0)                   \r\n");
-  fprintf(pFile,"#define DATA16         GV0(0)                   \r\n");
-  fprintf(pFile,"#define DATA32         LV0(0)                   \r\n");
-  fprintf(pFile,"#define DATAF          LC0(0)                   \r\n");
-  fprintf(pFile,"#define UNKNOWN        LV0(0)                   \r\n");
-  fprintf(pFile,"#define STRING         LCS,'T','E','S','T',0    \r\n");
-  fprintf(pFile,"\r\n");
-  fprintf(pFile,"UBYTE     prg[] =\r\n");
-  fprintf(pFile,"{\r\n");
-  fprintf(pFile,"  PROGRAMHeader(0,2,4),\r\n");
-  fprintf(pFile,"  VMTHREADHeader(0,4),\r\n");
-  fprintf(pFile,"  VMTHREADHeader(0,4),\r\n");
-  fprintf(pFile,"\r\n");
+  fprintf(pFile,"//******************************************************************************\n");
+  fprintf(pFile,"//Test Supported Opcodes in V%4.2f\n",VERS);
+  fprintf(pFile,"//******************************************************************************\n\n");
+  fprintf(pFile,"#define DATA8          LC0(0)                   \n");
+  fprintf(pFile,"#define DATA16         GV0(0)                   \n");
+  fprintf(pFile,"#define DATA32         LV0(0)                   \n");
+  fprintf(pFile,"#define DATAF          LC0(0)                   \n");
+  fprintf(pFile,"#define UNKNOWN        LV0(0)                   \n");
+  fprintf(pFile,"#define STRING         LCS,'T','E','S','T',0    \n");
+  fprintf(pFile,"\n");
+  fprintf(pFile,"UBYTE     prg[] =\n");
+  fprintf(pFile,"{\n");
+  fprintf(pFile,"  PROGRAMHeader(0,2,4),\n");
+  fprintf(pFile,"  VMTHREADHeader(0,4),\n");
+  fprintf(pFile,"  VMTHREADHeader(0,4),\n");
+  fprintf(pFile,"\n");
   for (OpCode = 0;OpCode < 256;OpCode++)
   {
     if ((OpCode != opERROR) && (OpCode != opNOP))
@@ -173,20 +173,20 @@ RESULT    cValidateInit(void)
       fprintf(pFile,"%s",Buffer);
       if (OpCode == 0x60)
       {
-//        fprintf(pFile,"  0x60,\r\n");
+//        fprintf(pFile,"  0x60,\n");
       }
     }
   }
   ShowOpcode(opOBJECT_END,Buffer,8000);
   fprintf(pFile,"%s",Buffer);
-  fprintf(pFile,"\r\n");
-  fprintf(pFile,"};\r\n\n");
-  fprintf(pFile,"//******************************************************************************\r\n");
+  fprintf(pFile,"\n");
+  fprintf(pFile,"};\n\n");
+  fprintf(pFile,"//******************************************************************************\n");
   fclose(pFile);
 
   if (system("~/projects/lms2012/bytecodeassembler/oasm") >= 0)
   {
-    printf("Compiling\r\n");
+    printf("Compiling\n");
     sync();
   }
 
@@ -339,7 +339,7 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
 //***************************************************************************
             if ((LineLength + 10) >= 80)
             {
-              printf("\r\n%*.*s",Indent,Indent,"");
+              printf("\n%*.*s",Indent,Indent,"");
               LineLength  =  Indent;
             }
             Value       =  (ULONG)0;
@@ -449,7 +449,7 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
 
                         if ((LineLength + 5) >= 80)
                         {
-                          printf("\r\n%*.*s",Indent,Indent,"");
+                          printf("\n%*.*s",Indent,Indent,"");
                           LineLength  =  Indent;
                         }
 
@@ -481,7 +481,7 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
 
                       if ((LineLength + 2) >= 80)
                       {
-                        printf("\r\n%*.*s",Indent,Indent,"");
+                        printf("\n%*.*s",Indent,Indent,"");
                         LineLength  =  Indent;
                       }
                       LineLength +=  printf("0");
@@ -607,7 +607,7 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
 
           if ((LineLength + 10) >= 80)
           {
-            printf("\r\n%*.*s",Indent,Indent,"");
+            printf("\n%*.*s",Indent,Indent,"");
             LineLength  =  Indent;
           }
           Value       =  (ULONG)0;
@@ -720,7 +720,7 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
 
                       if ((LineLength + 5) >= 80)
                       {
-                        printf("\r\n%*.*s",Indent,Indent,"");
+                        printf("\n%*.*s",Indent,Indent,"");
                         LineLength  =  Indent;
                       }
 
@@ -752,7 +752,7 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
 
                     if ((LineLength + 2) >= 80)
                     {
-                      printf("\r\n%*.*s",Indent,Indent,"");
+                      printf("\n%*.*s",Indent,Indent,"");
                       LineLength  =  Indent;
                     }
                     LineLength +=  printf("0");
@@ -885,7 +885,7 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
       }
       while (ParType || Parameters);
     }
-    printf("\r\n");
+    printf("\n");
   }
 
   return (Result);
@@ -917,10 +917,10 @@ RESULT    cValidateDisassembleProgram(PRGID PrgId,IP pI,LABEL *pLabel)
   Objects   =  (*(IMGHEAD*)pI).NumberOfObjects;
   Size      =  (*(IMGHEAD*)pI).ImageSize;
 
-  printf("\r\n//****************************************************************************");
-  printf("\r\n// Disassembler Listing");
-  printf("\r\n//****************************************************************************");
-  printf("\r\n\nUBYTE     prg[] =\r\n{\r\n");
+  printf("\n//****************************************************************************");
+  printf("\n// Disassembler Listing");
+  printf("\n//****************************************************************************");
+  printf("\n\nUBYTE     prg[] =\n{\n");
 
   Addr        =  0;
   LastOffset  =  0;
@@ -930,7 +930,7 @@ RESULT    cValidateDisassembleProgram(PRGID PrgId,IP pI,LABEL *pLabel)
   {
     printf("ERROR ");
   }
-  printf("  /* %4u */  PROGRAMHeader(%.2f,%d,%d),\r\n",Addr,(float)(*pIH).VersionInfo / (float)100,(*pIH).NumberOfObjects,(*pIH).GlobalBytes);
+  printf("  /* %4u */  PROGRAMHeader(%.2f,%d,%d),\n",Addr,(float)(*pIH).VersionInfo / (float)100,(*pIH).NumberOfObjects,(*pIH).GlobalBytes);
   Addr +=  sizeof(IMGHEAD);
 
   for (ObjIndex = 1;ObjIndex <= Objects;ObjIndex++)
@@ -968,11 +968,11 @@ RESULT    cValidateDisassembleProgram(PRGID PrgId,IP pI,LABEL *pLabel)
     ValidateInstance.Row  =  41 - ValidateInstance.Row;
     if (LastOffset  ==  (ULONG)pOH[ObjIndex].OffsetToInstructions)
     {
-      printf("%*.*s// Object %-3u (Alias for object %u)\r\n",ValidateInstance.Row,ValidateInstance.Row," ",ObjIndex,LastObject);
+      printf("%*.*s// Object %-3u (Alias for object %u)\n",ValidateInstance.Row,ValidateInstance.Row," ",ObjIndex,LastObject);
     }
     else
     {
-      printf("%*.*s// Object %-3u\r\n",ValidateInstance.Row,ValidateInstance.Row," ",ObjIndex);
+      printf("%*.*s// Object %-3u\n",ValidateInstance.Row,ValidateInstance.Row," ",ObjIndex);
     }
     ValidateInstance.Row  =  0;
     LastOffset  =  (ULONG)pOH[ObjIndex].OffsetToInstructions;
@@ -997,14 +997,14 @@ RESULT    cValidateDisassembleProgram(PRGID PrgId,IP pI,LABEL *pLabel)
     if (pOH[ObjIndex].OwnerObjectId)
     { // BLOCK object
 
-      printf("\r\n  /* Object %2d (BLOCK) [%lu..%lu] */\r\n\n",ObjIndex,(long unsigned int)MinIndex,(long unsigned int)MaxIndex);
+      printf("\n  /* Object %2d (BLOCK) [%lu..%lu] */\n\n",ObjIndex,(long unsigned int)MinIndex,(long unsigned int)MaxIndex);
     }
     else
     {
       if (pOH[ObjIndex].TriggerCount == 1)
       { // SUBCALL object
 
-        printf("\r\n  /* Object %2d (SUBCALL) [%lu..%lu] */\r\n\n",ObjIndex,(long unsigned int)MinIndex,(long unsigned int)MaxIndex);
+        printf("\n  /* Object %2d (SUBCALL) [%lu..%lu] */\n\n",ObjIndex,(long unsigned int)MinIndex,(long unsigned int)MaxIndex);
 
         ValidateInstance.Row +=    printf("  /* %4d */  ",MinIndex);
         TmpIndex  =  (IMINDEX)pI[MinIndex++];
@@ -1056,13 +1056,13 @@ RESULT    cValidateDisassembleProgram(PRGID PrgId,IP pI,LABEL *pLabel)
           }
           TmpIndex--;
         }
-        printf("\r\n\n");
+        printf("\n\n");
 
       }
       else
       { // VMTHREAD object
 
-        printf("\r\n  /* Object %2d (VMTHREAD) [%lu..%lu] */\r\n\n",ObjIndex,(long unsigned int)MinIndex,(long unsigned int)MaxIndex);
+        printf("\n  /* Object %2d (VMTHREAD) [%lu..%lu] */\n\n",ObjIndex,(long unsigned int)MinIndex,(long unsigned int)MaxIndex);
       }
     }
 
@@ -1078,8 +1078,8 @@ RESULT    cValidateDisassembleProgram(PRGID PrgId,IP pI,LABEL *pLabel)
     Addr  =  Index;
 
   }
-  printf("};\r\n");
-  printf("\r\n//****************************************************************************\r\n\n");
+  printf("};\n");
+  printf("\n//****************************************************************************\n\n");
 
 
   return (Result);
@@ -1641,7 +1641,7 @@ RESULT    cValidateProgram(PRGID PrgId,IP pI,LABEL *pLabel,DATA8 Disassemble)
 
 
 #ifdef    DEBUG
-  printf("Validation started\r\n");
+  printf("Validation started\n");
 #endif
   cValidateSetErrorIndex(0);
   pIH         =  (IMGHEAD*)pI;
@@ -1719,7 +1719,7 @@ RESULT    cValidateProgram(PRGID PrgId,IP pI,LABEL *pLabel,DATA8 Disassemble)
     if (ImageIndex > TotalSize)
     {
 #ifdef    DEBUG
-      printf("%d %d\r\n",ImageIndex,TotalSize);
+      printf("%d %d\n",ImageIndex,TotalSize);
 #endif
       cValidateSetErrorIndex(TmpIndex);
     }
@@ -1732,7 +1732,7 @@ RESULT    cValidateProgram(PRGID PrgId,IP pI,LABEL *pLabel,DATA8 Disassemble)
   }
 
 #ifdef    DEBUG
-  printf("Validation ended\r\n");
+  printf("Validation ended\n");
 #endif
   if (Disassemble)
   {
