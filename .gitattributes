@@ -1,0 +1,14 @@
+*           text=auto
+
+*.h         text
+*.c         text
+*.lms       text
+*.txt       text
+*.cmake     text
+*.sh        text
+*.logo      text
+*.rcf       text
+
+*.bmp       -text
+*.wav       -text
+*.jar       -text
