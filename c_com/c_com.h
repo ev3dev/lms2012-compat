@@ -1544,13 +1544,13 @@ typedef struct
   MAILBOX   MailBox[NO_OF_MAILBOXES];
 
   int       Cmdfd;
-  UBYTE		  VmReady;
+  UBYTE     VmReady;
   UBYTE     ComResult;
   UBYTE     ActiveComCh;   // Temporary fix until com channel functionality is in place, Ch interleaving not possible
   UBYTE     ReplyStatus;
 
   UBYTE     BrickName[vmBRICKNAMESIZE];
-
+  char     *musb_syspath;
 } COM_GLOBALS;
 
 extern COM_GLOBALS ComInstance;

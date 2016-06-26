@@ -959,46 +959,13 @@ int cDaisyGetInterruptPacketSize(void)
 
 RESULT cDaisyCreateSpeedInfo(void)
 {
-  // Makes the connection (shared mem) between Gadget driver
-  // kernel layer and the Userspace layer
+    RESULT Result = FAIL;
 
-  RESULT Result = FAIL;
-  int   UsbFile;
-  USB_SPEED *pUsbSpeedTemp;
+    // TODO: Need to use dbus to systemd to bring up low speed usb hid gadget
+    // if needed. Alternately, we could code the configfs here instead of using
+    // an external script and systemd.
 
-  // Create a Shared Memory entry for signaling the driver state FULL- or HIGHSPEED
-
-  UsbFile = open(USBDEV_DEVICE_NAME,O_RDWR | O_SYNC);
-
-  #ifdef DEBUG
-    printf("UsbFile = %d\n", UsbFile);
-  #endif
-
-  if(UsbFile >= 0)
-  {
-    pUsbSpeedTemp  =  (USB_SPEED*)mmap(0, sizeof(UWORD), PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, UsbFile, 0);
-
-    if(pUsbSpeedTemp == MAP_FAILED)
-    {
-      #ifdef DEBUG
-        printf("MAP_FAILED\n\r");
-      #endif
-
-      LogErrorNumber(USB_SHARED_MEMORY);
-    }
-    else
-    {
-      pUsbSpeed = pUsbSpeedTemp;
-      Result  =  OK;
-
-      #ifdef DEBUG
-        printf("OK pUsbSpeed in c_Daisy\n\r");
-      #endif
-    }
-    close(UsbFile);
-  }
-
-  return Result;
+    return Result;
 }
 
 RESULT cDaisyWriteTypeDownstream(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mode)

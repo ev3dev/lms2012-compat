@@ -1,0 +1,5 @@
+# This file is part of the lms2012-compat package
+
+SUBSYSTEM=="udc", ACTION=="add", TAG+="systemd", \
+    ENV{SYSTEMD_WANTS}="lms2012-compat-usb-hid@$kernel.service", \
+    ENV{SYSTEMD_ALIAS}="/sys/subsystem/udc/devices/$kernel"

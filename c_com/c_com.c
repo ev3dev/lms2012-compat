@@ -76,8 +76,6 @@ UWORD     cComReadBuffer(UBYTE *pBuffer,UWORD Size);
 UWORD     cComWriteBuffer(UBYTE *pBuffer,UWORD Size);
 UBYTE     cComFindMailbox(UBYTE *pName, UBYTE *pNo);
 
-void  cComSetMusbHdrcMode(void);
-
 #ifdef    DEBUG
   void      cComPrintTxMsg(TXBUF *pTxBuf);
 #endif
@@ -90,6 +88,40 @@ enum
   FS_IDLE,
 };
 
+static char *cComGetMusbDevice(void)
+{
+    struct udev_enumerate *enumerate;
+    struct udev_list_entry *list;
+    char *syspath = NULL;
+
+    enumerate = udev_enumerate_new(VMInstance.udev);
+    udev_enumerate_add_match_subsystem(enumerate, "udc");
+    udev_enumerate_scan_devices(enumerate);
+    list = udev_enumerate_get_list_entry(enumerate);
+    if (list == NULL) {
+        fprintf(stderr, "Failed to get udc device\n");
+    } else {
+        // just taking the first match in the list
+        const char *path = udev_list_entry_get_name(list);
+        struct udev_device *udc_device;
+        struct udev_device *musb_device;
+
+        udc_device = udev_device_new_from_syspath(VMInstance.udev, path);
+        musb_device = udev_device_get_parent(udc_device);
+        if (musb_device == NULL) {
+            fprintf(stderr, "Failed to get musb device\n");
+        } else {
+            path = udev_device_get_syspath(musb_device);
+            printf("musb: %s\n", path);
+            syspath = strdup(path);
+        }
+        udev_device_unref(udc_device);
+    }
+    udev_enumerate_unref(enumerate);
+
+    return syspath;
+}
+
 RESULT    cComInit(void)
 {
   RESULT  Result = FAIL;
@@ -97,8 +129,10 @@ RESULT    cComInit(void)
   UBYTE   Cnt;
   FILE    *File;
 
+  ComInstance.musb_syspath = cComGetMusbDevice();
+
   ComInstance.CommandReady      =  0;
-  ComInstance.Cmdfd             =  open(COM_CMD_DEVICE_NAME, O_RDWR, 0666);
+  ComInstance.Cmdfd             =  open("/dev/hidg0", O_RDWR, 0666);
 
   if (ComInstance.Cmdfd >= 0)
   {
@@ -172,9 +206,6 @@ RESULT    cComInit(void)
   // USB cable stuff init
   UsbConUpdate = 0;               // Reset timing of USB device side cable detection;
   cComUsbDeviceConnected = FALSE; // Until we believe in something else ;-)
-
-  // TODO: Fixup USB
-  // cComSetMusbHdrcMode();
 
   // TODO: Fixup Bluetooth
   // BtInit((char*)&(ComInstance.BrickName[0]));
@@ -263,44 +294,35 @@ RESULT    cComGetDeviceData(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pType,DAT
   return cDaisyGetDownstreamData(Layer, Port, Length, pType, pMode, pData);
 }
 
-void  cComSetMusbHdrcMode(void)
-{
-  // Force OTG into mode
-  char Musb_Cmd[64];
-  // Build the command string for setting the OTG mode
-  strcpy(Musb_Cmd, "echo otg > /sys/devices/platform/musb_hdrc/mode");
-  system(Musb_Cmd);
-}
-
 UBYTE cComCheckUsbCable(void)
 {
-  // Get mode from MUSB_HDRC
-  UBYTE Result = FALSE;
-  char buffer[21];
-  FILE *f;
+    struct udev_device *musb_device;
+    const char *mode;
+    UBYTE Result = FALSE;
 
-  f = fopen("/sys/devices/platform/musb_hdrc/mode", "r");
-  if(f)
-  {
-    fread(buffer, 20, 1, f);
-    fclose(f);
-  }
+    if (!ComInstance.musb_syspath) {
+        return Result;
+    }
 
-  #ifdef DEBUG
-    printf("BUFFER = %s\n\r", buffer);
-  #endif
+    // Have to create a new udev device each time because udev caches attribute
+    // values. We could read the attribute file directly, but udev takes care
+    // of things like stripping off the trailing newline, which is helpful.
+    // And this function is not called frequently, so performance is not an
+    // issue.
+    musb_device = udev_device_new_from_syspath(VMInstance.udev,
+                                               ComInstance.musb_syspath);
+    if (!musb_device) {
+        return Result;
+    }
 
-  if(strstr(buffer, "b_peripheral") != 0)
-    Result = TRUE;
+    mode = udev_device_get_sysattr_value(musb_device, "mode");
+    if (mode && strcmp(mode, "b_peripheral") == 0) {
+        Result = TRUE;
+    }
 
-  #ifdef DEBUG
-    if(Result == TRUE)
-      printf("CABLE connected\n\r");
-    else
-      printf("CABLE dis-connected :-(\n\r");
-  #endif
+    udev_device_unref(musb_device);
 
-  return Result;
+    return Result;
 }
 
 #ifdef DEBUG
@@ -349,50 +371,54 @@ void      cComShow(UBYTE *pB)
   }
 #endif
 
-
-
-UWORD     cComReadBuffer(UBYTE *pBuffer,UWORD Size)
+UWORD cComReadBuffer(UBYTE *pBuffer, UWORD Size)
 {
-  UWORD   Length = 0;
+    fd_set  Cmdfds;
+    int     ret;
 
-  struct  timeval Cmdtv;
-  fd_set  Cmdfds;
+    if (ComInstance.Cmdfd == -1) {
+      return 0;
+    }
 
-  Cmdtv.tv_sec   =  0;
-  Cmdtv.tv_usec  =  0;
-  FD_ZERO(&Cmdfds);
-  FD_SET(ComInstance.Cmdfd, &Cmdfds);
-  if (select(ComInstance.Cmdfd + 1, &Cmdfds, NULL, NULL, &Cmdtv))
-  {
-    Length  =  read(ComInstance.Cmdfd,pBuffer,(size_t)Size);
+    FD_ZERO(&Cmdfds);
+    FD_SET(ComInstance.Cmdfd, &Cmdfds);
+    ret = select(ComInstance.Cmdfd + 1, &Cmdfds, NULL, NULL, NULL);
+    if (ret == -1 && errno == EINTR) {
+        return 0;
+    }
+    if (ret < 0) {
+        perror("cComReadBuffer select failed");
+        return 0;
+    }
+    if (FD_ISSET(ComInstance.Cmdfd, &Cmdfds)) {
+        ret = read(ComInstance.Cmdfd, pBuffer, Size);
+        if (ret < 0) {
+            perror("cComReadBuffer read failed");
+            return 0;
+        }
+        return ret;
+    }
 
-	  #ifdef DEBUG
-    	printf("cComReadBuffer Length = %d\n", Length);
-	  #endif
-
-  }
-
-  return (Length);
+    return 0;
 }
 
-
-UWORD     cComWriteBuffer(UBYTE *pBuffer,UWORD Size)
+UWORD cComWriteBuffer(UBYTE *pBuffer, UWORD Size)
 {
-  UWORD   Length = 0;
+    UWORD Length;
 
-  if(FULL_SPEED == cDaisyGetUsbUpStreamSpeed()) {
-    Length  =  write(ComInstance.Cmdfd,pBuffer,64);
-  } else {
-    Length  =  write(ComInstance.Cmdfd,pBuffer,1024);
-  }
+    // TODO: implement low speed if needed
 
+    // if(FULL_SPEED == cDaisyGetUsbUpStreamSpeed()) {
+    //     Length = write(ComInstance.Cmdfd, pBuffer, 64);
+    // } else {
+    Length = write(ComInstance.Cmdfd, pBuffer, 1024);
+    // }
 #ifdef DEBUG
-  printf("cComWriteBuffer %d\n\r", Length);
+    printf("cComWriteBuffer %d\n\r", Length);
 #endif
 
-  return (Length);
+    return Length;
 }
-
 
 UBYTE     cComDirectCommand(UBYTE *pBuffer,UBYTE *pReply)
 {
@@ -2788,8 +2814,7 @@ void      cComUpdate(void)
     if(UsbConUpdate >= USB_CABLE_DETECT_RATE)
     {
       UsbConUpdate = 0;
-      // TODO: get USB working
-      // cComUsbDeviceConnected = cComCheckUsbCable();
+      cComUsbDeviceConnected = cComCheckUsbCable();
     }
 
   }

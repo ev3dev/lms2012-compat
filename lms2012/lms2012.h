@@ -163,7 +163,7 @@ char      *HwId = "03";
 //#define   ENABLE_HIGH_CURRENT           //!< Don't shut down on high current
 //#define   DISABLE_LOW_MEMORY            //!< Don't check low memory
 //#define   DISABLE_UART_DATA_ERROR       //!< Don't reset UART sensor if timeout or crc error
-#define   DISABLE_PREEMPTED_VM          //!< Don't run VM as preempted
+//#define   DISABLE_PREEMPTED_VM          //!< Don't run VM as preempted
 #define   DISABLE_SDCARD_SUPPORT        //!< Don't use SD card
 #define   DISABLE_USBSTICK_SUPPORT      //!< Don't use USB stick
 //#define   ENABLE_PERFORMANCE_TEST       //!< Show performance bar in the top line
@@ -340,12 +340,6 @@ char      *HwId = "03";
 #define   UART_DEVICE           "lms_uart"            //!< UART device name
 #define   UART_DEVICE_NAME      "/dev/lms_uart"       //!< UART device file name
 
-#define   USBDEV_DEVICE         "lms_usbdev"          //!< USB device
-#define   USBDEV_DEVICE_NAME    "/dev/lms_usbdev"     //!< USB device
-
-#define   USBHOST_DEVICE        "lms_usbhost"         //!< USB host
-#define   USBHOST_DEVICE_NAME   "/dev/lms_usbhost"    //!< USB host
-
 #define   IIC_DEVICE            "lms_iic"             //!< IIC device name
 #define   IIC_DEVICE_NAME       "/dev/lms_iic"        //!< IIC device
 
@@ -419,8 +413,6 @@ char      *HwId = "03";
 
 #define   DEFAULT_VOLUME        vmDEFAULT_VOLUME
 #define   DEFAULT_SLEEPMINUTES  vmDEFAULT_SLEEPMINUTES
-
-#define   COM_CMD_DEVICE_NAME   USBDEV_DEVICE_NAME    //!< USB HID command pipe device file name
 
 /*! \endverbatim
  *
