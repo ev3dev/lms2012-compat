@@ -330,8 +330,7 @@ RESULT cSoundUpdate(void)
 
                 frames = snd_pcm_avail(SoundInstance.pcm);
                 if (frames < 0) {
-                    fprintf(stderr, "Error getting available frames: %s\n",
-                            snd_strerror(frames));
+                    snd_pcm_recover(SoundInstance.pcm, frames, 1);
                     break;
                 }
                 if (frames <= BytesToRead) {
