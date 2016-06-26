@@ -561,7 +561,8 @@ void cSoundEntry(void)
                     SoundInstance.BytesToWrite = SoundInstance.SoundDataLength;
                 }
             } else {
-                fprintf(stderr, "Failed to open sound file: %s\n", strerror(errno));
+                fprintf(stderr, "Failed to open sound file '%s': %s\n",
+                        SoundInstance.PathBuffer, strerror(errno));
             }
         } else {
             fprintf(stderr, "Sound file name was NULL\n");
