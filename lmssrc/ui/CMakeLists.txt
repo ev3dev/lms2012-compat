@@ -23,7 +23,7 @@ add_lms_app (ui
         144x82_POP4
     SOUNDS
         Click
-        DownloadSucces
+        DownloadSuccess
         GeneralAlarm
         OverpowerAlert
         PowerDown

@@ -544,18 +544,18 @@ void      cUiExitTemp(void)
 #endif
 
 
-static IMGDATA DownloadSuccesSound[] = {
+static IMGDATA DownloadSuccessSound[] = {
   opINFO, LC0(GET_VOLUME), LV0(0),
-  opSOUND, LC0(PLAY), LV0(0), LCS, 'u','i','/','D','o','w','n','l','o','a','d','S','u','c','c','e','s', 0,
+  opSOUND, LC0(PLAY), LV0(0), LCS, 'u','i','/','D','o','w','n','l','o','a','d','S','u','c','c','e','s','s', 0,
   opSOUND_READY,
   opOBJECT_END
 };
 
-void      cUiDownloadSuccesSound(void)
+void      cUiDownloadSuccessSound(void)
 {
   VARDATA Locals[1];
 
-  ExecuteByteCode(DownloadSuccesSound,NULL,Locals);
+  ExecuteByteCode(DownloadSuccessSound,NULL,Locals);
 }
 
 
@@ -7518,7 +7518,7 @@ void      cUiWrite(void)
     case DOWNLOAD_END :
     {
       UiInstance.UiUpdate  =  1;
-      cUiDownloadSuccesSound();
+      cUiDownloadSuccessSound();
       DspStat  =  NOBREAK;
     }
     break;

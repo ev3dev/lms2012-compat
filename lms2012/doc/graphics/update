@@ -152,7 +152,7 @@ srcfile="Click"
 echo copy ${srcpath}${srcfile}${rsfext} to "${dstpath}"${srcfile}${rsfext}
 cp ${srcpath}${srcfile}${rsfext} "${dstpath}"${srcfile}${rsfext}
 
-srcfile="DownloadSucces"
+srcfile="DownloadSuccess"
 echo copy ${srcpath}${srcfile}${rsfext} to "${dstpath}"${srcfile}${rsfext}
 cp ${srcpath}${srcfile}${rsfext} "${dstpath}"${srcfile}${rsfext}
 
