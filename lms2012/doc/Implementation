@@ -6,6 +6,26 @@
  *  This section describes the relative changes from previous version
  *
  *
+ *\version lms2012_v109D
+ *
+ *-# As v109H but telnet enabled with password "Just a bit off the block!"                    \n
+ *
+ *
+ *\version lms2012_v109
+ *
+ *-# As v1081 but version changed to 1.09                                                     \n
+ *
+ *
+ *\version lms2012_v1081
+ *
+ *-# Telnet disabled                                                                          \n
+ *
+ *
+ *\version lms2012_v108
+ *
+ *-# Support for edimax added                                                                 \n
+ *
+ *
  *\version lms2012_v107
  *
  *-# As v1066 but version changed to 1.07                                                     \n
@@ -1946,12 +1966,14 @@
  *\n
  *  <hr size="1"/>
  *\n
+ *
  *  
- *  \version V0.54
+ *\version V0.54
  *
  *-# Sensor IIC driver updated                                                                \n
+ *
  *  
- *  \version V0.53
+ *\version V0.53
  *
  *-# Display spi driver changed (dma)                                                         \n
  *-# SD card driver changed (turn off clock when not used)                                    \n
@@ -1967,11 +1989,23 @@
  *  <hr size="1"/>
  *\n
  *  
- *  \version V0.54
+ *
+ *\version V1.09D (lmsfs_telnet_password.tar.bz2)
+ *
+ *-# Telnet enabled with password "Just a bit off the block!"                                 \n
+ *
+ *
+ *\version V1.09H, V1.09E (lmsfs_without_telnet.tar.bz2)
+ *
+ *-# Telnet disabled in run level 5                                                           \n
+ *
+ *
+ *\version V0.54
  *
  *-# PRU uarts updated (bitrate center moved 5% up)                                           \n
  *  
- *  \version V0.53
+ *
+ *\version V0.53
  *
  *-# BT_Init.sh updated                                                                       \n
  *
@@ -1979,3 +2013,9 @@
  */
 
 
+ *\version lms2012_v109D
+ *
+ *-# As v109H but telnet enabled with password "Just a bit off the block!"                    \n
+ *
+ *
+ *\version lms2012_v109

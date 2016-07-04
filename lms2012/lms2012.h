@@ -251,7 +251,8 @@ char      *HwId = "03";
 
 //#define   RETAILVERS                                  //!< Retail version
 #define   EDUCATIONVERS                               //!< Education version
-//#define   TESTVERS                      '6'           //!< Minor version (not shown if less than ASCII zero)
+//#define   DEVELOPERVERS                               //!< Developer version (telnet with password)
+//#define   TESTVERS                      '1'           //!< Minor version (not shown if less than ASCII zero)
 
 
 #ifdef RETAILVERS
@@ -267,6 +268,14 @@ char      *HwId = "03";
 #define   SPECIALVERS                   'X'
 #define   LEGO_BUNDLE_SEED_ID           "9YZJD9MXPZ"
 #define   LEGO_BUNDLE_ID                "com.lego.education.ev3"
+
+#endif
+
+#ifdef DEVELOPERVERS
+
+#define   SPECIALVERS                   'D'
+#define   LEGO_BUNDLE_SEED_ID           "9RNK8ZF528"
+#define   LEGO_BUNDLE_ID                "com.lego.lms"
 
 #endif
 

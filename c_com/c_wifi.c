@@ -79,10 +79,13 @@ static char AccessNameTable[MAX_ACCESS_NAME_COUNT][MAX_ACCESS_NAME_LENGTH];
 // of available H/W and a description of the drivers to load. I.e. a simple and download-
 // able way of integrating new and more drivers. NO commandline stuff.
 
-#define HARDWARE_SEARCH_STRING          "ID 0846:9030 NetGear, Inc."
+#define HARDWARE_SEARCH_STRING_01         "ID 0846:9030 NetGear, Inc."
+#define WIFI_VENDOR_ID_01    "0846"
+#define WIFI_DONGLE_ID_01    "9030"
 
-#define WIFI_VENDOR_ID    "0846"
-#define WIFI_DONGLE_ID    "9030"
+#define HARDWARE_SEARCH_STRING_02         "ID 7392:7811 Edimax Technology Co., Ltd"
+#define WIFI_VENDOR_ID_02    "7392"
+#define WIFI_DONGLE_ID_02    "7811"
 
 
 // The following could be set to variable/editable strings via methodes, but for now....
@@ -1204,7 +1207,8 @@ RESULT cWiFiDeepDongleSearch(void)
   // detect the HardWare Dongle. No Drivers has to
   // be loaded before using :-)
 
-  RESULT Result = FAIL;
+  RESULT Result = OK;
+  /*RESULT Result = FAIL;
 
   FILE *FilePointer = NULL;
   char FindDongle[10];
@@ -1226,13 +1230,14 @@ RESULT cWiFiDeepDongleSearch(void)
       }
     }
     pclose(FilePointer);
-  }
+  }*/
   return Result;
 }
 
 RESULT cWiFiKnownDongleAttached(void)
 {
-  FILE *pIdVendor = NULL;
+  RESULT Result = OK;
+  /*FILE *pIdVendor = NULL;
   FILE *pIdProduct = NULL;
   char VendorBuffer[64];
   char ProductBuffer[64];
@@ -1265,7 +1270,7 @@ RESULT cWiFiKnownDongleAttached(void)
   if(Result != OK) // Not found - Do we have a hub?
   {
     Result = cWiFiDeepDongleSearch();
-  }
+  }*/
   return Result;
 }
 
@@ -2389,13 +2394,13 @@ RESULT cWiFiGetLogicalName(void)  // Get the Logical Name of the Interface
     size_t NumberOfBytes;
     while((getline(&OneLine, &NumberOfBytes, FilePointer) > 0) && OneLine)
     {
-      if(strstr(OneLine, "IEEE 802"))
-      {
+      //if(strstr(OneLine, "IEEE 802"))
+      //{
           OneLine[5] = 0x00;
-          strcpy(LogicalIfName, OneLine);
+          strcpy(LogicalIfName, "wlan0"); // Fixed for now....
           Result = OK;
-          break;
-      }
+      //    break;
+      //}
     }
     pclose(FilePointer);
   }
@@ -3078,10 +3083,26 @@ void cWiFiLoadAthHwModules(void)
     if(!(cWiFiCheckForLoadedModule("ath9k_htc")))
       system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/ath/ath9k/ath9k_htc.ko &> /dev/null");
   #endif
+
+  #ifdef DEBUG
+    if(!(cWiFiCheckForLoadedModule("edimax01")))
+      system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/edimax01.ko");
+  #else
+    if(!(cWiFiCheckForLoadedModule("edimax01")))
+      system("/sbin/insmod /lib/modules/2.6.33-rc4/kernel/drivers/net/wireless/edimax01.ko &> /dev/null");
+  #endif
 }
 
 void cWiFiUnLoadAthHwModules(void)
 {
+  #ifdef DEBUG
+    if(cWiFiCheckForLoadedModule("edimax01"))
+      system("/sbin/rmmod edimax01.ko");
+  #else
+    if(cWiFiCheckForLoadedModule("edimax01"))
+      system("/sbin/rmmod edimax01.ko &> /dev/null");
+  #endif
+
   #ifdef DEBUG
     if(cWiFiCheckForLoadedModule("ath9k_htc"))
       system("/sbin/rmmod ath9k_htc.ko");

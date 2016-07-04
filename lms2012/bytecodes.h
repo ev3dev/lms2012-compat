@@ -30,7 +30,7 @@
 #ifndef   BYTECODES_H_
 #define   BYTECODES_H_
 
-#define   BYTECODE_VERSION              1.07
+#define   BYTECODE_VERSION              1.09
 
 /*! \page system
  *
