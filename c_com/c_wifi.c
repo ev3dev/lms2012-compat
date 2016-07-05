@@ -111,8 +111,8 @@ KNOWN_HW KnownWiFiDongle = HW_NOT_KNOWN;
 UBYTE TcpReadBuffer[1024];
 uint TcpReadBufPointer = 0;
 
-int WiFiConnectionState =  WIFI_NOT_INITIATED;
-int InitState = NOT_INIT;
+WIFI_STATE WiFiConnectionState = WIFI_NOT_INITIATED;
+WIFI_INIT_STATE InitState = NOT_INIT;
 // UDP
 int UdpSocketDescriptor = 0;
 char Server[32];  // PlaceHolder for the UDP listen Server Name/IP
@@ -3170,499 +3170,451 @@ void cWiFiUnLoadAthHwModules(void)
   #endif
 }
 
-void  cWiFiControl(void)
+void cWiFiControl(void)
 {
-  struct stat st;
-  char Command[128];
+    struct stat st;
+    char Command[128];
 
-  if(BeaconTx == TX_BEACON)               // Do we have to TX the beacons?
-  {
-    if(cWiFiCheckTimer() >= BEACON_TIME)  // If is it time for it?
-    {
-      if(cWiFiTransmitBeacon() != OK)     // Did we manage to TX one?
-      {
-        // Error handling - TODO: Should be user friendly
-      }
-      else
-      {
-        #ifdef DEBUG
-          printf("\n\rOK beacon TX\n\r");
-        #endif
-
-        cWiFiStartTimer();                // Reset for another timing (Beacon)
-      }
+    // Do we have to TX the beacons?
+    if (BeaconTx == TX_BEACON) {
+        // If is it time for it?
+        if (cWiFiCheckTimer() >= BEACON_TIME) {
+            // Did we manage to TX one?
+            if (cWiFiTransmitBeacon() != OK) {
+                // Error handling - TODO: Should be user friendly
+            } else {
+#ifdef DEBUG
+                printf("\nOK beacon TX\n");
+#endif
+                // Reset for another timing (Beacon)
+                cWiFiStartTimer();
+            }
+        }
     }
-  }
 
-  switch( WiFiConnectionState)
-  {
-
-    case  WIFI_NOT_INITIATED: // NOTHING INIT'ed
-                              // Idle
-                              break;
-
-    case  WIFI_INIT:          // Do the time consumption stuff
-                              switch( InitState )
-                              {
-                                case  NOT_INIT:   // Start the Wpa_Supplicant in BackGround using
-                                                  // a very "thin" .conf file
-
-                                                  #ifdef DEBUG
-                                                    printf("\nWIFI_INIT, NOT_INIT foer FindMacAddr... %d\n", WiFiStatus);
-                                                  #endif
-
-                                                  cWiFiFindMacAddr(); // Get the H/W MAC-address
-
-                                                  #ifdef DEBUG
-                                                    printf("\nWIFI_INIT, NOT_INIT efter FindMacAddr... %d\n", WiFiStatus);
-                                                  #endif
-
-                                                  cWiFiStartTimer();
-
-                                                  #ifdef DEBUG
-                                                    printf("\nWIFI_INIT, NOT_INIT foer system... %d\n", WiFiStatus);
-                                                  #endif
-
-                                                  cWiFiStartWpaSupplicant("/etc/wpa_supplicant.conf", LogicalIfName);
-                                                  //system("./wpa_supplicant -Dwext -iwlan<X> -c/etc/wpa_supplicant.conf -B");
-                                                  InitState = LOAD_SUPPLICANT;
-                                                  break;
-
-                                case  LOAD_SUPPLICANT:  TimeOut = cWiFiCheckTimer();
-                                                        if(TimeOut < WIFI_INIT_TIMEOUT)
-                                                        {
-                                                          strcpy(Command, "/var/run/wpa_supplicant/");
-                                                          strcat(Command, LogicalIfName);
-                                                          if(stat(Command, &st) == 0)
-                                                          {
-                                                            #ifdef DEBUG
-                                                              printf("\nWIFI_INIT, LOAD_SUPPLICANT => STAT OK %d\n", WiFiStatus);
-                                                            #endif
-
-                                                            // Ensure (help) Interface to become ready
-                                                            strcpy(Command, "ifconfig ");
-                                                            strcat(Command, LogicalIfName);
-                                                            strcat(Command, " down > /dev/null");
-
-                                                            system(Command);
-
-                                                            strcpy(Command, "ifconfig ");
-                                                            strcat(Command, LogicalIfName);
-                                                            strcat(Command, " up > /dev/null");
-
-                                                            system(Command);
-
-                                                            InitState = WAIT_ON_INTERFACE;
-                                                          }
-                                                          //else keep waiting
-                                                        }
-                                                        else
-                                                        {
-                                                          #ifdef DEBUG
-                                                            printf("\nWIFI_INIT, LOAD_SUPPLICANT => Timed out\n");
-                                                          #endif
-
-                                                          WiFiStatus = FAIL;
-                                                          WiFiConnectionState = WIFI_NOT_INITIATED;   // We're sleeping until user select ON
-                                                          InitState = NOT_INIT;
-                                                        }
-                                                        break;
-
-                                case  WAIT_ON_INTERFACE:  // Wait for the Control stuff to be ready
-                                                          // Get "handle" to Control Interface
-                                                          strcpy(Command, "/var/run/wpa_supplicant/");
-                                                          strcat(Command, LogicalIfName);
-
-                                                          if((ctrl_conn = wpa_ctrl_open(Command)) > 0)
-                                                          {
-                                                            if(cWiFiWpaPing() == 0)
-                                                            {
-                                                              #ifdef DEBUG
-                                                                printf("\nWIFI_INIT, WAIT_ON_INTERFACE => Ping OK %d\n", WiFiStatus);
-                                                              #endif
-
-                                                              cWiFiPopulateKnownApList();
-                                                              WiFiStatus = OK;
-                                                              WiFiConnectionState = WIFI_INITIATED;
-                                                              InitState = DONE;
-                                                            }
-                                                            else
-                                                            {
-                                                              #ifdef DEBUG
-                                                                printf("\nWIFI_INIT, WAIT_ON_INTERFACE => PING U/S\n");
-                                                              #endif
-
-                                                              WiFiStatus = FAIL;
-                                                              cWiFiExit();
-                                                            }
-                                                          }
-
-                                                          break;
-
-                                    default:              break;
-                                }
-                                break;
-
-    case  WIFI_INITIATED:       // Temporary state - WiFi lower Stuff turned ON
-                                WiFiOnStatus = OK;
-                                cWiFiStartDongleCheckTimer();
-
-                                #ifdef DEBUG
-                                  printf("\nWIFI_INITIATED %d\n", WiFiStatus);
-                                #endif
-
-                                WiFiConnectionState = READY_FOR_AP_SEARCH;
-
-                                #ifdef DEBUG
-                                  printf("\nREADY for search -> %d\n", WiFiStatus);
-                                #endif
-
-                                break;
-
-    case  READY_FOR_AP_SEARCH:  // We can select SEARCH i.e. Press Connections on the U.I.
-                                // We have the H/W stack up and running
-                                break;
-
-    case  SEARCH_APS:           // Polite wait
-
-                                #ifdef DEBUG
-                                  printf("\nSEARCH_APS:\n");
-                                  printf("\ncIndex = %d => %s\n", 0, ApTable[0].friendly_name);
-                                  printf("\ncIndex = %d => %s\n", 1, ApTable[1].friendly_name);
-                                  printf("\ncIndex = %d => %s\n", 2, ApTable[2].friendly_name);
-                                #endif
-
-                                break;
-
-    case  SEARCH_PENDING:
-                                // Wait some time for things to show up...
-
-                                #ifdef DEBUG
-                                  printf("cWiFiCheckTimer() = %d\r", cWiFiCheckTimer());
-                                #endif
-
-                                // Give some time for the stuff to show up
-                                if(20 <= cWiFiCheckTimer())  // Get Elapsed time in seconds
-                                {
-                                  // Getting the list and update the visible list
-                                  cWiFiStoreActualApList();
-                                }
-
-                                #ifdef DEBUG
-                                  printf("\nSEARCH_PENDING:\n");
-                                  printf("\ncIndex = %d => %s\n", 0, ApTable[0].friendly_name);
-                                  printf("\ncIndex = %d => %s\n", 1, ApTable[1].friendly_name);
-                                  printf("\ncIndex = %d => %s\n", 2, ApTable[2].friendly_name);
-                                #endif
-
-								                #ifdef DEBUG
-                                  printf("\nSTORED CORRECT:\n");
-                                  printf("\ncIndex = %d => %s\n", 0, ApTable[0].friendly_name);
-                                  printf("\ncIndex = %d => %s\n", 1, ApTable[1].friendly_name);
-                                  printf("\ncIndex = %d => %s\n", 2, ApTable[2].friendly_name);
-                                #endif
-
-								                #ifdef DEBUG
-                                  printf("\nSEARCH DONE\n");
-                                #endif
-
-                                break;
-
-    case  AP_LIST_UPDATED:      // Relaxed state until connection wanted
-
-								                #ifdef DEBUG
-                                  printf("\nAP_LIST_UPDATED ApTableSize = %d:\n", ApTableSize);
-                                  printf("\ncIndex = %d => %s\n", 0, ApTable[0].friendly_name);
-                                  printf("\ncIndex = %d => %s\n", 1, ApTable[1].friendly_name);
-                                  printf("\ncIndex = %d => %s\n", 2, ApTable[2].friendly_name);
-                                #endif
-
-                                break;
-
-    case  AP_CONNECTING:        // First connecting to the selected AP
-                                break;
-
-    case  WIFI_CONNECTED_TO_AP: // We have an active AP connection
-                                // Then get a valid IP address via DHCP
-                                break;
-
-    case  UDP_NOT_INITIATED:    // We have an valid IP address
-                                // Initiated, connected and ready for UDP
-                                // I.e. ready for starting Beacons
-
-								                #ifdef DEBUG
-                                  printf("\nHer er UDP_NOT_INITIATED\n");
-                                #endif
-
-                                WiFiConnectionState = INIT_UDP_CONNECTION;
-
-                                break;
-
-    case  INIT_UDP_CONNECTION:
-                                WiFiStatus = BUSY;                    // We're still waiting
-                                memset(Buffer, 0x00, sizeof(Buffer)); // Reset TX buffer
-
-								                #ifdef DEBUG
-                                  printf("\nLige foer cWiFiInitUdpConnection()\n");
-                                #endif
-
-                                if(cWiFiInitUdpConnection() == OK)
-                                {
-									                #ifdef DEBUG
-                                    printf("\nUDP connection READY @ INIT_UDP_CONNECTION\n");
-                                  #endif
-
-                                  if(cWiFiTransmitBeacon() == OK)     // Did we manage to TX one?
-                                  {
-                                    WiFiConnectionState = UDP_FIRST_TX;
-                                    BeaconTx = TX_BEACON;             // Enable Beacon
-                                    cWiFiStartTimer();                // Start timing (Beacon)
-                                    WiFiStatus = OK;
-                                  }
-                                  else
-                                  {
-                                    // TODO: Some ERROR handling where to go - should be user friendly
-                                  }
-                                }
-                                else
-                                {
-								                  #ifdef DEBUG
-                                    printf("\nUDP connection FAILed @ INIT_UDP_CONNECTION\n");
-                                  #endif
-
-                                  WiFiStatus = FAIL;
-                                  WiFiConnectionState = WIFI_NOT_INITIATED;
-                                }
-                                break;
-
-    case  UDP_FIRST_TX:         if(cWiFiCheckTimer() >= 2)  // Allow some time before..
-                                {
-                                  WiFiConnectionState = UDP_VISIBLE;
-                                }
-                                break;
-
-    case  UDP_VISIBLE:          // TX'ing beacon via UDP
-                                // We're tx'ing beacons, but waiting for connection
-                                // Are there any "dating" PC's?
-                                // Non-blocking test
-
-                                WiFiConnectionState = UDP_CONNECTED;
-
-                                break;
-
-    case  UDP_CONNECTED:        // We have an active negotiation connection
-                                // Temp state between OK UDP negotiation
-                                // and the "real" TCP communication
-
-                                if(cWiFiInitTcpServer() == OK)
-                                {
-								                  #ifdef DEBUG
-                                    printf("\nTCP init OK @ UDP_CONNECTED\n");
-                                  #endif
-
-                                  WiFiConnectionState = TCP_NOT_CONNECTED;
-                                }
-                                break;
-
-    case  TCP_NOT_CONNECTED:    // Waiting for the PC to connect via TCP
-                                // Non-blocking test
-                                if(cWiFiWaitForTcpConnection() == OK)
-                                {
-									                #ifdef DEBUG
-                                    printf("\nTCP_CONNECTED @ TCP_NOT_CONNECTED\n");
-									                #endif
-
-                                  TcpState = TCP_UP;
-                                  WiFiConnectionState = TCP_CONNECTED;
-                                  // We are connected so we can tell the
-                                  // world....
-                                  // And we're ready to TX/RX :-)
-                                  WiFiStatus = OK; // Not busy any longer
-                                }
-                                break;
-
-    case  TCP_CONNECTED:        // We have a TCP connection established
-
-                                #ifdef DEBUG
-                                  printf("\nTCP_CONNECTED @ TCP_CONNECTED.... And then.....\n");
-                                #endif
-
-                                break;
-
-    case  CLOSED:               // UDP/TCP closed
-
-                                break;
-
-    default:
-
-                                break;
-  }
-  if(WiFiOnStatus == OK)  // Íf some logic fired up
-  {                       // Check for the "volatile" USB dongle connection
-    if(cWiFiTimeFromLastDongleCheck() >= TIME_FOR_WIFI_DONGLE_CHECK) // Don't misuse the CPU cycles
-    {
-      #ifdef DEBUG
-        printf("Check for Dongle....");
-      #endif
-
-      if(cWiFiKnownDongleAttached() != OK)
-      {
-        #ifdef DEBUG
-          printf("FAIL!!\n\r");
-        #endif
-        cWiFiTurnOff();  // No H/W
-      }
-      else
-      {
+    switch (WiFiConnectionState) {
+    case WIFI_NOT_INITIATED:
+        // NOTHING INIT'ed
+        // Idle
+        break;
+
+    case WIFI_INIT:
+        // Do the time consumption stuff
+        switch (InitState) {
+        case NOT_INIT:
+            // Start the Wpa_Supplicant in BackGround using
+            // a very "thin" .conf file
+#ifdef DEBUG
+            printf("\nWIFI_INIT, NOT_INIT foer FindMacAddr... %d\n", WiFiStatus);
+#endif
+            cWiFiFindMacAddr(); // Get the H/W MAC-address
+#ifdef DEBUG
+            printf("\nWIFI_INIT, NOT_INIT efter FindMacAddr... %d\n", WiFiStatus);
+#endif
+            cWiFiStartTimer();
+#ifdef DEBUG
+            printf("\nWIFI_INIT, NOT_INIT foer system... %d\n", WiFiStatus);
+#endif
+            cWiFiStartWpaSupplicant("/etc/wpa_supplicant.conf", LogicalIfName);
+            //system("./wpa_supplicant -Dwext -iwlan<X> -c/etc/wpa_supplicant.conf -B");
+            InitState = LOAD_SUPPLICANT;
+            break;
+
+        case LOAD_SUPPLICANT:
+            TimeOut = cWiFiCheckTimer();
+            if (TimeOut < WIFI_INIT_TIMEOUT) {
+                strcpy(Command, "/var/run/wpa_supplicant/");
+                strcat(Command, LogicalIfName);
+                if (stat(Command, &st) == 0) {
+#ifdef DEBUG
+                    printf("\nWIFI_INIT, LOAD_SUPPLICANT => STAT OK %d\n", WiFiStatus);
+#endif
+                    // Ensure (help) Interface to become ready
+                    strcpy(Command, "ifconfig ");
+                    strcat(Command, LogicalIfName);
+                    strcat(Command, " down > /dev/null");
+
+                    system(Command);
+
+                    strcpy(Command, "ifconfig ");
+                    strcat(Command, LogicalIfName);
+                    strcat(Command, " up > /dev/null");
+
+                    system(Command);
+
+                    InitState = WAIT_ON_INTERFACE;
+                }
+                //else keep waiting
+            } else {
+#ifdef DEBUG
+                printf("\nWIFI_INIT, LOAD_SUPPLICANT => Timed out\n");
+#endif
+                WiFiStatus = FAIL;
+                // We're sleeping until user select ON
+                WiFiConnectionState = WIFI_NOT_INITIATED;
+                InitState = NOT_INIT;
+            }
+            break;
+
+        case WAIT_ON_INTERFACE:
+            // Wait for the Control stuff to be ready
+
+            // Get "handle" to Control Interface
+            strcpy(Command, "/var/run/wpa_supplicant/");
+            strcat(Command, LogicalIfName);
+
+            if ((ctrl_conn = wpa_ctrl_open(Command)) > 0) {
+                if (cWiFiWpaPing() == 0) {
+#ifdef DEBUG
+                    printf("\nWIFI_INIT, WAIT_ON_INTERFACE => Ping OK %d\n", WiFiStatus);
+#endif
+                    cWiFiPopulateKnownApList();
+                    WiFiStatus = OK;
+                    WiFiConnectionState = WIFI_INITIATED;
+                    InitState = DONE;
+                } else {
+#ifdef DEBUG
+                    printf("\nWIFI_INIT, WAIT_ON_INTERFACE => PING U/S\n");
+#endif
+                    WiFiStatus = FAIL;
+                    cWiFiExit();
+                }
+            }
+            break;
+        case DONE:
+            break;
+        }
+        break;
+
+    case WIFI_INITIATED:
+        // Temporary state - WiFi lower Stuff turned ON
+        WiFiOnStatus = OK;
         cWiFiStartDongleCheckTimer();
-        #ifdef DEBUG
-          printf("OK!!\n\r");
-        #endif
-      }
+#ifdef DEBUG
+        printf("\nWIFI_INITIATED %d\n", WiFiStatus);
+#endif
+        WiFiConnectionState = READY_FOR_AP_SEARCH;
+#ifdef DEBUG
+        printf("\nREADY for search -> %d\n", WiFiStatus);
+#endif
+        break;
+
+    case READY_FOR_AP_SEARCH:
+        // We can select SEARCH i.e. Press Connections on the U.I.
+        // We have the H/W stack up and running
+        break;
+
+    case SEARCH_APS:
+        // Polite wait
+#ifdef DEBUG
+        printf("\nSEARCH_APS:\n");
+        printf("\ncIndex = %d => %s\n", 0, ApTable[0].friendly_name);
+        printf("\ncIndex = %d => %s\n", 1, ApTable[1].friendly_name);
+        printf("\ncIndex = %d => %s\n", 2, ApTable[2].friendly_name);
+#endif
+        break;
+
+    case SEARCH_PENDING:
+        // Wait some time for things to show up...
+#ifdef DEBUG
+        printf("cWiFiCheckTimer() = %d\r", cWiFiCheckTimer());
+#endif
+        // Give some time for the stuff to show up
+        // Get Elapsed time in seconds
+        if (20 <= cWiFiCheckTimer()) {
+            // Getting the list and update the visible list
+            cWiFiStoreActualApList();
+        }
+#ifdef DEBUG
+        printf("\nSEARCH_PENDING:\n");
+        printf("\ncIndex = %d => %s\n", 0, ApTable[0].friendly_name);
+        printf("\ncIndex = %d => %s\n", 1, ApTable[1].friendly_name);
+        printf("\ncIndex = %d => %s\n", 2, ApTable[2].friendly_name);
+#endif
+        break;
+
+    case AP_LIST_UPDATED:
+        // Relaxed state until connection wanted
+#ifdef DEBUG
+        printf("\nAP_LIST_UPDATED ApTableSize = %d:\n", ApTableSize);
+        printf("\ncIndex = %d => %s\n", 0, ApTable[0].friendly_name);
+        printf("\ncIndex = %d => %s\n", 1, ApTable[1].friendly_name);
+        printf("\ncIndex = %d => %s\n", 2, ApTable[2].friendly_name);
+#endif
+      break;
+
+    case AP_CONNECTING:
+        // First connecting to the selected AP
+        break;
+
+    case WIFI_CONNECTED_TO_AP:
+        // We have an active AP connection
+        // Then get a valid IP address via DHCP
+        break;
+
+    case UDP_NOT_INITIATED:
+        // We have an valid IP address
+        // Initiated, connected and ready for UDP
+        // I.e. ready for starting Beacons
+#ifdef DEBUG
+        printf("\nHer er UDP_NOT_INITIATED\n");
+#endif
+        WiFiConnectionState = INIT_UDP_CONNECTION;
+        break;
+
+    case INIT_UDP_CONNECTION:
+        WiFiStatus = BUSY;                    // We're still waiting
+        memset(Buffer, 0x00, sizeof(Buffer)); // Reset TX buffer
+#ifdef DEBUG
+        printf("\nLige foer cWiFiInitUdpConnection()\n");
+#endif
+
+        if (cWiFiInitUdpConnection() == OK) {
+#ifdef DEBUG
+            printf("\nUDP connection READY @ INIT_UDP_CONNECTION\n");
+#endif
+            // Did we manage to TX one?
+            if (cWiFiTransmitBeacon() == OK) {
+                WiFiConnectionState = UDP_FIRST_TX;
+                BeaconTx = TX_BEACON;             // Enable Beacon
+                cWiFiStartTimer();                // Start timing (Beacon)
+                WiFiStatus = OK;
+            } else {
+                // TODO: Some ERROR handling where to go - should be user friendly
+            }
+        } else {
+#ifdef DEBUG
+            printf("\nUDP connection FAILed @ INIT_UDP_CONNECTION\n");
+#endif
+            WiFiStatus = FAIL;
+            WiFiConnectionState = WIFI_NOT_INITIATED;
+        }
+        break;
+
+    case UDP_FIRST_TX:
+        // Allow some time before..
+        if (cWiFiCheckTimer() >= 2) {
+            WiFiConnectionState = UDP_VISIBLE;
+        }
+        break;
+
+    case UDP_VISIBLE:
+        // TX'ing beacon via UDP
+        // We're tx'ing beacons, but waiting for connection
+        // Are there any "dating" PC's?
+        // Non-blocking test
+
+        WiFiConnectionState = UDP_CONNECTED;
+
+        break;
+
+    case UDP_CONNECTED:
+        // We have an active negotiation connection
+        // Temp state between OK UDP negotiation
+        // and the "real" TCP communication
+
+        if (cWiFiInitTcpServer() == OK) {
+#ifdef DEBUG
+            printf("\nTCP init OK @ UDP_CONNECTED\n");
+#endif
+            WiFiConnectionState = TCP_NOT_CONNECTED;
+        }
+        break;
+
+    case TCP_NOT_CONNECTED:
+        // Waiting for the PC to connect via TCP
+        // Non-blocking test
+        if (cWiFiWaitForTcpConnection() == OK) {
+#ifdef DEBUG
+            printf("\nTCP_CONNECTED @ TCP_NOT_CONNECTED\n");
+#endif
+            TcpState = TCP_UP;
+            WiFiConnectionState = TCP_CONNECTED;
+            // We are connected so we can tell the world....
+            // And we're ready to TX/RX :-)
+            WiFiStatus = OK; // Not busy any longer
+        }
+        break;
+
+    case TCP_CONNECTED:
+        // We have a TCP connection established
+#ifdef DEBUG
+        printf("\nTCP_CONNECTED @ TCP_CONNECTED.... And then.....\n");
+#endif
+        break;
+
+    case CLOSED:
+        // UDP/TCP closed
+        break;
     }
-  }
+    // Íf some logic fired up
+    if (WiFiOnStatus == OK) {
+        // Check for the "volatile" USB dongle connection
+        // Don't misuse the CPU cycles
+        if (cWiFiTimeFromLastDongleCheck() >= TIME_FOR_WIFI_DONGLE_CHECK) {
+#ifdef DEBUG
+            printf("Check for Dongle....");
+#endif
+            if (cWiFiKnownDongleAttached() != OK) {
+#ifdef DEBUG
+                printf("FAIL!!\n");
+#endif
+                cWiFiTurnOff();  // No H/W
+            } else {
+                cWiFiStartDongleCheckTimer();
+#ifdef DEBUG
+                printf("OK!!\n");
+#endif
+            }
+        }
+    }
 }
 
 
-RESULT  cWiFiGetOnStatus(void)
+RESULT cWiFiGetOnStatus(void)
 {
-  return WiFiOnStatus;
+    return WiFiOnStatus;
 }
 
-RESULT    cWiFiTurnOn(void) // TURN ON
+RESULT cWiFiTurnOn(void)
 {
-  RESULT  Result = FAIL;
-  char Command[64];
+    RESULT  Result = FAIL;
+    char Command[64];
 
-  WiFiStatus = BUSY;          // We will use some (a lot of) time before we're ready
+    // We will use some (a lot of) time before we're ready
+    WiFiStatus = BUSY;
 
-  if(WiFiConnectionState == WIFI_NOT_INITIATED) // Only try to initiated un- stuff ;-)
-  {
-    cWiFiInit();
-    cWiFiLoadAthHwModules();  // Load the foundation for the rest
-    cWiFiGetLogicalName();
+    // Only try to initiated un- stuff ;-)
+    if (WiFiConnectionState == WIFI_NOT_INITIATED) {
+        cWiFiInit();
+        cWiFiLoadAthHwModules();  // Load the foundation for the rest
+        cWiFiGetLogicalName();
 
-    #ifdef DEBUG
-      printf("\ncWiFiTurnOn and LOGIC NAME FOUND: %s\n", LogicalIfName);
-    #endif
+#ifdef DEBUG
+        printf("\ncWiFiTurnOn and LOGIC NAME FOUND: %s\n", LogicalIfName);
+#endif
 
-    // Remove the Control Interface - if exist...
-    strcpy(Command, "rm /var/run/wpa_supplicant/");
-    strcat(Command, LogicalIfName);
+        // Remove the Control Interface - if exist...
+        strcpy(Command, "rm /var/run/wpa_supplicant/");
+        strcat(Command, LogicalIfName);
 
-    strcat(Command, " &> /dev/null");
-    system(Command);
+        strcat(Command, " &> /dev/null");
+        system(Command);
 
-    Result  =  OK;
-    WiFiConnectionState = WIFI_INIT;
-    WiFiOnStatus = OK;
-  }
-  else
-  {
-  // Just debugging stuff
-    #ifdef DEBUG
-        printf("\ncWiFiTurnOn refused ALREADY ON or should be....\n");
-    #endif
-  }
-
-  WiFiStatus = OK;
-  return Result;
-}
-
-RESULT    cWiFiTurnOff(void) // TURN OFF
-{
-  RESULT  Result = FAIL;
-  int PC = 0;
-
-  #ifdef DEBUG
-    printf("cWiFiTurnOff called...\n");
-  #endif
-
-  WiFiOnStatus = FAIL;
-
-  if (ctrl_conn != NULL)
-  {
-    cWiFiKillUdHcPc();
-    BeaconTx = NO_TX;
-
-    // Store persistent data - i.e. all the old and new connections and -data
-
-    PC = cWiFiStoreKnownApList();
-    if(PC >= 0)
         Result  =  OK;
+        WiFiConnectionState = WIFI_INIT;
+        WiFiOnStatus = OK;
+    } else {
+        // Just debugging stuff
+#ifdef DEBUG
+        printf("\ncWiFiTurnOn refused ALREADY ON or should be....\n");
+#endif
+    }
 
-    #ifdef DEBUG
-      printf("cWiFiStoreKnownApList() returned %d\n\r", PC);
-	  #endif
+    WiFiStatus = OK;
 
-    cWiFiTcpClose();
-
-    cWiFiUdpClientClose();
-
-    cWiFiTerminate();
-
-    #ifdef DEBUG
-    if(WiFiStatus == OK)
-      printf("At TurnOff cWiFiTerminate()-> WiFiStatus == OK\n\r");
-    else
-      printf("At TurnOff cWiFiTerminate()-> WiFiStatus == NOT ok\n\r");
-    #endif
-
-    WiFiConnectionState = WIFI_NOT_INITIATED;
-    InitState = NOT_INIT;
-    wpa_ctrl_close(ctrl_conn);
-    ctrl_conn = NULL;
-    cWiFiUnLoadAthHwModules();  // Unload the foundation for the rest
-    KnownWiFiDongle = HW_NOT_KNOWN;
-  }
-
-  #ifdef DEBUG
-    if(WiFiStatus == OK)
-      printf("At TurnOff -> WiFiStatus == OK\n\r");
-    else
-      printf("At TurnOff -> WiFiStatus == NOT ok\n\r");
-  #endif
-
-  WiFiStatus = OK;  // NO FAIL BREAKing
-  Result  =  OK;    // -
-  ApTable[0].ap_flags &= ~(CONNECTED);  // We should hopefully be disconnected as well
-                                        // I.e. Turned OFF!
-  return Result;
+    return Result;
 }
 
-RESULT    cWiFiExit(void)
+RESULT cWiFiTurnOff(void)
 {
-  RESULT  Result = FAIL;
+    RESULT  Result = FAIL;
+    int PC = 0;
 
-  Result = cWiFiTurnOff();
-  return Result;
+#ifdef DEBUG
+    printf("cWiFiTurnOff called...\n");
+#endif
+
+    WiFiOnStatus = FAIL;
+
+    if (ctrl_conn) {
+        cWiFiKillUdHcPc();
+        BeaconTx = NO_TX;
+
+        // Store persistent data - i.e. all the old and new connections and -data
+
+        PC = cWiFiStoreKnownApList();
+        if (PC >= 0) {
+            Result = OK;
+        }
+
+#ifdef DEBUG
+        printf("cWiFiStoreKnownApList() returned %d\n", PC);
+#endif
+
+        cWiFiTcpClose();
+        cWiFiUdpClientClose();
+        cWiFiTerminate();
+
+#ifdef DEBUG
+        if (WiFiStatus == OK) {
+            printf("At TurnOff cWiFiTerminate()-> WiFiStatus == OK\n");
+        } else {
+            printf("At TurnOff cWiFiTerminate()-> WiFiStatus == NOT ok\n");
+        }
+#endif
+
+        WiFiConnectionState = WIFI_NOT_INITIATED;
+        InitState = NOT_INIT;
+        wpa_ctrl_close(ctrl_conn);
+        ctrl_conn = NULL;
+        // Unload the foundation for the rest
+        cWiFiUnLoadAthHwModules();
+        KnownWiFiDongle = HW_NOT_KNOWN;
+    }
+
+#ifdef DEBUG
+    if (WiFiStatus == OK) {
+        printf("At TurnOff -> WiFiStatus == OK\n");
+    } else {
+        printf("At TurnOff -> WiFiStatus == NOT ok\n");
+    }
+#endif
+    // NO FAIL BREAKing
+    WiFiStatus = OK;
+    Result  =  OK;
+    // We should hopefully be disconnected as well
+    // I.e. Turned OFF!
+    ApTable[0].ap_flags &= ~(CONNECTED);
+
+    return Result;
+}
+
+RESULT cWiFiExit(void)
+{
+    RESULT Result;
+
+    Result = cWiFiTurnOff();
+
+    return Result;
 }
 
 RESULT cWiFiInit(void)
 {
-  RESULT Result = FAIL;
+    RESULT Result = FAIL;
 
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("\ncWiFiInit START %d\n", WiFiStatus);
-  #endif
+#endif
 
-  WiFiOnStatus = FAIL;
-  BeaconTx = NO_TX;
-  WiFiConnectionState = WIFI_NOT_INITIATED;   // We're sleeping until user select ON
-  InitState = NOT_INIT;
-  TcpReadState = TCP_IDLE;
-  // Set IP address to UNKNOWN
-  strcpy(MyIp4Address, "???");
-  // Set MAC address of Interface to UNKNOWN (NOT read yet)
-  strcpy(MyHwMacAddress, "??:??:??:??:??:??");
-  cWiFiSetBtSerialNo();
-  cWiFiSetBrickName();
-  WiFiStatus = OK;
-  Result = OK;
+    WiFiOnStatus = FAIL;
+    BeaconTx = NO_TX;
+    // We're sleeping until user select ON
+    WiFiConnectionState = WIFI_NOT_INITIATED;
+    InitState = NOT_INIT;
+    TcpReadState = TCP_IDLE;
+    // Set IP address to UNKNOWN
+    strcpy(MyIp4Address, "???");
+    // Set MAC address of Interface to UNKNOWN (NOT read yet)
+    strcpy(MyHwMacAddress, "??:??:??:??:??:??");
+    cWiFiSetBtSerialNo();
+    cWiFiSetBrickName();
+    WiFiStatus = OK;
+    Result = OK;
 
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("\nWiFiStatus = %d\n", WiFiStatus);
-  #endif
+#endif
 
-  return Result;
+    return Result;
 }
