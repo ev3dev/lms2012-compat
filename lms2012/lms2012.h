@@ -26,33 +26,6 @@
  *
  */
 
-
-/*! \page debug Terminal Configuration
- *
-    \verbatim
-
-
-TERMINAL CONFIGURATION (in top of "lms2012.h")
-
-Normal release:                     DEBUG not defined, TERMINAL_ENABLED = 0, DEBUG_UART = 4
-
-Printf working:                     DEBUG not defined, TERMINAL_ENABLED = 0, DEBUG_UART = 0
-
-Development with debug messages:    DEBUG defined, TERMINAL_ENABLED = 1, DEBUG_UART = 0
-
-*/
-
-#ifdef    DEBUG
-#define   TERMINAL_ENABLED      1       //!< DEBUG terminal enabled (0 = disabled, 1 = enabled)
-#else
-#define   TERMINAL_ENABLED      0
-#endif
-
-#define   DEBUG_UART            4       //!< UART used for debug (0 = port1, 1 = port2, ... 4 = none)
-
-
-/*    \endverbatim */
-
 //#define   DEBUG_VM
 //#define   DEBUG_TRACE_TASK
 //#define   DEBUG_C_COM
