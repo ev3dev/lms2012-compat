@@ -135,861 +135,863 @@ UBYTE TcpReadState = TCP_IDLE;
 
 // ******************************************************************************
 
-void cWiFiStartTimer(void)  // Start the Timer
+// Start the Timer
+void cWiFiStartTimer(void)
 {
-  gettimeofday(&TimerStartVal, NULL);
+    gettimeofday(&TimerStartVal, NULL);
 }
 
-RESULT  cWiFiKillUdHcPc(void)
+RESULT cWiFiKillUdHcPc(void)
 {
-  RESULT Ret = FAIL;
-  char Cmd[48];
+    RESULT Ret = FAIL;
+    char Cmd[48];
 
-  // Only one instance at a time :-)
+    // Only one instance at a time :-)
 
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("We'll try to kill udhcpc\n");
-  #endif
-  strcpy(Cmd, "killall udhcpc &> /dev/null");
+#endif
+    strcpy(Cmd, "killall udhcpc &> /dev/null");
 
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("\nCmd = %s\n", Cmd);
-  #endif
+#endif
 
-  if(system(Cmd) == 0)
-  {
-    #ifdef DEBUG
-      printf("\nThe kill Cmd returns OK!!\n");
-    #endif
+    if (system(Cmd) == 0) {
+#ifdef DEBUG
+        printf("\nThe kill Cmd returns OK!!\n");
+#endif
+        Ret = OK;
+    }
 
-    Ret = OK;
-  }
-
-  return Ret;
+    return Ret;
 }
 
 void cWiFiStartDongleCheckTimer(void)
 {
-  // Get starttime
-  gettimeofday(&DongleCheckStartVal, NULL);
+    // Get starttime
+    gettimeofday(&DongleCheckStartVal, NULL);
 }
 
 int cWiFiTimeFromLastDongleCheck(void)
 {
-  // Get elapsed time from last dongle check
-  gettimeofday(&DongleCheckCurrentVal, NULL);
-  return (int)(DongleCheckCurrentVal.tv_sec - DongleCheckStartVal.tv_sec);
+    // Get elapsed time from last dongle check
+    gettimeofday(&DongleCheckCurrentVal, NULL);
+
+    return (int)(DongleCheckCurrentVal.tv_sec - DongleCheckStartVal.tv_sec);
 }
 
-int cWiFiCheckTimer(void)   // Get Elapsed time in seconds
+// Get Elapsed time in seconds
+int cWiFiCheckTimer(void)
 {
-  // Get actual time and calculate elapsed time
-  gettimeofday(&TimerCurrentVal, NULL);
-  return (int)(TimerCurrentVal.tv_sec - TimerStartVal.tv_sec);
+    // Get actual time and calculate elapsed time
+    gettimeofday(&TimerCurrentVal, NULL);
+
+    return (int)(TimerCurrentVal.tv_sec - TimerStartVal.tv_sec);
 }
 
 // Used primarily for debug (development :-))
 void wpa_control_message_callback(char *message, size_t length)
 {
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("%s\n", message);
-  #endif
+#endif
 }
 
-int do_wpa_command(struct wpa_ctrl * control, char *command )
+int do_wpa_command(struct wpa_ctrl *control, char *command)
 {
-  char command_return[10];
-  size_t len_command_return = sizeof(command_return) - 1; // Leave space for a terminating ASCIIZ
-  int ret_value;
+    char command_return[10];
+    // Leave space for a terminating ASCIIZ
+    size_t len_command_return = sizeof(command_return) - 1;
+    int ret_value;
 
-  memset(command_return, 0x00, len_command_return); // Reset to be sure!!
+    memset(command_return, 0x00, len_command_return); // Reset to be sure!!
 
-  // add more "nanny"ware look into good ref.... 8-)
-  if (control != NULL)
-  {
-    ret_value = wpa_ctrl_request( control,
-                                  command,
-                                  strlen(command),
-                                  command_return,
-                                  &len_command_return,
-                                  wpa_control_message_callback);
+    // add more "nanny"ware look into good ref.... 8-)
+    if (control != NULL) {
+        ret_value = wpa_ctrl_request(control, command, strlen(command),
+                                     command_return, &len_command_return,
+                                     wpa_control_message_callback);
 
-    command_return[len_command_return] = '\0';
-  }
-  else
-    ret_value = -1;
+        command_return[len_command_return] = '\0';
+    } else {
+        ret_value = -1;
+    }
 
-  return ret_value;
+    return ret_value;
 }
 
 // Opens - i.e. startup the WpaSupplicant in the background
-
-int cWiFiStartWpaSupplicant(char* ConfigPath,char* IFName)
+int cWiFiStartWpaSupplicant(char *ConfigPath, char *IFName)
 {
-  // Fire up the WPA Supplicant - returns 0 (zero) if OK
-  char StartCmd[128];
+    // Fire up the WPA Supplicant - returns 0 (zero) if OK
+    char StartCmd[128];
 
-  // Build the command string for startting the Control
-  strcpy(StartCmd, "./wpa_supplicant -Dwext -i");
-  strcat(StartCmd, IFName);
-  strcat(StartCmd, " -c");
-  strcat(StartCmd, ConfigPath);
-  strcat(StartCmd, " -B");
-  strcat(StartCmd, "&> /dev/null");
+    // Build the command string for startting the Control
+    strcpy(StartCmd, "./wpa_supplicant -Dwext -i");
+    strcat(StartCmd, IFName);
+    strcat(StartCmd, " -c");
+    strcat(StartCmd, ConfigPath);
+    strcat(StartCmd, " -B");
+    strcat(StartCmd, "&> /dev/null");
 
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("\nStart WPA_Supplicant: %s\n", StartCmd);
-  #endif
-  return system(StartCmd);
+#endif
+
+    return system(StartCmd);
 }
 
-struct wpa_ctrl * cWiFiOpenCtrlInterFace(char *CtrlPath, char *InterFace)
+struct wpa_ctrl *cWiFiOpenCtrlInterFace(char *CtrlPath, char *InterFace)
 {
-  char OpenCtrlCmd[64];
-  strcpy(OpenCtrlCmd, CtrlPath);
-  strcat(OpenCtrlCmd, InterFace);
-  return wpa_ctrl_open(OpenCtrlCmd);
+    char OpenCtrlCmd[64];
+
+    strcpy(OpenCtrlCmd, CtrlPath);
+    strcat(OpenCtrlCmd, InterFace);
+
+    return wpa_ctrl_open(OpenCtrlCmd);
 }
 
-int cWiFiPopulateKnownApList(void)  // At startup
-{                                   // Read already know "stuff" from the persistent storage
-  int RetVal = 0;
-  char FileName[128];
-  FILE *PersistentFile = NULL;
-  int ArrayIterator = 0;
-  aps OneApRecord;
+// Read already know "stuff" from the persistent storage at startup
+int cWiFiPopulateKnownApList(void)
+{
+    int RetVal = 0;
+    char FileName[128];
+    FILE *PersistentFile = NULL;
+    int ArrayIterator = 0;
+    aps OneApRecord;
 
-  strcpy(FileName, WIFI_PERSISTENT_PATH);
-  strcat(FileName, "/");
-  strcat(FileName, WIFI_PERSISTENT_FILENAME);
+    strcpy(FileName, WIFI_PERSISTENT_PATH);
+    strcat(FileName, "/");
+    strcat(FileName, WIFI_PERSISTENT_FILENAME);
 
-  ApStoreTableSize = 0; // ZERO size - NO known - if none in file
-  PersistentFile = fopen(FileName, "rb");
+    ApStoreTableSize = 0; // ZERO size - NO known - if none in file
+    PersistentFile = fopen(FileName, "rb");
 
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("\nKnownlist:\n");
-  #endif
+#endif
 
-  if ( PersistentFile != NULL )
-  {
-    while (fread(&OneApRecord, sizeof OneApRecord, 1, PersistentFile) == 1)
-    {
-      memcpy(&(ApStoreTable[ArrayIterator++]), &OneApRecord, sizeof(aps));
+    if (PersistentFile) {
+        while (fread(&OneApRecord, sizeof OneApRecord, 1, PersistentFile) == 1) {
+            memcpy(&(ApStoreTable[ArrayIterator++]), &OneApRecord, sizeof(aps));
+#ifdef DEBUG
+            printf("Populating ApStoreTable[x] == KnownList\n\r");
+            printf("\nApStoreTable[%d].mac_address = %s\n", (ArrayIterator - 1),
+                   ApStoreTable[ArrayIterator - 1].mac_address);
+            printf("\nApStoreTable[%d].security = %s\n", (ArrayIterator - 1),
+                   ApStoreTable[ArrayIterator - 1].security);
+            printf("\nApStoreTable[%d].friendly_name = %s\n", (ArrayIterator - 1),
+                   ApStoreTable[ArrayIterator - 1].friendly_name);
+            printf("\nApStoreTable[%d].pre_shared_key = %s\n", (ArrayIterator - 1),
+                   ApStoreTable[ArrayIterator - 1].pre_shared_key);
+            printf("\nApStoreTable[%d].ap_flags = %d\n", (ArrayIterator - 1),
+                   ApStoreTable[ArrayIterator - 1].ap_flags);
+#endif
+        }
+        fclose(PersistentFile);
+        ApStoreTableSize = ArrayIterator; // Store the KNOWN table size
 
-      #ifdef DEBUG
-      	printf("Populating ApStoreTable[x] == KnownList\n\r");
-        printf("\nApStoreTable[%d].mac_address = %s\n", (ArrayIterator - 1), ApStoreTable[ArrayIterator - 1].mac_address);
-        printf("\nApStoreTable[%d].security = %s\n", (ArrayIterator - 1), ApStoreTable[ArrayIterator - 1].security);
-        printf("\nApStoreTable[%d].friendly_name = %s\n", (ArrayIterator - 1), ApStoreTable[ArrayIterator - 1].friendly_name);
-        printf("\nApStoreTable[%d].pre_shared_key = %s\n", (ArrayIterator - 1), ApStoreTable[ArrayIterator - 1].pre_shared_key);
-        printf("\nApStoreTable[%d].ap_flags = %d\n", (ArrayIterator - 1), ApStoreTable[ArrayIterator - 1].ap_flags);
-      #endif
+        //******************************* TEST STUFF ****************************
+        //
+        // Used for a stable "environment" - i.e. the AP's are stable and always there :-)
+        //
+//#define TEST
+#undef TEST
+#ifdef TEST
+        printf("\nSimulated KnownList:\n");
+
+        ApStoreTableSize = 5;
+
+        strcpy(ApStoreTable[0].mac_address, "00:24:01:43:69:6e");
+        strcpy(ApStoreTable[0].security, "[WPA2-PSK-CCMP][WPS][ESS]");
+        strcpy(ApStoreTable[0].friendly_name, "FFF");
+        strcpy(ApStoreTable[0].pre_shared_key,
+               "dbc9c6cf6d4d8e9405842d2e4ab726f33f10de62c30254ff19512af0f");
+        ApStoreTable[0].ap_flags = 0x0C;
+
+        strcpy(ApStoreTable[1].mac_address, "00:24:01:43:69:01");
+        strcpy(ApStoreTable[1].security, "[WPA2]");
+        strcpy(ApStoreTable[1].friendly_name, "OOO");
+        strcpy(ApStoreTable[1].pre_shared_key, "");
+        ApStoreTable[1].ap_flags = 0x0C;
+
+        strcpy(ApStoreTable[2].mac_address, "00:24:01:43:69:02");
+        strcpy(ApStoreTable[2].security, "[WPA2-PSK-CCMP]");
+        strcpy(ApStoreTable[2].friendly_name, "AAA");
+        strcpy(ApStoreTable[2].pre_shared_key, "");
+        ApStoreTable[2].ap_flags = 0x0C;
+
+        strcpy(ApStoreTable[3].mac_address, "00:24:01:43:69:03");
+        strcpy(ApStoreTable[3].security, "[WPA2-PSK-CCMP][ESS]");
+        strcpy(ApStoreTable[3].friendly_name, "JJJ");
+        strcpy(ApStoreTable[3].pre_shared_key, "");
+        ApStoreTable[3].ap_flags = 0x0C;
+
+        strcpy(ApStoreTable[4].mac_address, "00:24:01:43:69:04");
+        strcpy(ApStoreTable[4].security, "[WPA2-PSK][ESS]");
+        strcpy(ApStoreTable[4].friendly_name, "KKK");
+        strcpy(ApStoreTable[4].pre_shared_key, "");
+        ApStoreTable[4].ap_flags = 0x0C;
+
+        /*strcpy(ApStoreTable[5].mac_address, "00:24:01:43:69:05");
+        strcpy(ApStoreTable[5].security, "");
+        strcpy(ApStoreTable[5].friendly_name, "Hugo05");
+        strcpy(ApStoreTable[5].pre_shared_key, "");
+        ApStoreTable[5].ap_flags = 0x08;*/
+#endif
+    //*************************** End of TEST STUFF ****************************
+
+    } else {
+        RetVal = -1;
     }
-    fclose(PersistentFile);
-    ApStoreTableSize = ArrayIterator; // Store the KNOWN table size
 
-//***************************************** TEST STUFF **********************************
-    //
-    // Used for a stable "environment" - i.e. the AP's are stable and always there :-)
-    //
-    //#define TEST
-	  #undef TEST
-    #ifdef TEST
-      printf("\nSimulated KnownList:\n");
-
-      ApStoreTableSize = 5;
-
-      strcpy(ApStoreTable[0].mac_address, "00:24:01:43:69:6e");
-      strcpy(ApStoreTable[0].security, "[WPA2-PSK-CCMP][WPS][ESS]");
-      strcpy(ApStoreTable[0].friendly_name, "FFF");
-      strcpy(ApStoreTable[0].pre_shared_key, "dbc9c6cf6d4d8e9405842d2e4ab726f33f10de62c30254ff19512af0f");
-      ApStoreTable[0].ap_flags = 0x0C;
-
-      strcpy(ApStoreTable[1].mac_address, "00:24:01:43:69:01");
-      strcpy(ApStoreTable[1].security, "[WPA2]");
-      strcpy(ApStoreTable[1].friendly_name, "OOO");
-      strcpy(ApStoreTable[1].pre_shared_key, "");
-      ApStoreTable[1].ap_flags = 0x0C;
-
-      strcpy(ApStoreTable[2].mac_address, "00:24:01:43:69:02");
-      strcpy(ApStoreTable[2].security, "[WPA2-PSK-CCMP]");
-      strcpy(ApStoreTable[2].friendly_name, "AAA");
-      strcpy(ApStoreTable[2].pre_shared_key, "");
-      ApStoreTable[2].ap_flags = 0x0C;
-
-      strcpy(ApStoreTable[3].mac_address, "00:24:01:43:69:03");
-      strcpy(ApStoreTable[3].security, "[WPA2-PSK-CCMP][ESS]");
-      strcpy(ApStoreTable[3].friendly_name, "JJJ");
-      strcpy(ApStoreTable[3].pre_shared_key, "");
-      ApStoreTable[3].ap_flags = 0x0C;
-
-      strcpy(ApStoreTable[4].mac_address, "00:24:01:43:69:04");
-      strcpy(ApStoreTable[4].security, "[WPA2-PSK][ESS]");
-      strcpy(ApStoreTable[4].friendly_name, "KKK");
-      strcpy(ApStoreTable[4].pre_shared_key, "");
-      ApStoreTable[4].ap_flags = 0x0C;
-
-      /*strcpy(ApStoreTable[5].mac_address, "00:24:01:43:69:05");
-      strcpy(ApStoreTable[5].security, "");
-      strcpy(ApStoreTable[5].friendly_name, "Hugo05");
-      strcpy(ApStoreTable[5].pre_shared_key, "");
-      ApStoreTable[5].ap_flags = 0x08;*/
-    #endif
-
-//*********************************** End of TEST STUFF **********************************
-
-  }
-  else
-  {
-    RetVal = -1;
-  }
-
-  return RetVal;
+    return RetVal;
 }
 
-int cWiFiStoreKnownApList(void) // At exit of main application
-{                               // Store known "stuff" in the (new) correct order
-  int RetVal = 0;
-  char FileName[128];
-  FILE *PersistentFile = NULL;
-  int ArrayIterator = 0;
-  aps OneApRecord;
+// At exit of main application
+// Store known "stuff" in the (new) correct order
+int cWiFiStoreKnownApList(void)
+{
+    int RetVal = 0;
+    char FileName[128];
+    FILE *PersistentFile = NULL;
+    int ArrayIterator = 0;
+    aps OneApRecord;
 
-  strcpy(FileName, WIFI_PERSISTENT_PATH);
-  strcat(FileName, "/");
-  strcat(FileName, WIFI_PERSISTENT_FILENAME);
+    strcpy(FileName, WIFI_PERSISTENT_PATH);
+    strcat(FileName, "/");
+    strcat(FileName, WIFI_PERSISTENT_FILENAME);
 
-  #ifdef	DEBUG
-      printf("AP_FLAG_ADJUST_FOR_STORAGE = %X\n\r", AP_FLAG_ADJUST_FOR_STORAGE);
-  	  printf("Persistent FileName = %s ApStoreTableSize = %d\n\r", FileName, ApStoreTableSize);
-  #endif
+#ifdef DEBUG
+    printf("AP_FLAG_ADJUST_FOR_STORAGE = %X\n\r", AP_FLAG_ADJUST_FOR_STORAGE);
+    printf("Persistent FileName = %s ApStoreTableSize = %d\n\r", FileName,
+           ApStoreTableSize);
+#endif
 
-  PersistentFile = fopen(FileName, "wb");
-  if ( PersistentFile != NULL )
-  {
-    for(ArrayIterator = 0; ArrayIterator < ApTableSize; ArrayIterator++)
-    {
+    PersistentFile = fopen(FileName, "wb");
+    if (PersistentFile) {
+        for(ArrayIterator = 0; ArrayIterator < ApTableSize; ArrayIterator++) {
 
-    // if(((ApStoreTable[ArrayIterator].ap_flags) & KNOWN) == KNOWN) NOT USED only HARD known ones
-      if(((ApTable[ArrayIterator].ap_flags) & KNOWN) == KNOWN)
-      {
-        //memcpy(&OneApRecord, &(ApStoreTable[ArrayIterator]), sizeof(aps)); NOT USED only HARD known ones
-        memcpy(&OneApRecord, &(ApTable[ArrayIterator]), sizeof(aps));
+            // if (((ApStoreTable[ArrayIterator].ap_flags) & KNOWN) == KNOWN) NOT USED only HARD known ones
+            if (((ApTable[ArrayIterator].ap_flags) & KNOWN) == KNOWN) {
+                //memcpy(&OneApRecord, &(ApStoreTable[ArrayIterator]), sizeof(aps)); NOT USED only HARD known ones
+                memcpy(&OneApRecord, &(ApTable[ArrayIterator]), sizeof(aps));
 
-        OneApRecord.ap_flags &= AP_FLAG_ADJUST_FOR_STORAGE;
+                OneApRecord.ap_flags &= AP_FLAG_ADJUST_FOR_STORAGE;
 
-       #ifdef  DEBUG
-         printf("cWiFiStoreKnownApList ApStoreTableSize = %d, ArrayIterator = %d\n\r", ApStoreTableSize, ArrayIterator);
-         printf("OneApRecord.ap_flags before: %X\n\r", OneApRecord.ap_flags);
-       #endif
+#ifdef  DEBUG
+                printf("cWiFiStoreKnownApList ApStoreTableSize = %d, ArrayIterator = %d\n\r",
+                       ApStoreTableSize, ArrayIterator);
+                printf("OneApRecord.ap_flags before: %X\n\r", OneApRecord.ap_flags);
+#endif
 
-         fwrite(&OneApRecord, sizeof OneApRecord, 1, PersistentFile);
-      }
+                fwrite(&OneApRecord, sizeof OneApRecord, 1, PersistentFile);
+            }
 
-      #ifdef DEBUG
-    	  printf("OneApRecord.ap_flags after, just after save: %X\n\r", OneApRecord.ap_flags);
-      	printf("Writing KnownList I.e. ApStoreTable[x] to Persistent file\n\r");
-        printf("\nApStoreTable[%d].mac_address = %s\n", (ArrayIterator), ApStoreTable[ArrayIterator].mac_address);
-        printf("\nApStoreTable[%d].security = %s\n", (ArrayIterator), ApStoreTable[ArrayIterator].security);
-        printf("\nApStoreTable[%d].friendly_name = %s\n", (ArrayIterator), ApStoreTable[ArrayIterator].friendly_name);
-        printf("\nApStoreTable[%d].pre_shared_key = %s\n", (ArrayIterator), ApStoreTable[ArrayIterator].pre_shared_key);
-        printf("\nApStoreTable[%d].ap_flags = %d\n", (ArrayIterator), ApStoreTable[ArrayIterator].ap_flags);
-      #endif
+#ifdef DEBUG
+            printf("OneApRecord.ap_flags after, just after save: %X\n\r",
+                   OneApRecord.ap_flags);
+            printf("Writing KnownList I.e. ApStoreTable[x] to Persistent file\n\r");
+            printf("\nApStoreTable[%d].mac_address = %s\n", (ArrayIterator),
+                   ApStoreTable[ArrayIterator].mac_address);
+            printf("\nApStoreTable[%d].security = %s\n", (ArrayIterator),
+                   ApStoreTable[ArrayIterator].security);
+            printf("\nApStoreTable[%d].friendly_name = %s\n", (ArrayIterator),
+                   ApStoreTable[ArrayIterator].friendly_name);
+            printf("\nApStoreTable[%d].pre_shared_key = %s\n", (ArrayIterator),
+                   ApStoreTable[ArrayIterator].pre_shared_key);
+            printf("\nApStoreTable[%d].ap_flags = %d\n", (ArrayIterator),
+                   ApStoreTable[ArrayIterator].ap_flags);
+#endif
+        }
+        //RetVal = ApStoreTableSize;NOT USED only HARD known ones
+        RetVal = ApTableSize;
+        fclose(PersistentFile);
+    } else {
+#ifdef DEBUG
+        printf("Handle to PersistentFile == NULL :-(\n\r");
+#endif
+
+        RetVal = -1;
     }
-    //RetVal = ApStoreTableSize;NOT USED only HARD known ones
-    RetVal = ApTableSize;
-    fclose(PersistentFile);
 
-  }
-  else
-  {
-    #ifdef DEBUG
-      printf("Handle to PersistentFile == NULL :-(\n\r");
-    #endif
-
-    RetVal = -1;
-  }
-  return RetVal;
+    return RetVal;
 }
 
-void cWiFiRestoreActualApRecord(int Destination)    // Restore a preserved record to ACTUAL
+// Restore a preserved record to ACTUAL
+void cWiFiRestoreActualApRecord(int Destination)
 {
-  memcpy(&(ApTable[Destination].mac_address), &TempApStorage, sizeof(aps));
+    memcpy(&(ApTable[Destination].mac_address), &TempApStorage, sizeof(aps));
 }
 
-void cWiFiPreserveActualApRecord(int Index)         // Preserve an ACTUAL record
+// Preserve an ACTUAL record
+void cWiFiPreserveActualApRecord(int Index)
 {
-  memcpy(&TempApStorage, &(ApTable[Index].mac_address), sizeof(aps));
+    memcpy(&TempApStorage, &(ApTable[Index].mac_address), sizeof(aps));
 }
 
 void cWiFiMoveUpInStoreList(int Index)
 {
-  // Make entry "n" become "n-1" i.e. index--
-  if(Index > 0)
-    memcpy(&(ApStoreTable[Index - 1]), &(ApStoreTable[Index]), sizeof(aps));
+    // Make entry "n" become "n-1" i.e. index--
+    if (Index > 0) {
+        memcpy(&(ApStoreTable[Index - 1]), &(ApStoreTable[Index]), sizeof(aps));
+    }
 }
 
 void cWiFiMoveDownInStoreList(int Index)
 {
-  // Make entry "n" become "n+1" i.e. index++
-  if(Index < (MAX_AP_STORAGE_ENTRIES - 2))
-    memcpy(&(ApStoreTable[Index + 1]), &(ApStoreTable[Index]), sizeof(aps));
+    // Make entry "n" become "n+1" i.e. index++
+    if (Index < (MAX_AP_STORAGE_ENTRIES - 2)) {
+        memcpy(&(ApStoreTable[Index + 1]), &(ApStoreTable[Index]), sizeof(aps));
+    }
 }
 
 void cWiFiMoveUpInActualList(int Index)
 {
-  // Make "n" become "n-1" - lower index, but higher order (newer/active etc.)
-  if(Index > 0)
-    memcpy(&(ApTable[Index - 1]), &(ApTable[Index]), sizeof(aps));
+    // Make "n" become "n-1" - lower index, but higher order (newer/active etc.)
+    if (Index > 0) {
+        memcpy(&(ApTable[Index - 1]), &(ApTable[Index]), sizeof(aps));
+    }
 }
 
 void cWiFiMoveDownInActualList(int Index)
 {
-  // Make "n" become "n+1" - lower priority (older/inactive etc.)
-  if(Index < (MAX_AP_ENTRIES - 2))
-    memcpy(&(ApTable[Index + 1]), &(ApTable[Index]), sizeof(aps));
+    // Make "n" become "n+1" - lower priority (older/inactive etc.)
+    if (Index < (MAX_AP_ENTRIES - 2)) {
+        memcpy(&(ApTable[Index + 1]), &(ApTable[Index]), sizeof(aps));
+    }
 }
 
-void cWiFiMoveUpInList(int Index)           // Direct UI function
+// Direct UI function
+void cWiFiMoveUpInList(int Index)
 {
-  // Make "n" become "n-1" and "n-1" moved down to "n"
+    // Make "n" become "n-1" and "n-1" moved down to "n"
 
-  if(Index > 0) // We can move up
-  {
-    cWiFiPreserveActualApRecord(Index - 1);
-    memcpy(&(ApTable[Index - 1]), &(ApTable[Index]), sizeof(aps));  // n to n-1
-    cWiFiRestoreActualApRecord(Index);
-  }
+     if (Index > 0) {
+        // We can move up
+        cWiFiPreserveActualApRecord(Index - 1);
+        // n to n-1
+        memcpy(&(ApTable[Index - 1]), &(ApTable[Index]), sizeof(aps));
+        cWiFiRestoreActualApRecord(Index);
+    }
 }
 
 RESULT cWiFiRemoveNetwork(void)
 {
-RESULT Ret = FAIL;
-  char CmdReturn[10];
+    RESULT Ret = FAIL;
+    char CmdReturn[10];
 #ifdef DEBUG
-  int RetVal;
+    int RetVal;
 #endif
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
+    // We leave space for a terminating /0x00
+    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
 
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("Remove Network called\n\r");
-  #endif
-
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-  if(ctrl_conn != NULL)
-  {
-#ifdef DEBUG
-    RetVal = 
 #endif
-    wpa_ctrl_request(ctrl_conn, "REMOVE_NETWORK all", strlen("REMOVE_NETWORK all"),
-                     CmdReturn, &LenCmdReturn, NULL);
-    sleep(3); // Force some cycles
-    CmdReturn[LenCmdReturn] = '\0';
 
-    #ifdef DEBUG
-      printf("Remove returns %s - RetVal = %d\n\r", CmdReturn, RetVal);
-    #endif
+    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
-    if(strstr(CmdReturn, "OK") != NULL)
+    if (ctrl_conn)
     {
-      #ifdef DEBUG
-        printf("Remove Network returned OK\n\r");
-      #endif
-      Ret = OK;
+#ifdef DEBUG
+        RetVal = 
+#endif
+        wpa_ctrl_request(ctrl_conn, "REMOVE_NETWORK all",
+                         strlen("REMOVE_NETWORK all"),
+                         CmdReturn, &LenCmdReturn, NULL);
+        sleep(3); // Force some cycles
+        CmdReturn[LenCmdReturn] = '\0';
+
+#ifdef DEBUG
+        printf("Remove returns %s - RetVal = %d\n\r", CmdReturn, RetVal);
+#endif
+
+        if (strstr(CmdReturn, "OK")) {
+#ifdef DEBUG
+            printf("Remove Network returned OK\n\r");
+#endif
+            Ret = OK;
+        } else {
+#ifdef DEBUG
+            printf("Remove Network was NOT OK :-(\n\r");
+#endif
+        }
     }
-    else
-    {
-      #ifdef DEBUG
-        printf("Remove Network was NOT OK :-(\n\r");
-      #endif
-    }
-  }
-  return Ret;
+
+    return Ret;
 }
 
 RESULT cWiFiTcpClose(void)
 {
-  int res;
-  UBYTE buffer[128];
-  RESULT Result = OK;
+    int res;
+    UBYTE buffer[128];
+    RESULT Result = OK;
+    struct linger so_linger;
 
-  WiFiStatus = BUSY;
+    WiFiStatus = BUSY;
 
-  struct linger so_linger;
+    so_linger.l_onoff = TRUE;
+    so_linger.l_linger = 0;
+    setsockopt(TcpConnectionSocket, SOL_SOCKET, SO_LINGER, &so_linger,
+               sizeof so_linger);
 
-  so_linger.l_onoff = TRUE;
-  so_linger.l_linger = 0;
-  setsockopt(TcpConnectionSocket,
-      SOL_SOCKET,
-      SO_LINGER,
-      &so_linger,
-      sizeof so_linger);
+    if (shutdown(TcpConnectionSocket, 2) < 0) {
+        do {
+#ifdef DEBUG
+            printf("In the do_while\n");
+#endif
+            res = read(TcpConnectionSocket, buffer, 100);
+            if (res < 0 ) {
+                break;
+            }
+        } while (res != 0);
 
-  if ( shutdown(TcpConnectionSocket, 2) < 0 )
-  {
-    do
-    {
-      #ifdef DEBUG
-        printf("In the do_while\n");
-      #endif
-      res = read(TcpConnectionSocket, buffer, 100);
-      if(res < 0 ) break;
+#ifdef DEBUG
+        printf("\nError calling Tcp shutdown()\n");
+#endif
     }
-    while (res != 0);
 
-    #ifdef DEBUG
-      printf("\nError calling Tcp shutdown()\n");
-    #endif
-  }
+    TcpConnectionSocket = 0;
+    WiFiStatus = OK;  // We are at a known state :-)
+    WiFiConnectionState = UDP_VISIBLE;
 
-  TcpConnectionSocket = 0;
-  WiFiStatus = OK;  // We are at a known state :-)
-  WiFiConnectionState = UDP_VISIBLE;
-  return Result;
+    return Result;
 }
 
 void cWiFiUdpClientClose(void)
 {
-  WiFiStatus = FAIL;                          // Async announcement of FAIL
-  WiFiConnectionState = WIFI_INITIATED;
-  BeaconTx = NO_TX;                           // Disable Beacon
-  if(close(UdpSocketDescriptor) == 0)
-    WiFiStatus = OK;                          // Socket kill
-}
-
-void cWiFiMoveDownInList(int Index)           // Direct UI function
-{
-  // Make "n" become "n+1" and "n+1" moved up to "n"
-  if(Index < (MAX_AP_ENTRIES - 2))
-  {
-    cWiFiPreserveActualApRecord(Index + 1);
-    memcpy(&(ApTable[Index + 1]), &(ApTable[Index]), sizeof(aps));
-    cWiFiRestoreActualApRecord(Index);
-  }
-}
-
-void cWiFiDeleteInList(int Index)             // Direct UI function
-{
-  // Delete "n" - making "n+1, n+2" => "n, n+1"
-  int i;
-
-  WiFiStatus = FAIL; // Until other....
-
-  if((Index < ApTableSize) && ((ApTable[0].ap_flags & CONNECTED) != CONNECTED)) // DO NOT outside or ACTIVE!!
-  {
-    for(i = Index + 1; i < (ApTableSize + 1); i++)
-    {
-      memcpy(&(ApTable[i - 1]), &(ApTable[i]), sizeof(aps));
+    WiFiStatus = FAIL;                          // Async announcement of FAIL
+    WiFiConnectionState = WIFI_INITIATED;
+    BeaconTx = NO_TX;                           // Disable Beacon
+    if (close(UdpSocketDescriptor) == 0) {
+        WiFiStatus = OK;                          // Socket kill
     }
-    ApTableSize--;
-    WiFiStatus = OK; // Somecleaning done :-)
-  }
 }
 
+// Direct UI function
+void cWiFiMoveDownInList(int Index)
+{
+    // Make "n" become "n+1" and "n+1" moved up to "n"
+    if (Index < (MAX_AP_ENTRIES - 2)) {
+        cWiFiPreserveActualApRecord(Index + 1);
+        memcpy(&(ApTable[Index + 1]), &(ApTable[Index]), sizeof(aps));
+        cWiFiRestoreActualApRecord(Index);
+    }
+}
+
+// Direct UI function
+// Delete "n" - making "n+1, n+2" => "n, n+1"
+void cWiFiDeleteInList(int Index)
+{
+    int i;
+
+    WiFiStatus = FAIL; // Until other....
+
+    // DO NOT outside or ACTIVE!!
+    if ((Index < ApTableSize) && ((ApTable[0].ap_flags & CONNECTED) != CONNECTED)) {
+        for (i = Index + 1; i < (ApTableSize + 1); i++) {
+            memcpy(&(ApTable[i - 1]), &(ApTable[i]), sizeof(aps));
+        }
+        ApTableSize--;
+        WiFiStatus = OK; // Somecleaning done :-)
+    }
+}
+
+// Delete "n" - making "n+1, n+2" => "n, n+1"
 void cWiFiDeleteInStoreList(int Index)
 {
-  // Delete "n" - making "n+1, n+2" => "n, n+1"
-  int i;
+    int i;
 
-  if(Index < ApStoreTableSize)
-  {
-    for(i = Index; i < (ApStoreTableSize - 1); i++)
-    {
-      memcpy(&(ApStoreTable[i]), &(ApStoreTable[i + 1]), sizeof(aps));
+    if (Index < ApStoreTableSize) {
+      for (i = Index; i < (ApStoreTableSize - 1); i++) {
+          memcpy(&(ApStoreTable[i]), &(ApStoreTable[i + 1]), sizeof(aps));
+      }
+      ApStoreTableSize--;
     }
-    ApStoreTableSize--;
-  }
 }
 
-void cWifiMoveAllActualDown(int SourcePointer)  // Lower priority
+// Lower priority
+void cWifiMoveAllActualDown(int SourcePointer)
 {
-  int i;
+    int i;
 
-  i = SourcePointer - 1;
-  do
-  {
-    cWiFiMoveDownInActualList(i--);
-  }
-  while(i >= 0);
+    i = SourcePointer - 1;
+    do {
+        cWiFiMoveDownInActualList(i--);
+    } while(i >= 0);
 }
 
-void cWiFiMoveAllStoreDown(int SourcePointer) // Lower priority
+// Lower priority
+void cWiFiMoveAllStoreDown(int SourcePointer)
 {
-  int i;
+    int i;
 
-  i = SourcePointer - 1;
-  do
-  {
-    cWiFiMoveDownInStoreList(i--);
-  }
-  while(i >= 0);
+    i = SourcePointer - 1;
+    do {
+        cWiFiMoveDownInStoreList(i--);
+    } while(i >= 0);
 }
 
-void cWiFiCopyStoreToActual(int StoreIndex, int ActualIndex)  // Move from STORED to ACTUAL
+// Move from STORED to ACTUAL
+void cWiFiCopyStoreToActual(int StoreIndex, int ActualIndex)
 {
-  memcpy(&(ApTable[StoreIndex]), &(ApStoreTable[ActualIndex]), sizeof(aps));
+    memcpy(&(ApTable[StoreIndex]), &(ApStoreTable[ActualIndex]), sizeof(aps));
 }
 
-void cWiFiCopyActualToStore(int ActualIndex, int StoreIndex)  // Move from ACTUAL to STORED
+// Move from ACTUAL to STORED
+void cWiFiCopyActualToStore(int ActualIndex, int StoreIndex)
 {
-  memcpy(&(ApStoreTable[StoreIndex]), &(ApTable[ActualIndex]),  sizeof(aps));
+    memcpy(&(ApStoreTable[StoreIndex]), &(ApTable[ActualIndex]), sizeof(aps));
 }
 
-RESULT cWiFiCheckAndDelete(int Index) // Check for entry in STORED list - if present -> DELETE it
+// Check for entry in STORED list - if present -> DELETE it
+RESULT cWiFiCheckAndDelete(int Index)
 {
-  int FoundIndex;
-  RESULT Found = FAIL;
-  int i;
+    int FoundIndex;
+    RESULT Found = FAIL;
+    int i;
 
-  for(i = 0; i < ApStoreTableSize; i++)
-  {
-    if(strcmp(ApTable[Index].mac_address, ApStoreTable[i].mac_address) == 0)
-    {
-      FoundIndex = i;
-      Found = OK;
+    for (i = 0; i < ApStoreTableSize; i++) {
+        if (strcmp(ApTable[Index].mac_address, ApStoreTable[i].mac_address) == 0) {
+            FoundIndex = i;
+            Found = OK;
+        }
     }
-  }
-  if (Found == OK)
-  {
-    cWiFiDeleteInStoreList(FoundIndex);
-    // If found and deleted
-    ApStoreTableSize--;
-  }
-  return Found; // true if FOUND and DELETED
+    if (Found == OK) {
+        cWiFiDeleteInStoreList(FoundIndex);
+        // If found and deleted
+        ApStoreTableSize--;
+    }
+
+    return Found; // true if FOUND and DELETED
 }
 
-void cWiFiAddToKnownApList(int Index) // When a connection is made to a new AP
+// When a connection is made to a new AP
+void cWiFiAddToKnownApList(int Index)
 {
-  // Place in Persistent data as TOP item - ALWAYS
-  int SourcePointer;
+    // Place in Persistent data as TOP item - ALWAYS
+    int SourcePointer;
 
-  // First adjust for storage - is the table already full??
-  if(ApStoreTableSize < (MAX_AP_STORAGE_ENTRIES - 1))
-  {
-    SourcePointer = ApStoreTableSize;
-  }
-  else
-  {
-    SourcePointer = ApStoreTableSize-1;
-  }
+    // First adjust for storage - is the table already full??
+    if (ApStoreTableSize < (MAX_AP_STORAGE_ENTRIES - 1)) {
+        SourcePointer = ApStoreTableSize;
+    } else {
+        SourcePointer = ApStoreTableSize-1;
+    }
 
-  // Move all entries one down
-  cWiFiMoveAllStoreDown(SourcePointer);
-  // Copy to TOP
-  cWiFiCopyActualToStore(Index, 0);
+    // Move all entries one down
+    cWiFiMoveAllStoreDown(SourcePointer);
+    // Copy to TOP
+    cWiFiCopyActualToStore(Index, 0);
 
-  ApStoreTableSize++;
-  if(ApStoreTableSize > (MAX_AP_STORAGE_ENTRIES - 1))
-      ApStoreTableSize = (MAX_AP_STORAGE_ENTRIES - 1);
+    ApStoreTableSize++;
+    if (ApStoreTableSize > (MAX_AP_STORAGE_ENTRIES - 1)) {
+        ApStoreTableSize = (MAX_AP_STORAGE_ENTRIES - 1);
+    }
 }
 
-void cWiFiPreserveStorageApRecord(int Index)  // Preserve a STORED record
+// Preserve a STORED record
+void cWiFiPreserveStorageApRecord(int Index)
 {
-  memcpy(&TempApStorage, &(ApStoreTable[Index].mac_address), sizeof(aps));
+    memcpy(&TempApStorage, &(ApStoreTable[Index].mac_address), sizeof(aps));
 }
 
-void cWiFiRestoreStorageApRecord(int Destination) // Restore a preserved record to STORED
+// Restore a preserved record to STORED
+void cWiFiRestoreStorageApRecord(int Destination)
 {
-  memcpy(&(ApStoreTable[Destination].mac_address), &TempApStorage, sizeof(aps));
+    memcpy(&(ApStoreTable[Destination].mac_address), &TempApStorage, sizeof(aps));
 }
 
+// Merge newly scanned and visible AP's with the KNOWN LIST
+// Prioritized - LAST used first, second used next (every-
+// thing visible and known) also prioritized first.
+// 1) KNOWN and VISIBLE first
+// 2) VISIBLE
+// 3) KNOWN but NOT visible
 RESULT cWiFiMergeActualAndKnownTable(void)
 {
-  // Merge newly scanned and visible AP's with the KNOWN LIST
-  // Prioritized - LAST used first, second used next (every-
-  // thing visible and known) also prioritized first.
-  // 1) KNOWN and VISIBLE first
-  // 2) VISIBLE
-  // 3) KNOWN but NOT visible
-  int KnownListIterator;
-  int VisibleListIterator;
-  RESULT Found = FAIL;
-  int KnownCounter = 0; // Points into the KNOWN part of the scanned
-  int i;
+    int KnownListIterator;
+    int VisibleListIterator;
+    RESULT Found = FAIL;
+    int KnownCounter = 0; // Points into the KNOWN part of the scanned
+    int i;
 
-  for (KnownListIterator = 0; KnownListIterator < ApStoreTableSize; KnownListIterator++)
-  {
-    VisibleListIterator = 0;
-    Found = FAIL;
+    for (KnownListIterator = 0; KnownListIterator < ApStoreTableSize; KnownListIterator++) {
+        VisibleListIterator = 0;
+        Found = FAIL;
 
-    do
-    {
-      if(strcmp(ApTable[VisibleListIterator].mac_address, ApStoreTable[KnownListIterator].mac_address) == 0) // They're equal
-      {   // Known and visible
-          // Move this Known to ApTable[KnownListIterator]
+        do {
+            if (strcmp(ApTable[VisibleListIterator].mac_address,
+                       ApStoreTable[KnownListIterator].mac_address) == 0)
+            {   // Known and visible
+                // Move this Known to ApTable[KnownListIterator]
 
-          // First Save entry @ ApTable[VisibleListIterator]
+                // First Save entry @ ApTable[VisibleListIterator]
 
-          // Then move all between KnownCounter (topmost) and VisibleListIterator (lowest) 1 position down
+                // Then move all between KnownCounter (topmost) and VisibleListIterator (lowest) 1 position down
 
-        for(i = VisibleListIterator; i > KnownCounter; i--)
-        {
-          cWiFiMoveDownInActualList(i - 1);
+                for(i = VisibleListIterator; i > KnownCounter; i--) {
+                    cWiFiMoveDownInActualList(i - 1);
+                }
+
+                cWiFiCopyStoreToActual(KnownListIterator, KnownCounter);  // Move from STORED to ACTUAL
+
+                ApTable[KnownCounter].ap_flags |=  (KNOWN + VISIBLE);     // Set flags
+
+                Found = OK;
+                KnownCounter++; // Used for populate rest of list with KNOWN if any
+            }
+
+            if (Found == FAIL) {
+                VisibleListIterator++;
+                if (VisibleListIterator >= MAX_AP_ENTRIES) {
+                    Found = OK; // Even if NOT found
+                    // Add to KNOWN but NOT visible in bottom of list
+                    cWiFiCopyStoreToActual(ApTableSize, KnownListIterator);
+
+                    ApTable[ApTableSize].ap_flags |=  KNOWN;
+                    ApTable[ApTableSize].ap_flags &= ~(CONNECTED);
+                    ApTable[ApTableSize].ap_flags &= ~(VISIBLE);
+                    ApTableSize++;
+                }
+            }
         }
-
-        cWiFiCopyStoreToActual(KnownListIterator, KnownCounter);  // Move from STORED to ACTUAL
-
-        ApTable[KnownCounter].ap_flags |=  (KNOWN + VISIBLE);     // Set flags
-
-        Found = OK;
-        KnownCounter++; // Used for populate rest of list with KNOWN if any
-      }
-
-      if(Found == FAIL)
-      {
-        VisibleListIterator++;
-        if(VisibleListIterator >= MAX_AP_ENTRIES)
-        {
-          Found = OK; // Even if NOT found
-          // Add to KNOWN but NOT visible in bottom of list
-          cWiFiCopyStoreToActual(ApTableSize, KnownListIterator);
-
-          ApTable[ApTableSize].ap_flags |=  KNOWN;
-          ApTable[ApTableSize].ap_flags &= ~(CONNECTED);
-          ApTable[ApTableSize].ap_flags &= ~(VISIBLE);
-          ApTableSize++;
-        }
-      }
+        while(Found == FAIL);
     }
-    while(Found == FAIL);
-  }
-  return OK;
+
+    return OK;
 }
 
 RESULT cWiFiTerminate(void)
 {
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
+    RESULT Ret = FAIL;
+    char CmdReturn[10];
 #ifdef DEBUG
-  int RetVal;
+    int RetVal;
 #endif
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
+    // We leave space for a terminating /0x00
+    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
 
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
+    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
-  if(ctrl_conn != NULL)
-  {
+    if (ctrl_conn) {
 #ifdef DEBUG
-    RetVal =
+        RetVal =
 #endif
-    wpa_ctrl_request(ctrl_conn, "TERMINATE", strlen("TERMINATE"), CmdReturn,
-                     &LenCmdReturn, NULL);
-    CmdReturn[LenCmdReturn] = '\0';
+        wpa_ctrl_request(ctrl_conn, "TERMINATE", strlen("TERMINATE"), CmdReturn,
+                         &LenCmdReturn, NULL);
+        CmdReturn[LenCmdReturn] = '\0';
 
-    #ifdef DEBUG
-      printf("WiFi terminate : RetVal %d , CmdReturn %s\n\r", RetVal, CmdReturn);
-    #endif
+#ifdef DEBUG
+        printf("WiFi terminate : RetVal %d , CmdReturn %s\n\r", RetVal, CmdReturn);
+#endif
 
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      Ret = OK;
+        if (strstr(CmdReturn, "OK") != NULL) {
+            Ret = OK;
+        }
     }
-  }
-  return Ret;
+
+    return Ret;
 }
 
 RESULT cWiFiAddNetwork(void)
 {
-  RESULT Ret = FAIL;
-  char aCmdReturn[128];
+    RESULT Ret = FAIL;
+    char aCmdReturn[128];
 #ifdef DEBUG
-  int RetVal;
+    int RetVal;
 #endif
-  size_t LenaCmdReturn = sizeof(aCmdReturn) - 1; // We leave space for a terminating /0x00
+    size_t LenaCmdReturn = sizeof(aCmdReturn) - 1; // We leave space for a terminating /0x00
 
-  memset(aCmdReturn, 0x00, LenaCmdReturn); // Reset to be sure!!
+    memset(aCmdReturn, 0x00, LenaCmdReturn); // Reset to be sure!!
 
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("Beginning of AddNetwork\n\r");
-  #endif
+#endif
 
-  if(ctrl_conn != NULL)
-  {
-    #ifdef DEBUG
-      printf("Internal in AddNetwork - before the real call\n\r");
-    #endif
+    if (ctrl_conn) {
+#ifdef DEBUG
+        printf("Internal in AddNetwork - before the real call\n\r");
+#endif
 
 #ifdef DEBUG
-    RetVal =
+        RetVal =
 #endif
-    wpa_ctrl_request(ctrl_conn, "ADD_NETWORK", strlen("ADD_NETWORK"),
-                     aCmdReturn, &LenaCmdReturn, NULL);
-    sleep(3); // Force some cycles
-    aCmdReturn[LenaCmdReturn] = '\0';
+        wpa_ctrl_request(ctrl_conn, "ADD_NETWORK", strlen("ADD_NETWORK"),
+                         aCmdReturn, &LenaCmdReturn, NULL);
+        sleep(3); // Force some cycles
+        aCmdReturn[LenaCmdReturn] = '\0';
 
-	  #ifdef DEBUG
-      printf("Add returns %s - RetVal = %d\n\r", aCmdReturn, RetVal);
-    #endif
+#ifdef DEBUG
+        printf("Add returns %s - RetVal = %d\n\r", aCmdReturn, RetVal);
+#endif
 
-    if((aCmdReturn[0] == '0') && (aCmdReturn[1] == 10)) // LF
-    {
-      #ifdef DEBUG
-        printf("0 (zero) in return at AddNetwork\n\r");
-      #endif
+        if ((aCmdReturn[0] == '0') && (aCmdReturn[1] == 10)) { // LF
+#ifdef DEBUG
+            printf("0 (zero) in return at AddNetwork\n\r");
+#endif
 
-      Ret = OK;
+            Ret = OK;
+        } else {
+#ifdef DEBUG
+            printf("AddNetwork NOT OK 0 = %d, 1 = %d !!\n", aCmdReturn[0], aCmdReturn[1]);
+#endif
+        }
     }
-    else
-    {
-      #ifdef DEBUG
-        printf("AddNetwork NOT OK 0 = %d, 1 = %d !!\n", aCmdReturn[0], aCmdReturn[1]);
-      #endif
-    }
-  }
-  return Ret;
+
+    return Ret;
 }
 
-RESULT cWiFiSetScanSsidToOne(void)  // The WPA_Supplicant should also be happy, when APs are invisible
+// The WPA_Supplicant should also be happy, when APs are invisible
+RESULT cWiFiSetScanSsidToOne(void)
 {
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  char Cmd[128];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
+    RESULT Ret = FAIL;
+    char CmdReturn[10];
+    char Cmd[128];
+    // We leave space for a terminating /0x00
+    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
 
-  WiFiStatus = BUSY;
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
+    WiFiStatus = BUSY;
+    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("\n\rEntry of SET_ScanSsidToOne to ONE\n\r");
-  #endif
+#endif
 
-  if(ctrl_conn != NULL)
-  {
-    strcpy(Cmd, "SET_NETWORK 0 scan_ssid 1");
+    if (ctrl_conn) {
+        strcpy(Cmd, "SET_NETWORK 0 scan_ssid 1");
 
-    wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn, NULL);
+        wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn, NULL);
 
-    CmdReturn[LenCmdReturn] = '\0';
+        CmdReturn[LenCmdReturn] = '\0';
 
-    #ifdef DEBUG
-      printf("ap_scan: CMD= %s, Return= %s", Cmd, CmdReturn);
-    #endif
+#ifdef DEBUG
+        printf("ap_scan: CMD= %s, Return= %s", Cmd, CmdReturn);
+#endif
 
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      Ret = OK;
-      WiFiStatus = OK;
+        if (strstr(CmdReturn, "OK") != NULL) {
+            Ret = OK;
+            WiFiStatus = OK;
+        } else {
+            WiFiStatus = FAIL;
+        }
     }
-    else
-    {
-      WiFiStatus = FAIL;
-    }
-  }
-  return Ret;
+
+    return Ret;
 }
 
 RESULT cWiFiSetSsid(char *Ssid)
 {
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  char Cmd[128];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
+    RESULT Ret = FAIL;
+    char CmdReturn[10];
+    char Cmd[128];
+    // We leave space for a terminating /0x00
+    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
 
-  WiFiStatus = BUSY;
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
+    WiFiStatus = BUSY;
+    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
-  #ifdef DEBUG
+#ifdef DEBUG
     printf("\n\rEntry of SET_SSID in c_wifi\n\r");
-  #endif
+#endif
 
-  if(ctrl_conn != NULL)
-  {
-    strcpy(Cmd, "SET_NETWORK 0 ssid \"");
-    strcat(Cmd, Ssid);
-    strcat(Cmd, "\"");
+    if (ctrl_conn) {
+        strcpy(Cmd, "SET_NETWORK 0 ssid \"");
+        strcat(Cmd, Ssid);
+        strcat(Cmd, "\"");
 
+        wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn,
+                         NULL);
 
-    wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn, NULL);
+        CmdReturn[LenCmdReturn] = '\0';
 
-    CmdReturn[LenCmdReturn] = '\0';
+#ifdef DEBUG
+        printf("SetSSID: CMD= %s, Return= %s", Cmd, CmdReturn);
+#endif
 
-    #ifdef DEBUG
-      printf("SetSSID: CMD= %s, Return= %s", Cmd, CmdReturn);
-    #endif
-
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      Ret = OK;
-      WiFiStatus = OK;
+        if (strstr(CmdReturn, "OK") != NULL) {
+            Ret = OK;
+            WiFiStatus = OK;
+        } else {
+            WiFiStatus = FAIL;
+        }
     }
-    else
-    {
-      WiFiStatus = FAIL;
-    }
-  }
-  return Ret;
+
+    return Ret;
 }
 
 RESULT cWiFiSetKeyManagToWpa2(void)
 {
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
+    RESULT Ret = FAIL;
+    char CmdReturn[10];
+    // We leave space for a terminating /0x00
+    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
 
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
+    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
-  if(ctrl_conn != NULL)
-  {
-    wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 key_mgmt WPA-PSK",
-                     strlen("SET_NETWORK 0 key_mgmt WPA-PSK"), CmdReturn,
-                     &LenCmdReturn, NULL);
+    if (ctrl_conn) {
+        wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 key_mgmt WPA-PSK",
+                         strlen("SET_NETWORK 0 key_mgmt WPA-PSK"), CmdReturn,
+                         &LenCmdReturn, NULL);
 
-    CmdReturn[LenCmdReturn] = '\0';
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      Ret = OK;
+        CmdReturn[LenCmdReturn] = '\0';
+        if (strstr(CmdReturn, "OK") != NULL) {
+            Ret = OK;
+        }
     }
-  }
-  return Ret;
+
+    return Ret;
 }
 
 RESULT cWiFiSetKeyManagToNone(void)
 {
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
+    RESULT Ret = FAIL;
+    char CmdReturn[10];
+    // We leave space for a terminating /0x00
+    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
 
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
+    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
-  if(ctrl_conn != NULL)
-  {
-    wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 key_mgmt NONE",
-                     strlen("SET_NETWORK 0 key_mgmt NONE"), CmdReturn,
-                     &LenCmdReturn, NULL);
+    if (ctrl_conn) {
+        wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 key_mgmt NONE",
+                         strlen("SET_NETWORK 0 key_mgmt NONE"), CmdReturn,
+                         &LenCmdReturn, NULL);
 
-    CmdReturn[LenCmdReturn] = '\0';
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      Ret = OK;
+        CmdReturn[LenCmdReturn] = '\0';
+        if (strstr(CmdReturn, "OK") != NULL) {
+            Ret = OK;
+        }
     }
-  }
-  return Ret;
+
+    return Ret;
 }
 
-RESULT cWiFiSetPsk(char *Psk )
+RESULT cWiFiSetPsk(char *Psk)
 {
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  char Cmd[128];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
+    RESULT Ret = FAIL;
+    char CmdReturn[10];
+    char Cmd[128];
+    // We leave space for a terminating /0x00
+    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
 
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
+    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
-  if(ctrl_conn != NULL)
-  {
-    strcpy(Cmd, "SET_NETWORK 0 psk ");
-    strcat(Cmd, Psk);
+    if (ctrl_conn) {
+        strcpy(Cmd, "SET_NETWORK 0 psk ");
+        strcat(Cmd, Psk);
 
-    wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn, NULL);
+        wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn,
+                         NULL);
 
-    CmdReturn[LenCmdReturn] = '\0';
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      Ret = OK;
+        CmdReturn[LenCmdReturn] = '\0';
+        if (strstr(CmdReturn, "OK") != NULL) {
+            Ret = OK;
+      }
     }
-  }
-  return Ret;
+
+    return Ret;
 }
 
 RESULT cWiFiGetApMacAddr(char* MacAddr, int Index)
