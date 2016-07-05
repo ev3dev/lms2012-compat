@@ -374,6 +374,7 @@ void      cComShow(UBYTE *pB)
 UWORD cComReadBuffer(UBYTE *pBuffer, UWORD Size)
 {
     fd_set  Cmdfds;
+    struct timeval timeout = { 0 };
     int     ret;
 
     if (ComInstance.Cmdfd == -1) {
@@ -382,7 +383,7 @@ UWORD cComReadBuffer(UBYTE *pBuffer, UWORD Size)
 
     FD_ZERO(&Cmdfds);
     FD_SET(ComInstance.Cmdfd, &Cmdfds);
-    ret = select(ComInstance.Cmdfd + 1, &Cmdfds, NULL, NULL, NULL);
+    ret = select(ComInstance.Cmdfd + 1, &Cmdfds, NULL, NULL, &timeout);
     if (ret == -1 && errno == EINTR) {
         return 0;
     }
