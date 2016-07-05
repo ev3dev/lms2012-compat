@@ -100,11 +100,6 @@
 #define   DEBUG
 #endif
 
-#ifdef    DEBUG
-// #define   DEBUG_TRACE_TASK
-// #define   DEBUG_TRACE_VM
-#endif
-
 // Buttons are mapped differently in the enum BUTTONTYPE and in ButtonState.
 #define IDX_BACK_BUTTON BACK_BUTTON-1
 

@@ -75,15 +75,7 @@ MEMORY_GLOBALS MemoryInstance;
 
 #ifdef    DEBUG_C_MEMORY
 #define   DEBUG
-#define   DEBUG_C_MEMORY_LOG
-#define   DEBUG_C_MEMORY_FILE
 #endif
-
-#ifdef    DEBUG
-#define   DEBUG_MEMORY_USAGE
-#define   DEBUG_TRACE_FILENAME
-#endif
-
 
 void      cMemoryGetUsage(DATA32 *pTotal,DATA32 *pFree,DATA8 Force)
 {

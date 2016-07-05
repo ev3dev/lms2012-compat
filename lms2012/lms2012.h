@@ -26,55 +26,6 @@
  *
  */
 
-//#define   DEBUG_VM
-//#define   DEBUG_TRACE_TASK
-//#define   DEBUG_C_COM
-//#define   DEBUG_C_INPUT
-//#define   DEBUG_C_INPUT_DAISYCHAIN
-//#define   DEBUG_C_INPUT_DATALOG
-//#define   DEBUG_C_INPUT_FAST_DATALOG
-//#define   DEBUG_C_MEMORY
-//#define   DEBUG_C_MEMORY_LOG
-//#define   DEBUG_C_MEMORY_FILE
-//#define   DEBUG_C_MEMORY_LOW
-//#define   DEBUG_C_SOUND
-//#define   DEBUG_C_UI
-
-//#define   DEBUG_D_ANALOG
-//#define   DEBUG_D_POWER
-//#define   DEBUG_D_UART
-//#define   DEBUG_D_UART_ERROR
-//#define   DEBUG_D_UI
-//#define   DEBUG_D_SOUND
-//#define   DEBUG_D_IIC
-//#define   DEBUG_D_USBDEV
-
-//#define   ENABLE_TEST_ON_PORT4
-
-//#define   BUFPRINTSIZE 100000
-//#define   REMEMBER_TO_ENABLE_SAVE_USER_DATA
-//#define   REMEMBER_TO_FIX_TYPEDATA
-
-//#define   DEBUG_TRACE_USB_COMMAND
-//#define   DEBUG_TRACE_MODE_CHANGE
-#define   DEBUG_TRACE_KEY
-//#define   DEBUG_TRACE_ANGLE
-//#define   DEBUG_TRACE_US
-//#define   DEBUG_TRACE_VM
-//#define   DEBUG_TRACE_DAISYCHAIN
-//#define   DEBUG_BYTECODE_TIME
-//#define   DEBUG_TRACE_FREEZE
-//#define   DEBUG_TRACE_FILENAME
-//#define   DEBUG_TRACE_IIC
-//#define   DEBUG_SDCARD
-//#define   DEBUG_USBSTICK
-//#define   DEBUG_VIRTUAL_BATT_TEMP
-//#define   DEBUG_TEMP_SHUTDOWN
-//#define   DEBUG_BACK_BLOCKED
-//#define   DEBUG_MEMORY_USAGE
-#define   DEBUG_RECHARGEABLE
-#define   ALLOW_DEBUG_PULSE
-
 //#define DEBUG_DYNLOAD
 
 
