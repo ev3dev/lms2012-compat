@@ -65,7 +65,7 @@ foreach (icon ${C_UI_ICONS})
     if (NOT source)
         set (source ${icon})
     endif ()
-    set (bmp ${CMAKE_CURRENT_SOURCE_DIR}/${source}.bmp)
+    set (bmp ${CMAKE_CURRENT_SOURCE_DIR}/bmp/${source}.bmp)
     set (xbm ${CMAKE_CURRENT_BINARY_DIR}/${icon}.xbm)
 
     add_custom_command (OUTPUT ${xbm}
