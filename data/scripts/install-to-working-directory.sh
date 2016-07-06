@@ -40,6 +40,7 @@ for d in \
     'sys/ui'                        \
     'tools/Bluetooth'               \
     'tools/Brick Info'              \
+    'tools/Brick Name'              \
     'tools/Sleep'                   \
     'tools/Volume'                  \
     'tools/WiFi'                    \
