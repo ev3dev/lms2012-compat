@@ -34,7 +34,7 @@ set (t331_SOURCE ir_bpos)
 set (t332_SOURCE ir_bbut)
 
 add_lms_app (Port+View
-    PATH apps
+    INSTALL_PATH "apps/Port View"
     ICON 24x12_ViewApp
     PROGRAMS "Port View"
     GRAPHICS

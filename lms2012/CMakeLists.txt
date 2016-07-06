@@ -37,3 +37,5 @@ if (CMAKE_CROSSCOMPILING)
     # These are not picked up automatically when cross compiling for some reason
     target_link_libraries (lms2012 "-pthread")
 endif (CMAKE_CROSSCOMPILING)
+
+install (TARGETS lms2012 RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR})

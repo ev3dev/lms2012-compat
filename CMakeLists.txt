@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 2.8)
 project (lms2012-compat C)
 
+include (GNUInstallDirs)
+
 # compiler configuration options
 
 option (LMS2012_ENABLE_TERMINAL "Enable debug terminal")
@@ -109,5 +111,6 @@ add_subdirectory (c_output)
 add_subdirectory (c_robotcvm)
 add_subdirectory (c_sound)
 add_subdirectory (c_ui)
+add_subdirectory (data)
 add_subdirectory (lms2012)
 add_subdirectory (lmssrc)

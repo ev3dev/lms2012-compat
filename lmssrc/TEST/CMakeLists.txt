@@ -1,7 +1,6 @@
 
 add_lms_app (TEST
-    PATH prjs
-    INSTALL_TO X86
+    INSTALL_PATH prjs/TEST
     PROGRAMS
         "Change Name"
         Debug

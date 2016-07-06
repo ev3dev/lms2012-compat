@@ -1,5 +1,5 @@
 
 add_lms_app (Demo
-    PATH prjs
+    INSTALL_PATH prjs/Demo
     PROGRAMS Demo
 )

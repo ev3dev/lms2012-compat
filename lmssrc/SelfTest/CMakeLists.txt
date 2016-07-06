@@ -1,7 +1,6 @@
 
 add_lms_app (SelfTest
-    PATH prjs
-    INSTALL_TO X86
+    INSTALL_PATH "prjs/SelfTest"
     PROGRAMS
         Run
         Test0101

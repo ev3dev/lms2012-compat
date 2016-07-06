@@ -1,6 +1,6 @@
 
 add_lms_app (Debug
-    PATH tools
+    INSTALL_PATH tools/Debug
     ICON DebugIcon
     PROGRAMS Debug
 )

@@ -7,8 +7,8 @@ set (apps_screen_SOURCE         178x26_APPS_TAB)
 set (settings_screen_SOURCE     178x26_SETTINGS_TAB)
 
 add_lms_app (ui
-    PATH
-        sys
+    INSTALL_PATH
+        sys/ui
     PROGRAMS
         ui
     GRAPHICS

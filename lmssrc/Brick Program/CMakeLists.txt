@@ -1,7 +1,7 @@
 
 add_lms_app (Brick+Program
-    PATH
-        apps
+    INSTALL_PATH
+        "apps/Brick Program"
     ICON
         24x12_ProgApp
     PROGRAMS

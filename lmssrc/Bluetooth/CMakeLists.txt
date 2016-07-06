@@ -1,6 +1,6 @@
 add_lms_app (Bluetooth
-    PATH
-        tools
+    INSTALL_PATH
+        tools/Bluetooth
     ICON
         BluetoothIcon
     PROGRAMS

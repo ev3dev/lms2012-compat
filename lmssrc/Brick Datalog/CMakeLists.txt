@@ -23,8 +23,8 @@ set (t331_SOURCE ir_bpos)
 set (t332_SOURCE ir_bbut)
 
 add_lms_app (Brick+Datalog ARCHIVE
-    PATH
-        apps
+    INSTALL_PATH
+        "apps/Brick Datalog"
     ICON
         24x12_DLApp
     PROGRAMS

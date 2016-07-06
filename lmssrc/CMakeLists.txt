@@ -8,7 +8,7 @@ set (RAW2RSF ${CMAKE_SOURCE_DIR}/lmssrc/raw2rsf.sh)
 
 macro (add_lms_app TARGET)
     set (options ARCHIVE)
-    set (one_value_args PATH ICON INSTALL_TO)
+    set (one_value_args INSTALL_PATH ICON)
     set (multi_value_args PROGRAMS PROGRAMS_TASM GRAPHICS SOUNDS)
     cmake_parse_arguments (LMSSRC
         "${options}"
@@ -97,6 +97,9 @@ macro (add_lms_app TARGET)
             ${LMSSRC_RGF_LIST}
             ${LMSSRC_RSF_LIST}
     )
+
+    install (FILES ${LMSSRC_RBF_LIST} ${LMSSRC_RGF_LIST} ${LMSSRC_RSF_LIST}
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/${LMSSRC_INSTALL_PATH})
 
 endmacro ()
 

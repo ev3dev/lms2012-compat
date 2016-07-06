@@ -1,6 +1,6 @@
 
 add_lms_app (Sleep
-    PATH tools
+    INSTALL_PATH tools/Sleep
     ICON SleepIcon
     PROGRAMS Sleep
     GRAPHICS 144x32_POP1

@@ -1,6 +1,6 @@
 
 add_lms_app (WiFi
-    PATH tools
+    INSTALL_PATH tools/WiFi
     ICON WiFiIcon
     PROGRAMS
         WiFi

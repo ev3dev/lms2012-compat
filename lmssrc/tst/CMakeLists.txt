@@ -1,6 +1,6 @@
 
 add_lms_app (tst
-	PATH sys
+	INSTALL_PATH sys/tst
 	PROGRAMS
 		tst
 		Performance
