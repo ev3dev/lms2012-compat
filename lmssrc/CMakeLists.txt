@@ -7,8 +7,8 @@ set (LMSASM_DIR ${CMAKE_SOURCE_DIR}/lmssrc/adk/lmsasm)
 set (RAW2RSF ${CMAKE_SOURCE_DIR}/lmssrc/raw2rsf.sh)
 
 macro (add_lms_app TARGET)
-    set (options ARCHIVE)
-    set (one_value_args INSTALL_PATH ICON)
+    set (options)
+    set (one_value_args ARCHIVE INSTALL_PATH ICON)
     set (multi_value_args PROGRAMS PROGRAMS_TASM GRAPHICS SOUNDS)
     cmake_parse_arguments (LMSSRC
         "${options}"
@@ -91,15 +91,39 @@ macro (add_lms_app TARGET)
         list (APPEND LMSSRC_RSF_LIST ${rsf})
     endforeach ()
 
-    add_custom_target (${TARGET} ALL
-        DEPENDS
-            ${LMSSRC_RBF_LIST}
-            ${LMSSRC_RGF_LIST}
-            ${LMSSRC_RSF_LIST}
-    )
+    if (LMSSRC_ARCHIVE)
+        set (raf ${CMAKE_CURRENT_BINARY_DIR}/${LMSSRC_ARCHIVE}.raf)
+        foreach (file ${LMSSRC_RBF_LIST} ${LMSSRC_RGF_LIST} ${LMSSRC_RSF_LIST})
+            file (RELATIVE_PATH file ${CMAKE_CURRENT_BINARY_DIR} ${file})
+            list (APPEND raf_files ${file})
+        endforeach ()
 
-    install (FILES ${LMSSRC_RBF_LIST} ${LMSSRC_RGF_LIST} ${LMSSRC_RSF_LIST}
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/${LMSSRC_INSTALL_PATH})
+        add_custom_command (OUTPUT ${raf}
+            COMMAND tar
+                --transform=s,^,${LMSSRC_ARCHIVE}/,
+                -czf ${raf}
+                ${raf_files}
+            WORKING_DIRECTORY
+                ${CMAKE_CURRENT_BINARY_DIR}
+            DEPENDS
+                ${LMSSRC_RBF_LIST}
+                ${LMSSRC_RGF_LIST}
+                ${LMSSRC_RSF_LIST}
+        )
+
+        add_custom_target (${TARGET} ALL DEPENDS ${raf})
+        install (FILES ${raf}
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/${LMSSRC_INSTALL_PATH})
+    else ()
+        add_custom_target (${TARGET} ALL
+            DEPENDS
+                ${LMSSRC_RBF_LIST}
+                ${LMSSRC_RGF_LIST}
+                ${LMSSRC_RSF_LIST}
+        )
+        install (FILES ${LMSSRC_RBF_LIST} ${LMSSRC_RGF_LIST} ${LMSSRC_RSF_LIST}
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/${LMSSRC_INSTALL_PATH})
+    endif ()
 
 endmacro ()
 

@@ -31,6 +31,7 @@ cd $(dirname $0)/..
 
 # these files and directories are always copied
 for d in \
+    'apps/Brick Datalog'            \
     'apps/Brick Program'            \
     'apps/IR Control'               \
     'apps/Motor Control'            \
