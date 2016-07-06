@@ -78,7 +78,7 @@
                   |        |
                   |        |----yyyyyyyy------icon file       (icon.rgf)
                   |        |                  byte code file  (yyyyyyyy.rbf)
-                  |        |                  sound files
+                  |        |                  sound files     (.rsf)
                   |        |                  graphics files  (.rgf)
                   |        |                  datalog files   (.rdf)
                   |        |
@@ -95,7 +95,7 @@
                   |                      |
                   |                      |----wwwwwwww------icon file       (icon.rgf)
                   |                      |                  byte code file  (yyyyyyyy.rbf)
-                  |                      |                  sound files
+                  |                      |                  sound files     (.rsf)
                   |                      |                  graphics files  (.rgf)
                   |                      |                  datalog files   (.rdf)
                   |                      |
@@ -130,20 +130,12 @@
                   |
                   |         SYSTEM
                   |
-                  sys------,----ui------------byte code file  (gui.rbf)
+                  sys------,----ui------------byte code file  (ui.rbf)
                            |                  sound files     (.rsf)
                            |                  graphics files  (.rgf)
                            |
-                           |----lib-----------shared librarys (.so)
-                           |
-                           |----mod-----------kernel modules  (.ko)
-                           |
-                           |----settings------config files    (.rcf, .rtf, .dat)
-                           |                  typedata.rcf    (device type data)
-                           |
-                           |
-                           '----lms2012   (executable)
-                                bash files
+                           '----settings------config files    (.rcf, .rtf, .dat)
+                                              typedata.rcf    (device type data)
 
   \endverbatim
  *
