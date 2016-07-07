@@ -348,7 +348,6 @@ typedef   struct
   int       LedRightGreenTriggerFile;
   int       LedLeftGreenTriggerFile;
   int       PowerFile;
-  int       UiFile;
   int       AdcFile;
   int       DispFile;
 
