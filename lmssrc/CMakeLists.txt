@@ -69,7 +69,7 @@ macro (add_lms_app TARGET)
         set (raw ${CMAKE_CURRENT_BINARY_DIR}/${sound}.raw)
         set (rsf ${CMAKE_CURRENT_BINARY_DIR}/${sound}.rsf)
 
-        add_custom_command (OUTPUT ${raw}
+        add_custom_command (OUTPUT ${rsf}
             COMMAND ${SOUND_EXCHANGE}
                 ${wav}
                 --bits 8
@@ -77,15 +77,11 @@ macro (add_lms_app TARGET)
                 --encoding unsigned-integer
                 --rate 8000
                 ${raw}
-            DEPENDS
-                ${wav}
-        )
-        add_custom_command (OUTPUT ${rsf}
             COMMAND ${RAW2RSF}
                 ${raw}
                 ${rsf}
             DEPENDS
-                ${raw}
+                ${wav}
                 ${RAW2RSF}
         )
         list (APPEND LMSSRC_RSF_LIST ${rsf})
