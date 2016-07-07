@@ -1,10 +1,16 @@
 
 set (SOURCE_FILES
+    browser.c
     button.c
     c_ui.c
     d_lcd.c
     d_terminal.c
+    dialog.c
+    draw.c
+    graph.c
+    keyboard.c
     led.c
+    textbox.c
 )
 
 add_library (c_ui OBJECT ${SOURCE_FILES})
@@ -27,9 +33,6 @@ set (C_UI_ICONS
     normal_font
     large_font
     tiny_font
-    keyboardc
-    keyboardn
-    keyboards
     mindstorms
     Ani1x
     Ani2x
@@ -37,9 +40,19 @@ set (C_UI_ICONS
     Ani4x
     Ani5x
     Ani6x
+    POP3
+)
+set (BROWSER_ICONS
+    PCApp
+)
+set (DIALOG_ICONS
     POP2
     POP3
-    PCApp
+)
+set (KEYBOARD_ICONS
+    keyboardc
+    keyboardn
+    keyboards
 )
 
 # TODO: Would be nice to rename icons so we don't have to have this lookup table
@@ -62,20 +75,30 @@ set (PCApp_SOURCE           24x12_PCApp)
 
 find_program (IMAGEMAGICK_CONVERT convert)
 
-foreach (icon ${C_UI_ICONS})
-    set (source ${${icon}_SOURCE})
-    if (NOT source)
-        set (source ${icon})
-    endif ()
-    set (bmp ${CMAKE_CURRENT_SOURCE_DIR}/bmp/${source}.bmp)
-    set (xbm ${CMAKE_CURRENT_BINARY_DIR}/${icon}.xbm)
+macro (bmp_to_xbm GROUP)
+    foreach (icon ${${GROUP}_ICONS})
+        set (source ${${icon}_SOURCE})
+        if (NOT source)
+            set (source ${icon})
+        endif ()
+        set (bmp ${CMAKE_CURRENT_SOURCE_DIR}/bmp/${source}.bmp)
+        set (xbm ${CMAKE_CURRENT_BINARY_DIR}/${icon}.xbm)
 
-    add_custom_command (OUTPUT ${xbm}
-        COMMAND ${IMAGEMAGICK_CONVERT} ${bmp} ${xbm}
-        DEPENDS ${bmp}
-    )
-    list (APPEND C_UI_XBMS ${xbm})
-endforeach ()
+        add_custom_command (OUTPUT ${xbm}
+            COMMAND ${IMAGEMAGICK_CONVERT} ${bmp} ${xbm}
+            DEPENDS ${bmp}
+        )
+        list (APPEND ${GROUP}_XBMS ${xbm})
+    endforeach ()
+endmacro ()
 
-# c_ui.c includes the xbm files inline
+bmp_to_xbm (BROWSER)
+bmp_to_xbm (C_UI)
+bmp_to_xbm (DIALOG)
+bmp_to_xbm (KEYBOARD)
+
+# these .c files include xbm files inline
+set_source_files_properties (browser.c PROPERTIES OBJECT_DEPENDS "${BROWSER_XBMS}")
 set_source_files_properties (c_ui.c PROPERTIES OBJECT_DEPENDS "${C_UI_XBMS}")
+set_source_files_properties (dialog.c PROPERTIES OBJECT_DEPENDS "${DIALOG_XBMS}")
+set_source_files_properties (keyboard.c PROPERTIES OBJECT_DEPENDS "${KEYBOARD_XBMS}")

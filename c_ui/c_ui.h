@@ -460,4 +460,9 @@ typedef   struct
 
 extern UI_GLOBALS UiInstance;
 
+static inline DATA16 cUiAlignX(DATA16 X)
+{
+    return (X + 7) & ~7;
+}
+
 #endif /* C_UI_H_ */
