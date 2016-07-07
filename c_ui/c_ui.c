@@ -798,6 +798,18 @@ RESULT    cUiExit(void)
   if (UiInstance.ButtonFile >= MIN_HANDLE) {
     close(UiInstance.ButtonFile);
   }
+  if (UiInstance.LedRightRedTriggerFile >= MIN_HANDLE) {
+    close(UiInstance.LedRightRedTriggerFile);
+  }
+  if (UiInstance.LedLeftRedTriggerFile >= MIN_HANDLE) {
+    close(UiInstance.LedLeftRedTriggerFile);
+  }
+  if (UiInstance.LedRightGreenTriggerFile >= MIN_HANDLE) {
+    close(UiInstance.LedRightGreenTriggerFile);
+  }
+  if (UiInstance.LedLeftGreenTriggerFile >= MIN_HANDLE) {
+    close(UiInstance.LedLeftGreenTriggerFile);
+  }
 
   if (UiInstance.AdcFile >= MIN_HANDLE)
   {
