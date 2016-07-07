@@ -143,6 +143,7 @@
 
 #include "lms2012.h"
 #include "button.h"
+#include "led.h"
 #include "c_ui.h"
 #include "d_terminal.h"
 #include "c_memory.h"
@@ -549,44 +550,6 @@ void      cUiDownloadSuccessSound(void)
   ExecuteByteCode(DownloadSuccessSound,NULL,Locals);
 }
 
-
-// FIXME: Need to update to use kernel LED drivers or simulated LEDs.
-void      cUiSetLed(DATA8 State)
-{
-  // DATA8   Buffer[2];
-
-  // UiInstance.LedState  =  State;
-
-  // if (UiInstance.UiFile >= MIN_HANDLE)
-  // {
-  //   if (UiInstance.Warnlight)
-  //   {
-  //     if ((State == LED_GREEN_FLASH) || (State == LED_RED_FLASH) || (State == LED_ORANGE_FLASH))
-  //     {
-  //       Buffer[0]  =  LED_ORANGE_FLASH + '0';
-  //     }
-  //     else
-  //     {
-  //       if ((State == LED_GREEN_PULSE) || (State == LED_RED_PULSE) || (State == LED_ORANGE_PULSE))
-  //       {
-  //         Buffer[0]  =  LED_ORANGE_PULSE + '0';
-  //       }
-  //       else
-  //       {
-  //         Buffer[0]  =  LED_ORANGE + '0';
-  //       }
-  //     }
-  //   }
-  //   else
-  //   {
-  //     Buffer[0]  =  UiInstance.LedState + '0';
-  //   }
-  //   Buffer[1]  =  0;
-  //   write(UiInstance.UiFile,Buffer,2);
-  // }
-}
-
-
 void      cUiAlive(void)
 {
   UiInstance.SleepTimer  =  0;
@@ -655,6 +618,10 @@ RESULT    cUiInit(void)
   Result          =  dTerminalInit();
 
   UiInstance.ButtonFile =  cUiButtonOpenFile();
+  UiInstance.LedRightRedTriggerFile   = cUiLedOpenTriggerFile("ev3:right", "red");
+  UiInstance.LedLeftRedTriggerFile    = cUiLedOpenTriggerFile("ev3:left",  "red");
+  UiInstance.LedRightGreenTriggerFile = cUiLedOpenTriggerFile("ev3:right", "green");
+  UiInstance.LedLeftGreenTriggerFile  = cUiLedOpenTriggerFile("ev3:left",  "green");
   UiInstance.PowerFile  =  open(POWER_DEVICE_NAME,O_RDWR);
   UiInstance.AdcFile    =  open(ANALOG_DEVICE_NAME,O_RDWR | O_SYNC);
 
@@ -785,7 +752,7 @@ RESULT    cUiOpen(void)
   LCDCopy(&UiInstance.LcdSafe,&UiInstance.LcdPool[0],sizeof(LCD));
 
   cUiButtonClearAll();
-  cUiSetLed(LED_GREEN_PULSE);
+  cUiLedSetState(LED_GREEN_PULSE);
   UiInstance.RunScreenEnabled   =  3;
   UiInstance.RunLedEnabled      =  1;
   UiInstance.TopLineEnabled     =  0;
@@ -806,7 +773,7 @@ RESULT    cUiClose(void)
   UiInstance.TopLineEnabled     =  1;
   UiInstance.BackButtonBlocked  =  0;
   UiInstance.Browser.NeedUpdate =  1;
-  cUiSetLed(LED_GREEN);
+  cUiLedSetState(LED_GREEN);
 
   cUiButtonClearAll();
 
@@ -1430,7 +1397,7 @@ void      cUiRunScreen(void)
 
         if (UiInstance.RunLedEnabled)
         {
-          cUiSetLed(LED_GREEN_PULSE);
+          cUiLedSetState(LED_GREEN_PULSE);
         }
 
         dLcdDrawPicture((*UiInstance.pLcd).Lcd,FG_COLOR,8,67,Ani1x_width,Ani1x_height,(UBYTE*)Ani1x_bits);
@@ -2037,7 +2004,7 @@ void      cUiUpdate(UWORD Time)
       { // If not on - turn orange light on
 
         UiInstance.Warnlight  =  1;
-        cUiSetLed(UiInstance.LedState);
+        cUiLedSetState(UiInstance.LedState);
       }
     }
     else
@@ -2047,7 +2014,7 @@ void      cUiUpdate(UWORD Time)
       { // If orange light on - turn it off
 
         UiInstance.Warnlight  =  0;
-        cUiSetLed(UiInstance.LedState);
+        cUiLedSetState(UiInstance.LedState);
       }
     }
 
@@ -6839,7 +6806,7 @@ void      cUiWrite(void)
       {
         Data8   =  LEDPATTERNS - 1;
       }
-      cUiSetLed(Data8);
+      cUiLedSetState(Data8);
       UiInstance.RunLedEnabled  =  0;
 
       DspStat  =  NOBREAK;

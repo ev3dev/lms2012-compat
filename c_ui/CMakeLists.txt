@@ -4,6 +4,7 @@ set (SOURCE_FILES
     c_ui.c
     d_lcd.c
     d_terminal.c
+    led.c
 )
 
 add_library (c_ui OBJECT ${SOURCE_FILES})

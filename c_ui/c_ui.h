@@ -35,7 +35,6 @@
 #define   MAX_NOTIFY_LINE_CHARS         32
 
 void      cUiUpdateLcd(void);
-void      cUiSetLed(DATA8 State);
 void      cUiRunScreen(void);
 
 RESULT    cUiInit(void);
@@ -344,6 +343,10 @@ typedef   struct
   TXTBOX    Txtbox;
 
   int       ButtonFile;
+  int       LedRightRedTriggerFile;
+  int       LedLeftRedTriggerFile;
+  int       LedRightGreenTriggerFile;
+  int       LedLeftGreenTriggerFile;
   int       PowerFile;
   int       UiFile;
   int       AdcFile;
@@ -389,7 +392,7 @@ typedef   struct
   DATA8     RunScreenCounter;
   DATA8     Escape;
 
-  DATA8     LedState;
+  LEDPATTERN LedState;
 
   ButtonStateFlags        ButtonState[BUTTONS];
   ButtonActivationFlags   Activated;
