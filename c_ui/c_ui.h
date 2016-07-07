@@ -22,7 +22,7 @@
 #ifndef C_UI_H_
 #define C_UI_H_
 
-#include  "lms2012.h"
+#include "lms2012.h"
 
 #define   IMAGEBUFFER_SIZE              1000
 #define   KEYBUF_SIZE                   100
@@ -34,7 +34,6 @@
 #define   MAX_NOTIFY_LINES              8
 #define   MAX_NOTIFY_LINE_CHARS         32
 
-DATA8     cUiGetPress(DATA8 Button);
 void      cUiUpdateLcd(void);
 void      cUiSetLed(DATA8 State);
 void      cUiRunScreen(void);
@@ -302,25 +301,24 @@ TXTBOX;
 #define   OSBUILD_SIZE      11
 #define   IPADDR_SIZE       16
 
+typedef enum {
+    BUTTON_STATE_ACTIVE       = 0x01,
+    BUTTON_STATE_PRESSED      = 0x02,  //!< button is pressed at the moment
+    BUTTON_STATE_ACTIVATED    = 0x04,  //!< button has been activated since last read
+    BUTTON_STATE_LONGPRESS    = 0x08,  //!< button long press detected
+    BUTTON_STATE_BUMPED       = 0x10,  //!< button has been pressed and released
+    BUTTON_STATE_LONG_LATCH   = 0x20,
+} ButtonStateFlags;
 
-#define   BUTTON_ACTIVE                 0x01
-#define   BUTTON_PRESSED                0x02  //!< button is pressed at the moment
-#define   BUTTON_ACTIVATED              0x04  //!< button has been activated since last read
-#define   BUTTON_LONGPRESS              0x08  //!< button long press detected
-#define   BUTTON_BUMBED                 0x10  //!< button has been pressed and released
-#define   BUTTON_LONG_LATCH             0x20
+#define BUTTON_STATE_MASK (BUTTON_STATE_ACTIVATED | BUTTON_STATE_LONGPRESS | BUTTON_STATE_BUMPED | BUTTON_STATE_LONG_LATCH)
 
-#define   BUTTON_CLR                    (BUTTON_ACTIVATED | BUTTON_LONGPRESS | BUTTON_BUMBED | BUTTON_LONG_LATCH)
-#define   BUTTON_FLUSH                  (BUTTON_ACTIVATED | BUTTON_LONGPRESS | BUTTON_BUMBED | BUTTON_LONG_LATCH)
+typedef enum {
+    BUTTON_ACTIVATION_ALIVE    = 0x01,
+    BUTTON_ACTIVATION_CLICK    = 0x02,
+    BUTTON_ACTIVATION_BUFPRINT = 0x04,
+} ButtonActivationFlags;
 
-
-
-#define   BUTTON_ALIVE                  0x01
-#define   BUTTON_CLICK                  0x02
-#define   BUTTON_BUFPRINT               0x04
-
-#define   BUTTON_SET                    (BUTTON_ALIVE | BUTTON_CLICK)
-
+#define BUTTON_ACTIVATION_SET (BUTTON_ACTIVATION_ALIVE | BUTTON_ACTIVATION_CLICK)
 
 typedef   struct
 {
@@ -393,11 +391,11 @@ typedef   struct
 
   DATA8     LedState;
 
-  DATA8     ButtonState[BUTTONS];
+  ButtonStateFlags        ButtonState[BUTTONS];
+  ButtonActivationFlags   Activated;
   DATA16    ButtonTimer[BUTTONS];
   DATA16    ButtonDebounceTimer[BUTTONS];
   DATA16    ButtonRepeatTimer[BUTTONS];
-  DATA8     Activated;
 
   DATA8     ScreenBusy;
   DATA8     ScreenBlocked;

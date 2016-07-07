@@ -529,8 +529,8 @@ DSPSTAT   ExecuteByteCode(IP pByteCode,GP pGlobals,LP pLocals)
   VMInstance.Priority             =  1;
 
   // Execute special byte code stream
-  UiInstance.ButtonState[IDX_BACK_BUTTON] &= ~BUTTON_LONGPRESS;
-  while ((*VMInstance.ObjectIp != opOBJECT_END) && (!(UiInstance.ButtonState[IDX_BACK_BUTTON] & BUTTON_LONGPRESS)))
+  UiInstance.ButtonState[IDX_BACK_BUTTON] &= ~BUTTON_STATE_LONGPRESS;
+  while ((*VMInstance.ObjectIp != opOBJECT_END) && (!(UiInstance.ButtonState[IDX_BACK_BUTTON] & BUTTON_STATE_LONGPRESS)))
   {
     VMInstance.DispatchStatus       =  NOBREAK;
     VMInstance.Priority             =  C_PRIORITY;
@@ -567,7 +567,7 @@ DSPSTAT   ExecuteByteCode(IP pByteCode,GP pGlobals,LP pLocals)
   }
   Result                          =  VMInstance.DispatchStatus;
 
-  UiInstance.ButtonState[IDX_BACK_BUTTON] &= ~BUTTON_LONGPRESS;
+  UiInstance.ButtonState[IDX_BACK_BUTTON] &= ~BUTTON_STATE_LONGPRESS;
 
   // Restore running object parameters
   VMInstance.Priority             =  VMInstance.PrioritySave;

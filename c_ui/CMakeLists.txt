@@ -1,5 +1,6 @@
 
 set (SOURCE_FILES
+    button.c
     c_ui.c
     d_lcd.c
     d_terminal.c

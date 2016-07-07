@@ -142,6 +142,7 @@
  */
 
 #include "lms2012.h"
+#include "button.h"
 #include "c_ui.h"
 #include "d_terminal.h"
 #include "c_memory.h"
@@ -172,8 +173,6 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <time.h>
-
-#include <linux/input.h>
 
 #ifdef    DEBUG_C_UI
 #define   DEBUG
@@ -551,27 +550,6 @@ void      cUiDownloadSuccessSound(void)
 }
 
 
-void      cUiButtonClr(void)
-{
-  DATA8   Button;
-
-  for (Button = 0;Button < BUTTONS;Button++)
-  {
-    UiInstance.ButtonState[Button] &= ~BUTTON_CLR;
-  }
-}
-
-
-void      cUiButtonFlush(void)
-{
-  DATA8   Button;
-
-  for (Button = 0;Button < BUTTONS;Button++)
-  {
-    UiInstance.ButtonState[Button] &= ~BUTTON_FLUSH;
-  }
-}
-
 // FIXME: Need to update to use kernel LED drivers or simulated LEDs.
 void      cUiSetLed(DATA8 State)
 {
@@ -612,59 +590,6 @@ void      cUiSetLed(DATA8 State)
 void      cUiAlive(void)
 {
   UiInstance.SleepTimer  =  0;
-}
-
-static int cUiOpenButtonFile(void)
-{
-  struct  udev_enumerate *enumerate;
-  struct  udev_list_entry *list;
-  int file = -1;
-
-  enumerate = udev_enumerate_new(VMInstance.udev);
-  udev_enumerate_add_match_subsystem(enumerate, "input");
-  udev_enumerate_add_match_sysname(enumerate, "input*");
-  // We are looking for a device that has only UP, DOWN, LEFT, RIGHT, ENTER,
-  // and BACKSPACE
-  udev_enumerate_add_match_property(enumerate, "KEY", "1680 0 0 10004000");
-  udev_enumerate_scan_devices(enumerate);
-  list = udev_enumerate_get_list_entry(enumerate);
-  if (list == NULL) {
-    fprintf(stderr, "Failed to get button input device\n");
-  } else {
-    // just taking the first match in the list
-    const char *path = udev_list_entry_get_name(list);
-    struct udev_device *input_device;
-
-    input_device = udev_device_new_from_syspath(VMInstance.udev, path);
-    udev_enumerate_unref(enumerate);
-    enumerate = udev_enumerate_new(VMInstance.udev);
-    udev_enumerate_add_match_subsystem(enumerate, "input");
-    udev_enumerate_add_match_sysname(enumerate, "event*");
-    udev_enumerate_add_match_parent(enumerate, input_device);
-    udev_enumerate_scan_devices(enumerate);
-    list = udev_enumerate_get_list_entry(enumerate);
-    if (list == NULL) {
-      fprintf(stderr, "Failed to get button event device\n");
-    } else {
-      // again, there should only be one match
-      struct udev_device *event_device;
-
-      path = udev_list_entry_get_name(list);
-      event_device = udev_device_new_from_syspath(VMInstance.udev, path);
-
-      path = udev_device_get_devnode(event_device);
-      file = open(path, O_RDONLY);
-      if (file == -1) {
-        fprintf(stderr, "Could not open %s: %s\n", path, strerror(errno));
-      }
-
-      udev_device_unref(event_device);
-    }
-    udev_device_unref(input_device);
-  }
-  udev_enumerate_unref(enumerate);
-
-  return file;
 }
 
 RESULT    cUiInit(void)
@@ -729,7 +654,7 @@ RESULT    cUiInit(void)
 
   Result          =  dTerminalInit();
 
-  UiInstance.ButtonFile =  cUiOpenButtonFile();
+  UiInstance.ButtonFile =  cUiButtonOpenFile();
   UiInstance.PowerFile  =  open(POWER_DEVICE_NAME,O_RDWR);
   UiInstance.AdcFile    =  open(ANALOG_DEVICE_NAME,O_RDWR | O_SYNC);
 
@@ -819,7 +744,7 @@ RESULT    cUiInit(void)
   }
   close(Sid);
 
-  cUiButtonClr();
+  cUiButtonClearAll();
 
   UiInstance.BattIndicatorHigh      =  BATT_INDICATOR_HIGH;
   UiInstance.BattIndicatorLow       =  BATT_INDICATOR_LOW;
@@ -859,7 +784,7 @@ RESULT    cUiOpen(void)
   // Save screen before run
   LCDCopy(&UiInstance.LcdSafe,&UiInstance.LcdPool[0],sizeof(LCD));
 
-  cUiButtonClr();
+  cUiButtonClearAll();
   cUiSetLed(LED_GREEN_PULSE);
   UiInstance.RunScreenEnabled   =  3;
   UiInstance.RunLedEnabled      =  1;
@@ -883,7 +808,7 @@ RESULT    cUiClose(void)
   UiInstance.Browser.NeedUpdate =  1;
   cUiSetLed(LED_GREEN);
 
-  cUiButtonClr();
+  cUiButtonClearAll();
 
   Result  =  OK;
 
@@ -920,127 +845,6 @@ RESULT    cUiExit(void)
 
   return (Result);
 }
-
-// map EV3 buttons to Linux input keys
-static const int Button2KeyMap[BUTTONS] = {
-  [0] = KEY_UP,         /* UP_BUTTON */
-  [1] = KEY_ENTER,      /* ENTER_BUTTON */
-  [2] = KEY_DOWN,       /* DOWN_BUTTON */
-  [3] = KEY_RIGHT,      /* RIGHT_BUTTON */
-  [4] = KEY_LEFT,       /* LEFT_BUTTON */
-  [5] = KEY_BACKSPACE,  /* BACK_BUTTON */
-};
-
-void      cUiUpdateButtons(DATA16 Time)
-{
-  DATA8   Button;
-
-  // TODO: Ideally, we would be using evdev or ev3devKit to get input events
-  // rather than manually polling the key state like we are doing here with
-  // the EVIOCGKEY ioctl
-
-  // if we have real hardware buttons, check them
-  if (UiInstance.ButtonFile >= MIN_HANDLE) {
-    unsigned char state[(KEY_MAX + 7) / 8] = { 0 };
-
-    ioctl(UiInstance.ButtonFile, EVIOCGKEY(sizeof(state)), state);
-    for (Button = 0; Button < BUTTONS; Button++) {
-      int key = Button2KeyMap[Button];
-
-      if (state[key / 8] == 1 << (key % 8)) {
-        // button is pressed
-        if (UiInstance.ButtonDebounceTimer[Button] == 0) {
-          UiInstance.ButtonState[Button] = BUTTON_ACTIVE;
-        }
-        UiInstance.ButtonDebounceTimer[Button] = BUTTON_DEBOUNCE_TIME;
-      } else {
-        // Button is not pressed
-        if (UiInstance.ButtonDebounceTimer[Button] > 0) {
-          UiInstance.ButtonDebounceTimer[Button] -= Time;
-
-          if (UiInstance.ButtonDebounceTimer[Button] <= 0) {
-            UiInstance.ButtonState[Button] &= ~BUTTON_ACTIVE;
-            UiInstance.ButtonDebounceTimer[Button] = 0;
-          }
-        }
-      }
-    }
-  }
-
-  for (Button = 0;Button < BUTTONS;Button++) {
-    // Check virtual buttons (hardware, direct command, PC)
-
-    if (UiInstance.ButtonState[Button] & BUTTON_ACTIVE)
-    {
-      if (!(UiInstance.ButtonState[Button] & BUTTON_PRESSED))
-      { // Button activated
-
-        UiInstance.Activated                      =  BUTTON_SET;
-        UiInstance.ButtonState[Button]           |=  BUTTON_PRESSED;
-        UiInstance.ButtonState[Button]           |=  BUTTON_ACTIVATED;
-        UiInstance.ButtonTimer[Button]            =  0;
-        UiInstance.ButtonRepeatTimer[Button]      =  BUTTON_START_REPEAT_TIME;
-      }
-
-      // Control auto repeat
-
-      if (UiInstance.ButtonRepeatTimer[Button] > Time)
-      {
-        UiInstance.ButtonRepeatTimer[Button] -=  Time;
-      }
-      else
-      {
-        if ((Button != 1) && (Button != 5))
-        { // No repeat on ENTER and BACK
-
-          UiInstance.Activated                     |=  BUTTON_SET;
-          UiInstance.ButtonState[Button]           |=  BUTTON_ACTIVATED;
-          UiInstance.ButtonRepeatTimer[Button]      =  BUTTON_REPEAT_TIME;
-        }
-      }
-
-      // Control long press
-
-      UiInstance.ButtonTimer[Button]               +=  Time;
-
-      if (UiInstance.ButtonTimer[Button] >= LONG_PRESS_TIME)
-      {
-        if (!(UiInstance.ButtonState[Button] & BUTTON_LONG_LATCH))
-        { // Only once
-
-          UiInstance.ButtonState[Button]           |=  BUTTON_LONG_LATCH;
-
-#ifdef BUFPRINTSIZE
-          if (Button == 2)
-          {
-            UiInstance.Activated                   |=  BUTTON_BUFPRINT;
-          }
-#endif
-        }
-        UiInstance.ButtonState[Button]           |=  BUTTON_LONGPRESS;
-      }
-
-    }
-    else
-    {
-      if ((UiInstance.ButtonState[Button] & BUTTON_PRESSED))
-      { // Button released
-
-        UiInstance.ButtonState[Button]           &= ~BUTTON_PRESSED;
-        UiInstance.ButtonState[Button]           &= ~BUTTON_LONG_LATCH;
-        UiInstance.ButtonState[Button]           |=  BUTTON_BUMBED;
-      }
-    }
-
-#ifdef ALLOW_DEBUG_PULSE
-    if ((UiInstance.ButtonState[Button] & (BUTTON_ACTIVATED | BUTTON_LONGPRESS)))
-    {
-      VMInstance.Pulse |=  vmPULSE_KEY;
-    }
-#endif
-  }
-}
-
 
 RESULT    cUiUpdateInput(void)
 {
@@ -1167,412 +971,6 @@ void      cUiWriteString(DATA8 *pString)
   }
 }
 
-
-#define   REAL_ANY_BUTTON   6
-#define   REAL_NO_BUTTON    7
-
-
-DATA8     MappedToReal[BUTTONTYPES] =
-{
-// Mapped               Real
-  [UP_BUTTON]         = 0,
-  [ENTER_BUTTON]      = 1,
-  [DOWN_BUTTON]       = 2,
-  [RIGHT_BUTTON]      = 3,
-  [LEFT_BUTTON]       = 4,
-  [BACK_BUTTON]       = 5,
-  [ANY_BUTTON]        = REAL_ANY_BUTTON,
-  [NO_BUTTON]         = REAL_NO_BUTTON
-};
-
-
-DATA8     cUiButtonRemap(DATA8 Mapped)
-{
-  DATA8   Real;
-
-  if ((Mapped >= 0) && (Mapped < BUTTONTYPES))
-  {
-    Real  =  MappedToReal[Mapped];
-  }
-  else
-  {
-    Real  =  REAL_ANY_BUTTON;
-  }
-
-  return (Real);
-}
-
-
-void      cUiSetPress(DATA8 Button,DATA8 Press)
-{
-  Button  =  cUiButtonRemap(Button);
-
-  if (Button < BUTTONS)
-  {
-    if (Press)
-    {
-      UiInstance.ButtonState[Button] |=  BUTTON_ACTIVE;
-    }
-    else
-    {
-      UiInstance.ButtonState[Button] &= ~BUTTON_ACTIVE;
-    }
-  }
-  else
-  {
-    if (Button == REAL_ANY_BUTTON)
-    {
-      if (Press)
-      {
-        for (Button = 0;Button < BUTTONS;Button++)
-        {
-          UiInstance.ButtonState[Button] |=  BUTTON_ACTIVE;
-        }
-      }
-      else
-      {
-        for (Button = 0;Button < BUTTONS;Button++)
-        {
-          UiInstance.ButtonState[Button] &= ~BUTTON_ACTIVE;
-        }
-      }
-    }
-  }
-}
-
-
-DATA8     cUiGetPress(DATA8 Button)
-{
-  DATA8   Result = 0;
-
-  Button  =  cUiButtonRemap(Button);
-
-  if (Button < BUTTONS)
-  {
-    if (UiInstance.ButtonState[Button] & BUTTON_PRESSED)
-    {
-      Result                           =  1;
-    }
-  }
-  else
-  {
-    if (Button == REAL_ANY_BUTTON)
-    {
-      for (Button = 0;Button < BUTTONS;Button++)
-      {
-        if (UiInstance.ButtonState[Button] & BUTTON_PRESSED)
-        {
-          Result                           =  1;
-        }
-      }
-    }
-  }
-
-  return (Result);
-}
-
-
-DATA8     cUiTestShortPress(DATA8 Button)
-{
-  DATA8   Result = 0;
-
-  Button  =  cUiButtonRemap(Button);
-
-  if (Button < BUTTONS)
-  {
-    if (UiInstance.ButtonState[Button] & BUTTON_ACTIVATED)
-    {
-      Result                           =  1;
-    }
-  }
-  else
-  {
-    if (Button == REAL_ANY_BUTTON)
-    {
-      for (Button = 0;Button < BUTTONS;Button++)
-      {
-        if (UiInstance.ButtonState[Button] & BUTTON_ACTIVATED)
-        {
-          Result                           =  1;
-        }
-      }
-    }
-    else
-    {
-      if (Button == REAL_NO_BUTTON)
-      {
-        Result  =  1;
-        for (Button = 0;Button < BUTTONS;Button++)
-        {
-          if (UiInstance.ButtonState[Button] & BUTTON_ACTIVATED)
-          {
-            Result                           =  0;
-          }
-        }
-      }
-    }
-  }
-
-  return (Result);
-}
-
-
-DATA8     cUiGetShortPress(DATA8 Button)
-{
-  DATA8   Result = 0;
-
-  Button  =  cUiButtonRemap(Button);
-
-  if (Button < BUTTONS)
-  {
-    if (UiInstance.ButtonState[Button] & BUTTON_ACTIVATED)
-    {
-      UiInstance.ButtonState[Button] &= ~BUTTON_ACTIVATED;
-      Result                           =  1;
-    }
-  }
-  else
-  {
-    if (Button == REAL_ANY_BUTTON)
-    {
-      for (Button = 0;Button < BUTTONS;Button++)
-      {
-        if (UiInstance.ButtonState[Button] & BUTTON_ACTIVATED)
-        {
-          UiInstance.ButtonState[Button] &= ~BUTTON_ACTIVATED;
-          Result                           =  1;
-        }
-      }
-    }
-    else
-    {
-      if (Button == REAL_NO_BUTTON)
-      {
-        Result  =  1;
-        for (Button = 0;Button < BUTTONS;Button++)
-        {
-          if (UiInstance.ButtonState[Button] & BUTTON_ACTIVATED)
-          {
-            UiInstance.ButtonState[Button] &= ~BUTTON_ACTIVATED;
-            Result                           =  0;
-          }
-        }
-      }
-    }
-  }
-  if (Result)
-  {
-    UiInstance.Click  =  1;
-  }
-
-  return (Result);
-}
-
-
-DATA8     cUiGetBumbed(DATA8 Button)
-{
-  DATA8   Result = 0;
-
-  Button  =  cUiButtonRemap(Button);
-
-  if (Button < BUTTONS)
-  {
-    if (UiInstance.ButtonState[Button] & BUTTON_BUMBED)
-    {
-      UiInstance.ButtonState[Button] &= ~BUTTON_BUMBED;
-      Result                           =  1;
-    }
-  }
-  else
-  {
-    if (Button == REAL_ANY_BUTTON)
-    {
-      for (Button = 0;Button < BUTTONS;Button++)
-      {
-        if (UiInstance.ButtonState[Button] & BUTTON_BUMBED)
-        {
-          UiInstance.ButtonState[Button] &= ~BUTTON_BUMBED;
-          Result                           =  1;
-        }
-      }
-    }
-    else
-    {
-      if (Button == REAL_NO_BUTTON)
-      {
-        Result  =  1;
-        for (Button = 0;Button < BUTTONS;Button++)
-        {
-          if (UiInstance.ButtonState[Button] & BUTTON_BUMBED)
-          {
-            UiInstance.ButtonState[Button] &= ~BUTTON_BUMBED;
-            Result                           =  0;
-          }
-        }
-      }
-    }
-  }
-
-  return (Result);
-}
-
-
-DATA8     cUiTestLongPress(DATA8 Button)
-{
-  DATA8   Result = 0;
-
-  Button  =  cUiButtonRemap(Button);
-
-  if (Button < BUTTONS)
-  {
-    if (UiInstance.ButtonState[Button] & BUTTON_LONGPRESS)
-    {
-      Result                           =  1;
-    }
-  }
-  else
-  {
-    if (Button == REAL_ANY_BUTTON)
-    {
-      for (Button = 0;Button < BUTTONS;Button++)
-      {
-        if (UiInstance.ButtonState[Button] & BUTTON_LONGPRESS)
-        {
-          Result                           =  1;
-        }
-      }
-    }
-    else
-    {
-      if (Button == REAL_NO_BUTTON)
-      {
-        Result  =  1;
-        for (Button = 0;Button < BUTTONS;Button++)
-        {
-          if (UiInstance.ButtonState[Button] & BUTTON_LONGPRESS)
-          {
-            Result                           =  0;
-          }
-        }
-      }
-    }
-  }
-
-  return (Result);
-}
-
-
-DATA8     cUiGetLongPress(DATA8 Button)
-{
-  DATA8   Result = 0;
-
-  Button  =  cUiButtonRemap(Button);
-
-  if (Button < BUTTONS)
-  {
-    if (UiInstance.ButtonState[Button] & BUTTON_LONGPRESS)
-    {
-      UiInstance.ButtonState[Button] &= ~BUTTON_LONGPRESS;
-      Result                           =  1;
-    }
-  }
-  else
-  {
-    if (Button == REAL_ANY_BUTTON)
-    {
-      for (Button = 0;Button < BUTTONS;Button++)
-      {
-        if (UiInstance.ButtonState[Button] & BUTTON_LONGPRESS)
-        {
-          UiInstance.ButtonState[Button] &= ~BUTTON_LONGPRESS;
-          Result                           =  1;
-        }
-      }
-    }
-    else
-    {
-      if (Button == REAL_NO_BUTTON)
-      {
-        Result  =  1;
-        for (Button = 0;Button < BUTTONS;Button++)
-        {
-          if (UiInstance.ButtonState[Button] & BUTTON_LONGPRESS)
-          {
-            UiInstance.ButtonState[Button] &= ~BUTTON_LONGPRESS;
-            Result                           =  0;
-          }
-        }
-      }
-    }
-  }
-  if (Result)
-  {
-    UiInstance.Click  =  1;
-  }
-
-  return (Result);
-}
-
-
-DATA16    cUiTestHorz(void)
-{
-  DATA16  Result = 0;
-
-  if (cUiTestShortPress(LEFT_BUTTON))
-  {
-    Result  = -1;
-  }
-  if (cUiTestShortPress(RIGHT_BUTTON))
-  {
-    Result  =  1;
-  }
-
-  return (Result);
-}
-
-
-DATA16    cUiGetHorz(void)
-{
-  DATA16  Result = 0;
-
-  if (cUiGetShortPress(LEFT_BUTTON))
-  {
-    Result            = -1;
-  }
-  if (cUiGetShortPress(RIGHT_BUTTON))
-  {
-    Result            =  1;
-  }
-
-  return (Result);
-}
-
-
-DATA16    cUiGetVert(void)
-{
-  DATA16  Result = 0;
-
-  if (cUiGetShortPress(UP_BUTTON))
-  {
-    Result            = -1;
-  }
-  if (cUiGetShortPress(DOWN_BUTTON))
-  {
-    Result            =  1;
-  }
-
-  return (Result);
-}
-
-
-DATA8     cUiWaitForPress(void)
-{
-  DATA8   Result = 0;
-
-  Result  =  cUiTestShortPress(ANY_BUTTON);
-
-  return (Result);
-}
 
 
 DATA16    cUiAlignX(DATA16 X)
@@ -2363,14 +1761,14 @@ void      cUiCheckPower(UWORD Time)
       dLcdDrawLine((*UiInstance.pLcd).Lcd,FG_COLOR,X + 5,Y + 39,X + 138,Y + 39);
       dLcdDrawIcon((*UiInstance.pLcd).Lcd,FG_COLOR,X + 56,Y + 40,LARGE_ICON,YES_SEL);
       dLcdUpdate(UiInstance.pLcd);
-      cUiButtonFlush();
+      cUiButtonClearAll();
       UiInstance.PowerState++;
     }
     break;
 
     case 4 :
     {
-      if (cUiGetShortPress(ENTER_BUTTON))
+      if (cUiButtonGetShortPress(ENTER_BUTTON))
       {
         if (UiInstance.ScreenBlocked)
         {
@@ -2491,9 +1889,9 @@ void      cUiCheckAlive(UWORD Time)
 
   UiInstance.SleepTimer +=  Time;
 
-  if (UiInstance.Activated & BUTTON_ALIVE)
+  if (UiInstance.Activated & BUTTON_ACTIVATION_ALIVE)
   {
-    UiInstance.Activated &= ~BUTTON_ALIVE;
+    UiInstance.Activated &= ~BUTTON_ACTIVATION_ALIVE;
     cUiAlive();
   }
   Timeout  =  (ULONG)GetSleepMinutes();
@@ -2729,7 +2127,7 @@ void      cUiUpdate(UWORD Time)
           dLcdDrawLine((*UiInstance.pLcd).Lcd,FG_COLOR,vmPOP3_ABS_WARN_LINE_X,vmPOP3_ABS_WARN_LINE_Y,vmPOP3_ABS_WARN_LINE_ENDX,vmPOP3_ABS_WARN_LINE_Y);
           dLcdDrawIcon((*UiInstance.pLcd).Lcd,FG_COLOR,vmPOP3_ABS_WARN_YES_X,vmPOP3_ABS_WARN_YES_Y,LARGE_ICON,YES_SEL);
           dLcdUpdate(UiInstance.pLcd);
-          cUiButtonFlush();
+          cUiButtonClearAll();
           UiInstance.ScreenBlocked  =  1;
         }
       }
@@ -2741,7 +2139,7 @@ void      cUiUpdate(UWORD Time)
 
     if (Tmp)
     {
-      if (cUiGetShortPress(ENTER_BUTTON))
+      if (cUiButtonGetShortPress(ENTER_BUTTON))
       {
         UiInstance.ScreenBlocked  =  0;
         LCDCopy(&UiInstance.LcdSave,&UiInstance.LcdSafe,sizeof(UiInstance.LcdSafe));
@@ -3022,9 +2420,9 @@ DATA8     cUiNotification(DATA8 Color,DATA16 X,DATA16 Y,DATA8 Icon1,DATA8 Icon2,
     UiInstance.ScreenBusy       =  0;
   }
 
-  if (cUiGetShortPress(ENTER_BUTTON))
+  if (cUiButtonGetShortPress(ENTER_BUTTON))
   {
-    cUiButtonFlush();
+    cUiButtonClearAll();
     Result  =  OK;
     *pState =  0;
   }
@@ -3041,7 +2439,7 @@ DATA8     cUiQuestion(DATA8 Color, DATA16 X,DATA16 Y,DATA8 Icon1,DATA8 Icon2,DAT
 
   pQ      =  &UiInstance.Question;
 
-  Inc  =  cUiGetHorz();
+  Inc  =  cUiButtonGetHorz();
   if (Inc != 0)
   {
     (*pQ).NeedUpdate    =  1;
@@ -3149,15 +2547,15 @@ DATA8     cUiQuestion(DATA8 Color, DATA16 X,DATA16 Y,DATA8 Icon1,DATA8 Icon2,DAT
     cUiUpdateLcd();
     UiInstance.ScreenBusy       =  0;
   }
-  if (cUiGetShortPress(ENTER_BUTTON))
+  if (cUiButtonGetShortPress(ENTER_BUTTON))
   {
-    cUiButtonFlush();
+    cUiButtonClearAll();
     Result    =  OK;
     *pState   =  0;
   }
-  if (cUiGetShortPress(BACK_BUTTON))
+  if (cUiButtonGetShortPress(BACK_BUTTON))
   {
-    cUiButtonFlush();
+    cUiButtonClearAll();
     Result    =  OK;
     *pState   =  0;
     *pAnswer  =  -1;
@@ -3231,7 +2629,7 @@ RESULT    cUiIconQuestion(DATA8 Color,DATA16 X,DATA16 Y,DATA8 *pState,DATA32 *pI
   if ((*pQ).NoOfIcons)
   {
     // Check for move pointer
-    Tmp  =  cUiGetHorz();
+    Tmp  =  cUiButtonGetHorz();
     if (Tmp)
     {
       (*pQ).PointerX +=  Tmp;
@@ -3284,7 +2682,7 @@ RESULT    cUiIconQuestion(DATA8 Color,DATA16 X,DATA16 Y,DATA8 *pState,DATA32 *pI
     cUiUpdateLcd();
     UiInstance.ScreenBusy       =  0;
   }
-  if (cUiGetShortPress(ENTER_BUTTON))
+  if (cUiButtonGetShortPress(ENTER_BUTTON))
   {
     if ((*pQ).NoOfIcons)
     {
@@ -3308,17 +2706,17 @@ RESULT    cUiIconQuestion(DATA8 Color,DATA16 X,DATA16 Y,DATA8 *pState,DATA32 *pI
     {
       *pIcons  =  0;
     }
-    cUiButtonFlush();
+    cUiButtonClearAll();
     Result  =  OK;
     *pState =  0;
 #ifdef DEBUG
     printf("Selecting icon %d -> 0x%08X\n",(*pQ).PointerX,*pIcons);
 #endif
   }
-  if (cUiGetShortPress(BACK_BUTTON))
+  if (cUiButtonGetShortPress(BACK_BUTTON))
   {
     *pIcons  =  0;
-    cUiButtonFlush();
+    cUiButtonClearAll();
     Result  =  OK;
     *pState =  0;
   }
@@ -3421,7 +2819,7 @@ DATA8     cUiKeyboard(DATA8 Color,DATA16 X,DATA16 Y,DATA8 Icon,DATA8 Lng,DATA8 *
   Width             =  strlen((char*)KeyboardLayout[(*pK).Layout][(*pK).PointerY]) - 1;
   Height            =  MAX_KEYB_HEIGHT - 1;
 
-  Inc               =  cUiGetHorz();
+  Inc               =  cUiButtonGetHorz();
   (*pK).PointerX   +=  Inc;
   if ((*pK).PointerX < 0)
   {
@@ -3431,7 +2829,7 @@ DATA8     cUiKeyboard(DATA8 Color,DATA16 X,DATA16 Y,DATA8 Icon,DATA8 Lng,DATA8 *
   {
     (*pK).PointerX  =  Width;
   }
-  Inc               =  cUiGetVert();
+  Inc               =  cUiButtonGetVert();
   (*pK).PointerY   +=  Inc;
   if ((*pK).PointerY < 0)
   {
@@ -3445,12 +2843,12 @@ DATA8     cUiKeyboard(DATA8 Color,DATA16 X,DATA16 Y,DATA8 Icon,DATA8 Lng,DATA8 *
 
   TmpChar  =  KeyboardLayout[(*pK).Layout][(*pK).PointerY][(*pK).PointerX];
 
-  if (cUiGetShortPress(BACK_BUTTON))
+  if (cUiButtonGetShortPress(BACK_BUTTON))
   {
     SelectedChar  =  0x0D;
     pAnswer[0]    =  0;
   }
-  if (cUiGetShortPress(ENTER_BUTTON))
+  if (cUiButtonGetShortPress(ENTER_BUTTON))
   {
     SelectedChar  =  TmpChar;
 
@@ -4070,7 +3468,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
 
     if (((*pB).OpenFolder != 0) && ((*pB).OpenFolder == (*pB).ItemPointer))
     {
-      if (cUiGetShortPress(BACK_BUTTON))
+      if (cUiButtonGetShortPress(BACK_BUTTON))
       {
         // Close folder
   #ifdef DEBUG
@@ -4092,7 +3490,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
     {
       if ((*pB).OpenFolder == 0)
       {
-        if (cUiGetShortPress(BACK_BUTTON))
+        if (cUiButtonGetShortPress(BACK_BUTTON))
         {
           // Collapse sdcard
     #ifdef DEBUG
@@ -4120,7 +3518,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
     {
       if ((*pB).OpenFolder == 0)
       {
-        if (cUiGetShortPress(BACK_BUTTON))
+        if (cUiButtonGetShortPress(BACK_BUTTON))
         {
           // Collapse usbstick
     #ifdef DEBUG
@@ -4149,7 +3547,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
       (*pB).NeedUpdate  =  1;
     }
 
-    if (cUiGetShortPress(ENTER_BUTTON))
+    if (cUiButtonGetShortPress(ENTER_BUTTON))
     {
       (*pB).OldFiles      =  0;
       if ((*pB).OpenFolder)
@@ -4326,7 +3724,7 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
       }
     }
 
-    Tmp  =  cUiGetVert();
+    Tmp  =  cUiButtonGetVert();
     if (Tmp != 0)
     { // up/down arrow pressed
 
@@ -4665,14 +4063,14 @@ RESULT    cUiBrowser(DATA8 Type,DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 Lng,
 
     if (Result != OK)
     {
-      Tmp  =  cUiTestHorz();
+      Tmp  =  cUiButtonTestHorz();
       if (Ignore == Tmp)
       {
-        Tmp  =  cUiGetHorz();
+        Tmp  =  cUiButtonGetHorz();
         Tmp  =  0;
       }
 
-      if ((Tmp != 0) || (cUiTestShortPress(BACK_BUTTON)) || (cUiTestLongPress(BACK_BUTTON)))
+      if ((Tmp != 0) || (cUiButtonTestShortPress(BACK_BUTTON)) || (cUiButtonTestLongPress(BACK_BUTTON)))
       {
         if (Type != BROWSE_CACHE)
         {
@@ -4981,7 +4379,7 @@ RESULT    cUiTextbox(DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 *pText,DATA32 S
 
   TotalItems  =  (*pB).Items;
 
-  Tmp  =  cUiGetVert();
+  Tmp  =  cUiButtonGetVert();
   if (Tmp != 0)
   { // up/down arrow pressed
 
@@ -5015,13 +4413,13 @@ RESULT    cUiTextbox(DATA16 X,DATA16 Y,DATA16 X1,DATA16 Y1,DATA8 *pText,DATA32 S
     (*pB).ItemStart++;
   }
 
-  if (cUiGetShortPress(ENTER_BUTTON))
+  if (cUiButtonGetShortPress(ENTER_BUTTON))
   {
     *pLine  =  (*pB).ItemPointer;
 
     Result  =  OK;
   }
-  if (cUiGetShortPress(BACK_BUTTON))
+  if (cUiButtonGetShortPress(BACK_BUTTON))
   {
     *pLine  =  -1;
 
@@ -7557,287 +6955,6 @@ void      cUiWrite(void)
   }
   SetDispatchStatus(DspStat);
 }
-
-
-/*! \page cUi
- *  <hr size="1"/>
- *  <b>     opUI_BUTTON (CMD, ....)  </b>
- *
- *- UI button\n
- *- Dispatch status unchanged
- *
- *  \param  (DATA8)   CMD           - \ref uibuttonsubcode
- *
- *  - CMD = FLUSH
- *
- *\n
- *
- *  - CMD = WAIT_FOR_PRESS
- *
- *\n
- *
- *  - CMD = PRESSED
- *    -  \param  (DATA8)   BUTTON   - \ref buttons \n
- *    -  \return (DATA8)   STATE    - Button is pressed (0 = no, 1 = yes)\n
- *
- *\n
- *
- *  - CMD = SHORTPRESS
- *    -  \param  (DATA8)   BUTTON   - \ref buttons \n
- *    -  \return (DATA8)   STATE    - Button has been pressed (0 = no, 1 = yes)\n
- *
- *\n
- *  - CMD = GET_BUMBED
- *    -  \param  (DATA8)   BUTTON   - \ref buttons \n
- *    -  \return (DATA8)   STATE    - Button has been pressed (0 = no, 1 = yes)\n
- *
- *\n
- *
- *  - CMD = LONGPRESS
- *    -  \param  (DATA8)   BUTTON   - \ref buttons \n
- *    -  \return (DATA8)   STATE    - Button has been hold down(0 = no, 1 = yes)\n
- *
- *\n
- *  - CMD = PRESS
- *    -  \param  (DATA8)   BUTTON   - \ref buttons \n
- *
- *\n
- *  - CMD = RELEASE
- *    -  \param  (DATA8)   BUTTON   - \ref buttons \n
- *
- *\n
- *  - CMD = GET_HORZ
- *    -  \return (DATA16)  VALUE    - Horizontal arrows data (-1 = left, +1 = right, 0 = not pressed)\n
- *
- *\n
- *  - CMD = GET_VERT
- *    -  \return (DATA16)  VALUE    - Vertical arrows data (-1 = up, +1 = down, 0 = not pressed)\n
- *
- *\n
- *  - CMD = SET_BACK_BLOCK
- *    -  \param  (DATA8)   BLOCKED  - Set UI back button blocked flag (0 = not blocked, 1 = blocked)\n
- *
- *\n
- *  - CMD = GET_BACK_BLOCK
- *    -  \return (DATA8)   BLOCKED  - Get UI back button blocked flag (0 = not blocked, 1 = blocked)\n
- *
- *\n
- *
- *  - CMD = TESTSHORTPRESS
- *    -  \param  (DATA8)   BUTTON   - \ref buttons \n
- *    -  \return (DATA8)   STATE    - Button has been hold down(0 = no, 1 = yes)\n
- *
- *\n
- *
- *  - CMD = TESTLONGPRESS
- *    -  \param  (DATA8)   BUTTON   - \ref buttons \n
- *    -  \return (DATA8)   STATE    - Button has been hold down(0 = no, 1 = yes)\n
- *
- *\n
- *  - CMD = GET_CLICK
- *\n  Get and clear click sound request (internal use only)\n
- *    -  \return (DATA8)   CLICK    - Click sound request (0 = no, 1 = yes)\n
- *
- *\n
- *
- */
-/*! \brief  opUI_BUTTON byte code
- *
- */
-void      cUiButton(void)
-{
-  PRGID   TmpPrgId;
-  OBJID   TmpObjId;
-  IP      TmpIp;
-  DATA8   Cmd;
-  DATA8   Button;
-  DATA8   State;
-  DATA16  Inc;
-  DATA8   Blocked;
-
-  TmpIp         =  GetObjectIp();
-  TmpPrgId      =  CurrentProgramId();
-
-  if (UiInstance.ScreenBlocked == 0)
-  {
-    Blocked  =  0;
-  }
-  else
-  {
-    TmpObjId      =  CallingObjectId();
-    if ((TmpPrgId == UiInstance.ScreenPrgId) && (TmpObjId == UiInstance.ScreenObjId))
-    {
-      Blocked  =  0;
-    }
-    else
-    {
-      Blocked  =  1;
-    }
-  }
-
-  Cmd     =  *(DATA8*)PrimParPointer();
-
-  State   =  0;
-  Inc     =  0;
-
-  switch (Cmd)
-  { // Function
-
-    case PRESS :
-    {
-      Button  =  *(DATA8*)PrimParPointer();
-      cUiSetPress(Button,1);
-    }
-    break;
-
-    case RELEASE :
-    {
-      Button  =  *(DATA8*)PrimParPointer();
-      cUiSetPress(Button,0);
-    }
-    break;
-
-    case SHORTPRESS :
-    {
-      Button  =  *(DATA8*)PrimParPointer();
-
-      if (Blocked == 0)
-      {
-        State  =  cUiGetShortPress(Button);
-      }
-      *(DATA8*)PrimParPointer()  =  State;
-    }
-    break;
-
-    case GET_BUMBED :
-    {
-      Button  =  *(DATA8*)PrimParPointer();
-
-      if (Blocked == 0)
-      {
-        State  =  cUiGetBumbed(Button);
-      }
-      *(DATA8*)PrimParPointer()  =  State;
-    }
-    break;
-
-    case PRESSED :
-    {
-      Button  =  *(DATA8*)PrimParPointer();
-
-      if (Blocked == 0)
-      {
-        State  =  cUiGetPress(Button);
-      }
-      *(DATA8*)PrimParPointer()  =  State;
-    }
-    break;
-
-    case LONGPRESS :
-    {
-      Button  =  *(DATA8*)PrimParPointer();
-
-      if (Blocked == 0)
-      {
-        State  =  cUiGetLongPress(Button);
-      }
-      *(DATA8*)PrimParPointer()  =  State;
-    }
-    break;
-
-    case FLUSH :
-    {
-      if (Blocked == 0)
-      {
-        cUiButtonFlush();
-      }
-    }
-    break;
-
-    case WAIT_FOR_PRESS :
-    {
-      if (Blocked == 0)
-      {
-        if (cUiWaitForPress() == 0)
-        {
-          SetObjectIp(TmpIp - 1);
-          SetDispatchStatus(BUSYBREAK);
-        }
-      }
-      else
-      {
-        SetObjectIp(TmpIp - 1);
-        SetDispatchStatus(BUSYBREAK);
-      }
-    }
-    break;
-
-    case GET_HORZ :
-    {
-      if (Blocked == 0)
-      {
-        Inc  =  cUiGetHorz();
-      }
-      *(DATA16*)PrimParPointer()  =  Inc;
-    }
-    break;
-
-    case GET_VERT :
-    {
-      if (Blocked == 0)
-      {
-        Inc  =  cUiGetVert();
-      }
-      *(DATA16*)PrimParPointer()  =  Inc;
-    }
-    break;
-
-    case SET_BACK_BLOCK :
-    {
-      UiInstance.BackButtonBlocked  =  *(DATA8*)PrimParPointer();
-    }
-    break;
-
-    case GET_BACK_BLOCK :
-    {
-      *(DATA8*)PrimParPointer()  =  UiInstance.BackButtonBlocked;
-    }
-    break;
-
-    case TESTSHORTPRESS :
-    {
-      Button  =  *(DATA8*)PrimParPointer();
-
-      if (Blocked == 0)
-      {
-        State  =  cUiTestShortPress(Button);
-      }
-      *(DATA8*)PrimParPointer()  =  State;
-    }
-    break;
-
-    case TESTLONGPRESS :
-    {
-      Button  =  *(DATA8*)PrimParPointer();
-
-      if (Blocked == 0)
-      {
-        State  =  cUiTestLongPress(Button);
-      }
-      *(DATA8*)PrimParPointer()  =  State;
-    }
-    break;
-
-    case GET_CLICK :
-    {
-      *(DATA8*)PrimParPointer()  =  UiInstance.Click;
-      UiInstance.Click           =  0;
-    }
-    break;
-
-  }
-}
-
 
 /*! \page cUi
  *  \anchor KEEPALIVE

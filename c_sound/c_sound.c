@@ -92,7 +92,7 @@ typedef struct {
 
 SOUND_GLOBALS SoundInstance;
 
-// TODO: this function is duplicated from cUiOpenButtonFile - it can be shared
+// TODO: this function is duplicated from cUiButtonOpenFile - it can be shared
 static int cSoundOpenEventFile(void)
 {
     struct udev_enumerate *enumerate;
