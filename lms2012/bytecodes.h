@@ -608,7 +608,7 @@ typedef   enum
   GET_BACK_BLOCK  = 11,
   TESTSHORTPRESS  = 12,
   TESTLONGPRESS   = 13,
-  GET_BUMBED      = 14,
+  GET_BUMPED      = 14,
   GET_CLICK       = 15,
 
   UI_BUTTON_SUBCODES

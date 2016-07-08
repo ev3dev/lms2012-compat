@@ -75,7 +75,7 @@ char      *HwId = "03";
 #define   DISABLE_DAISYCHAIN
 #define   DISABLE_DAISYCHAIN_COM_CALL
 //#define   DISABLE_FAST_DATALOG_BUFFER
-//#define   DISABLE_BUMBED
+//#define   DISABLE_BUMPED
 //#define   LOG_ASCII
 //#define   DISABLE_FIQ_IIC
 #define   UART1_FAKE_INTERRUPT          //!< Don't use real interrupt on UART1 (linux prompt)

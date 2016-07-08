@@ -190,7 +190,7 @@
  *-# BT status updated in UI if changed (by direct command or user program)                   \n
  *-# WIFI status updated in UI if changed (by direct command or user program)                 \n
  *-# Download sound issue fixed (waits for completion)                                        \n
- *-# Bumbed on unmounted touch sensor returns 0 (instead of nan)                              \n
+ *-# Bumped on unmounted touch sensor returns 0 (instead of nan)                              \n
  *-# Sys. command BLUETOOTHPIN can only be set by USB connection                              \n
  *-# Sys. command CONTINUE_DOWNLOAD returns END_OF_FILE when complete file has been received  \n
  *-# Spaces is allowed in WiFi SSID                                                           \n
@@ -428,7 +428,7 @@
  *-# Fast datalog (black layer buffering and optimization) implementation started             \n
  *-# opSTRINGS VALUE_TO_STRING bug fixed                                                      \n
  *-# opUI_DRAW FILLCIRCLE algorithm changed                                                   \n
- *-# opUI_BUTTON GET_BUMBED implemented                                                       \n
+ *-# opUI_BUTTON GET_BUMPED implemented                                                       \n
  *-# opINPUT_SAMPLE implemented (read buffered device values) (see \ref cinputsample "Example")\n
  *-# opFILE WRITE_LOG last two parameters removed and 4th. parameter changed encoding to "handle"\n
  *-# opUI_WRITE GRAPH_SETUP last five parameters changed encoding to "handle"                 \n

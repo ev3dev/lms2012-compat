@@ -273,28 +273,28 @@ vmthread  MAIN
   DATA8   State
 
 Loop:
-  UI_BUTTON(GET_BUMBED,ENTER_BUTTON,State)
+  UI_BUTTON(GET_BUMPED,ENTER_BUTTON,State)
   JR_FALSE(State,NotPressedYet)
 
-  CALL(Bumbed)
+  CALL(Bumped)
 
   JR(Loop)
 
 StillPressed:
 NotPressedYet:
 
-  CALL(NotBumbed)
+  CALL(NotBumped)
 
   JR(Loop)
 }
 
 
-subcall   Bumbed
+subcall   Bumped
 {
   DATA32  Timer
 
   UI_DRAW(FILLWINDOW,BG_COLOR,0,0)
-  UI_DRAW(TEXT,FG_COLOR,50,50,'BUMBED')
+  UI_DRAW(TEXT,FG_COLOR,50,50,'BUMPED')
   UI_DRAW(UPDATE)
 
   TIMER_WAIT(1000,Timer)
@@ -302,7 +302,7 @@ subcall   Bumbed
 }
 
 
-subcall   NotBumbed
+subcall   NotBumped
 {
   UI_DRAW(FILLWINDOW,BG_COLOR,0,0)
   UI_DRAW(UPDATE)
@@ -395,28 +395,28 @@ vmthread  MAIN
   DATA8   State
 
 Loop:
-  UI_BUTTON(GET_BUMBED,ENTER_BUTTON,State)
+  UI_BUTTON(GET_BUMPED,ENTER_BUTTON,State)
   JR_FALSE(State,NotPressedYet)
 
-  CALL(Bumbed)
+  CALL(Bumped)
 
   JR(Loop)
 
 StillPressed:
 NotPressedYet:
 
-  CALL(NotBumbed)
+  CALL(NotBumped)
 
   JR(Loop)
 }
 
 
-subcall   Bumbed
+subcall   Bumped
 {
   DATA32  Timer
 
   UI_DRAW(FILLWINDOW,BG_COLOR,0,0)
-  UI_DRAW(TEXT,FG_COLOR,50,50,'BUMBED')
+  UI_DRAW(TEXT,FG_COLOR,50,50,'BUMPED')
   UI_DRAW(UPDATE)
 
   TIMER_WAIT(1000,Timer)
@@ -424,7 +424,7 @@ subcall   Bumbed
 }
 
 
-subcall   NotBumbed
+subcall   NotBumped
 {
   UI_DRAW(FILLWINDOW,BG_COLOR,0,0)
   UI_DRAW(UPDATE)

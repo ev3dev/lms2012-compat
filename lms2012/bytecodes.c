@@ -604,7 +604,7 @@ static  SUBCODE SubCodes[SUBPS][MAX_SUBCODES] =
   SC(   UI_BUTTON_SUBP,         GET_BACK_BLOCK,         PAR8,                                           0,0,0,0,0,0,0         ),
   SC(   UI_BUTTON_SUBP,         TESTSHORTPRESS,         PAR8,PAR8,                                      0,0,0,0,0,0           ),
   SC(   UI_BUTTON_SUBP,         TESTLONGPRESS,          PAR8,PAR8,                                      0,0,0,0,0,0           ),
-  SC(   UI_BUTTON_SUBP,         GET_BUMBED,             PAR8,PAR8,                                      0,0,0,0,0,0           ),
+  SC(   UI_BUTTON_SUBP,         GET_BUMPED,             PAR8,PAR8,                                      0,0,0,0,0,0           ),
   SC(   UI_BUTTON_SUBP,         GET_CLICK,              PAR8,                                           0,0,0,0,0,0,0         ),
 
   //    Com

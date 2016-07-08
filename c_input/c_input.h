@@ -109,7 +109,7 @@ typedef   struct
   RESULT  DevStatus;
   DATA8   Busy;
   DATAF   Raw[MAX_DEVICE_DATASETS];           //!< Raw value (only updated when "cInputReadDeviceRaw" function is called)
-#ifndef DISABLE_BUMBED
+#ifndef DISABLE_BUMPED
   DATAF   OldRaw;
   DATA32  Changes;
   DATA32  Bumps;

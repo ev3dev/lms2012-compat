@@ -360,7 +360,7 @@ void      Memcpy(void *pDest,const void *pSrc,size_t No)
 
 
 IMGDATA CLR_LAYER_CLR_CHANGES[]       = { opINPUT_DEVICE,CLR_CHANGES,0,0,opINPUT_DEVICE,CLR_CHANGES,0,1,opINPUT_DEVICE,CLR_CHANGES,0,2,opINPUT_DEVICE,CLR_CHANGES,0,3,opOBJECT_END };
-IMGDATA CLR_LAYER_CLR_BUMBED[]        = { opUI_BUTTON,FLUSH,opOBJECT_END };
+IMGDATA CLR_LAYER_CLR_BUMPED[]        = { opUI_BUTTON,FLUSH,opOBJECT_END };
 IMGDATA CLR_LAYER_OUTPUT_RESET[]      = { opOUTPUT_RESET,0,15,opOBJECT_END };
 IMGDATA CLR_LAYER_OUTPUT_CLR_COUNT[]  = { opOUTPUT_CLR_COUNT,0,15,opOBJECT_END };
 IMGDATA CLR_LAYER_INPUT_WRITE[]       = { opINPUT_WRITE,0,0,1,DEVCMD_RESET,opINPUT_WRITE,0,1,1,DEVCMD_RESET,opINPUT_WRITE,0,2,1,DEVCMD_RESET,opINPUT_WRITE,0,3,1,DEVCMD_RESET,opOBJECT_END };
@@ -369,7 +369,7 @@ IMGDATA CLR_LAYER_INPUT_WRITE[]       = { opINPUT_WRITE,0,0,1,DEVCMD_RESET,opINP
 void      ClrLayer(void)
 {
   ExecuteByteCode(CLR_LAYER_CLR_CHANGES,NULL,NULL);
-  ExecuteByteCode(CLR_LAYER_CLR_BUMBED,NULL,NULL);
+  ExecuteByteCode(CLR_LAYER_CLR_BUMPED,NULL,NULL);
   ExecuteByteCode(CLR_LAYER_OUTPUT_RESET,NULL,NULL);
   ExecuteByteCode(CLR_LAYER_OUTPUT_CLR_COUNT,NULL,NULL);
   ExecuteByteCode(CLR_LAYER_INPUT_WRITE,NULL,NULL);
@@ -3413,7 +3413,7 @@ void      cInputSimulate(UWORD Time,DATA8 Device,DATA8 Connection,DATA8 Type)
 
 void      cInputUpdate(UWORD Time)
 {
-#ifndef DISABLE_BUMBED
+#ifndef DISABLE_BUMPED
   DATA8   Device;
   DATAF   Value;
   DATAF   Diff;
@@ -3421,7 +3421,7 @@ void      cInputUpdate(UWORD Time)
 
   cInputDcmUpdate(Time);
 
-#ifndef DISABLE_BUMBED
+#ifndef DISABLE_BUMPED
   for (Device = 0;Device < INPUT_PORTS;Device++)
   { // check each port for changes
 
@@ -3599,7 +3599,7 @@ RESULT    cInputInit(void)
     InputInstance.DeviceData[Tmp].TypeIndex   =  InputInstance.NoneIndex;
     InputInstance.DeviceType[Tmp]             =  TYPE_NONE;
     InputInstance.DeviceMode[Tmp]             =  0;
-#ifndef DISABLE_BUMBED
+#ifndef DISABLE_BUMPED
     InputInstance.DeviceData[Tmp].Changes     =  (DATA32)0;
     InputInstance.DeviceData[Tmp].Bumps       =  (DATA32)0;
 #endif
@@ -4401,7 +4401,7 @@ void      cInputDevice(void)
     }
     break;
 
-#ifndef DISABLE_BUMBED
+#ifndef DISABLE_BUMPED
     case GET_CHANGES :
     {
       DataF  =  DATAF_NAN;

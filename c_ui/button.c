@@ -632,7 +632,7 @@ static DATA8 cUiButtonWaitForPress(void)
  *    -  \return (DATA8)   STATE    - Button has been pressed (0 = no, 1 = yes)\n
  *
  *\n
- *  - CMD = GET_BUMBED
+ *  - CMD = GET_BUMPED
  *    -  \param  (DATA8)   BUTTON   - \ref buttons \n
  *    -  \return (DATA8)   STATE    - Button has been pressed (0 = no, 1 = yes)\n
  *
@@ -754,7 +754,7 @@ void      cUiButton(void)
     }
     break;
 
-    case GET_BUMBED :
+    case GET_BUMPED :
     {
       Button  =  *(DATA8*)PrimParPointer();
 
