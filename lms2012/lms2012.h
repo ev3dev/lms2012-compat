@@ -83,7 +83,7 @@ char      *HwId = "03";
 //#define   ENABLE_HIGH_CURRENT           //!< Don't shut down on high current
 //#define   DISABLE_LOW_MEMORY            //!< Don't check low memory
 //#define   DISABLE_UART_DATA_ERROR       //!< Don't reset UART sensor if timeout or crc error
-//#define   DISABLE_PREEMPTED_VM          //!< Don't run VM as preempted
+#define   DISABLE_PREEMPTED_VM          //!< Don't run VM as preempted
 #define   DISABLE_SDCARD_SUPPORT        //!< Don't use SD card
 #define   DISABLE_USBSTICK_SUPPORT      //!< Don't use USB stick
 //#define   ENABLE_PERFORMANCE_TEST       //!< Show performance bar in the top line
