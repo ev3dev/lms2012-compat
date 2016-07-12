@@ -131,7 +131,7 @@ RESULT    cComInit(void)
   ComInstance.musb_syspath = cComGetMusbDevice();
 
   ComInstance.CommandReady      =  0;
-  ComInstance.Cmdfd             =  open("/dev/hidg0", O_RDWR, 0666);
+  ComInstance.Cmdfd             =  open("/dev/hidg0", O_RDWR);
 
   if (ComInstance.Cmdfd >= 0)
   {
