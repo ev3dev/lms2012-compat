@@ -1549,7 +1549,7 @@ typedef struct
   UBYTE     ActiveComCh;   // Temporary fix until com channel functionality is in place, Ch interleaving not possible
   UBYTE     ReplyStatus;
 
-  UBYTE     BrickName[vmBRICKNAMESIZE];
+  char      BrickName[vmBRICKNAMESIZE];
   char     *musb_syspath;
 } COM_GLOBALS;
 

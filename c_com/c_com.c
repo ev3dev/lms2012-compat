@@ -198,7 +198,7 @@ RESULT    cComInit(void)
   if (File != NULL)
   {
 
-    fgets((char*)&(ComInstance.BrickName[0]), (int)vmBRICKNAMESIZE, File);
+    fgets(ComInstance.BrickName, (int)vmBRICKNAMESIZE, File);
     fclose (File);
   }
 
@@ -206,14 +206,9 @@ RESULT    cComInit(void)
   UsbConUpdate = 0;               // Reset timing of USB device side cable detection;
   cComUsbDeviceConnected = FALSE; // Until we believe in something else ;-)
 
-  // TODO: Fixup Bluetooth
-  // BtInit((char*)&(ComInstance.BrickName[0]));
-
-  // TODO: Fixup Daisychaining
-  // cDaisyInit();
-
-  // TODO: Fixup Wi-Fi
-  // cWiFiInit();
+  BtInit(ComInstance.BrickName);
+  cDaisyInit();
+  cWiFiInit();
 
   ComInstance.VmReady      =  1;
   ComInstance.ReplyStatus  =  0;
@@ -4681,7 +4676,7 @@ void      cComGet(void)
 
       if (NULL != pName)
       {
-        snprintf((char*)pName,Length,"%s",(char*)&(ComInstance.BrickName[0]));
+        snprintf((char*)pName,Length,"%s",ComInstance.BrickName);
       }
 
       DspStat =  NOBREAK;
@@ -5341,7 +5336,7 @@ void      cComSet(void)
             fwrite(nl, 1, (int)1, File);                // Insert new line
             fclose (File);
           }
-          snprintf((char*)&(ComInstance.BrickName[0]), vmBRICKNAMESIZE, "%s",(char*)pName);
+          snprintf(ComInstance.BrickName, vmBRICKNAMESIZE, "%s",(char*)pName);
           sethostname((char*)pName, Len + 1);
           DspStat =  NOBREAK;
         }
@@ -5552,7 +5547,7 @@ UBYTE     cComGetWifiStatus(void)
 
 void      cComGetBrickName(DATA8 Length, DATA8 *pBrickName)
 {
-  snprintf((char*)pBrickName,Length,"%s",(char*)&(ComInstance.BrickName[0]));
+  snprintf((char*)pBrickName,Length,"%s",ComInstance.BrickName);
 }
 
 
