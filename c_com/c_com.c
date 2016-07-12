@@ -112,7 +112,6 @@ static char *cComGetMusbDevice(void)
             fprintf(stderr, "Failed to get musb device\n");
         } else {
             path = udev_device_get_syspath(musb_device);
-            printf("musb: %s\n", path);
             syspath = strdup(path);
         }
         udev_device_unref(udc_device);
