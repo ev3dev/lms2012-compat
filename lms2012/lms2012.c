@@ -2305,7 +2305,7 @@ RESULT    mSchedInit(int argc,char *argv[])
 
   VMInstance.Test         =  0;
 
-  VmPrint("\n\nLMS2012 VM STARTED\n{\n");
+  VmPrint("LMS2012 VM STARTED\n");
   VMInstance.ProgramId    =  DEBUG_SLOT;
   pImgHead                =  (IMGHEAD*)UiImage;
   (*pImgHead).ImageSize   =  sizeof(UiImage);
@@ -2554,7 +2554,7 @@ RESULT    mSchedExit(void)
 {
   DATA32  Result = OK;
 
-  VmPrint("}\nVM STOPPED\n\n");
+  VmPrint("VM STOPPED\n");
 
 #ifndef DISABLE_SDCARD_SUPPORT
   char    SDBuffer[250];
