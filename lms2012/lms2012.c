@@ -5253,7 +5253,6 @@ void      Tst(void)
   DATA8   Index;
   DATA8   Data8;
   DATA16  Value;
-  DATA8   Buffer[2];
   TSTPIN  Tstpin;
   TSTUART Tstuart;
   int     File;
@@ -5426,15 +5425,11 @@ void      Tst(void)
 
         case TST_ACCU_SWITCH :
         {
-          Data8  =  0;
-          if (UiInstance.PowerFile >= MIN_HANDLE)
-          {
-            read(UiInstance.PowerFile,Buffer,2);
-            if (Buffer[0] == '1')
-            {
-              Data8  =  1;
-            }
-          }
+          // This isn't a true test because it only reflects the state when
+          // the battery driver was loaded and not the current state of the
+          // switch. However, in practice, unless you are running without a
+          // battery, you can't change the state of this switch.
+          Data8 = UiInstance.Accu;
           *(DATA8*)PrimParPointer()  =  Data8;
         }
         break;

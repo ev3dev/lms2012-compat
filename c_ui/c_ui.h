@@ -331,9 +331,6 @@ typedef   struct
   LCD       LcdBuffer;
   LCD       *pLcd;
 
-  ANALOG    Analog;
-  ANALOG    *pAnalog;
-
   NOTIFY    Notify;
   TQUESTION Question;
   IQUESTION IconQuestion;
@@ -347,8 +344,8 @@ typedef   struct
   int       LedLeftRedTriggerFile;
   int       LedRightGreenTriggerFile;
   int       LedLeftGreenTriggerFile;
-  int       PowerFile;
-  int       AdcFile;
+  int       BatteryVoltageNowFile;
+  int       BatteryCurrentNowFile;
   int       DispFile;
 
   ULONG     SleepTimer;
@@ -363,9 +360,9 @@ typedef   struct
   DATA8     AllowUpdate;
 #endif
 
+  DATAF     VinCnt;
   DATAF     CinCnt;
   DATAF     CoutCnt;
-  DATAF     VinCnt;
 
 #ifndef DISABLE_VIRTUAL_BATT_TEMP
   DATA32    TempTimer;
@@ -376,8 +373,6 @@ typedef   struct
   DATAF     Ibatt;
   DATAF     Imotor;
   DATAF     Iintegrated;
-
-  UBYTE     PowerInitialized;
 
   DATA8     UpdateState;
   ULONG     UpdateStateTimer;

@@ -10,6 +10,7 @@ set (SOURCE_FILES
     graph.c
     keyboard.c
     led.c
+    power.c
     textbox.c
 )
 

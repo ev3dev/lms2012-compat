@@ -145,6 +145,7 @@
 #include "button.h"
 #include "graph.h"
 #include "led.h"
+#include "power.h"
 #include "textbox.h"
 #include "c_ui.h"
 #include "d_terminal.h"
@@ -187,357 +188,6 @@ extern char *strptime(const char *s, const char *format, struct tm *tm);
 
 UI_GLOBALS UiInstance;
 
-#ifndef DISABLE_VIRTUAL_BATT_TEMP
-
-  //Defines der kan tænde for debug beskeder
-  //#define __dbg1
-  //#define __dbg2
-
-  /*************************** Model parameters *******************************/
-  //Approx. initial internal resistance of 6 Energizer industrial batteries :
-  float R_bat_init = 0.63468;
-  //Bjarke's proposal for spring resistance :
-  //float spring_resistance = 0.42;
-  //Batteries' heat capacity :
-  float heat_cap_bat = 136.6598;
-  //Newtonian cooling constant for electronics :
-  float K_bat_loss_to_elec = -0.0003; //-0.000789767;
-  //Newtonian heating constant for electronics :
-  float K_bat_gain_from_elec = 0.001242896; //0.001035746;
-  //Newtonian cooling constant for environment :
-  float K_bat_to_room = -0.00012;
-  //Battery power Boost
-  float battery_power_boost = 1.7;
-  //Battery R_bat negative gain
-  float R_bat_neg_gain = 1.00;
-
-  //Slope of electronics lossless heating curve (linear!!!) [Deg.C / s] :
-  float K_elec_heat_slope = 0.0123175;
-  //Newtonian cooling constant for battery packs :
-  float K_elec_loss_to_bat = -0.004137487;
-  //Newtonian heating constant for battery packs :
-  float K_elec_gain_from_bat = 0.002027574; //0.00152068;
-  //Newtonian cooling constant for environment :
-  float K_elec_to_room = -0.001931431; //-0.001843639;
-
-  // Function for estimating new battery temperature based on measurements
-  // of battery voltage and battery power.
-    float new_bat_temp (float V_bat, float I_bat)
-    {
-
-      static int   index       = 0; //Keeps track of sample index since power-on
-      static float I_bat_mean  = 0; //Running mean current
-      const float sample_period = 0.4; //Algorithm update period in seconds
-      static float T_bat = 0; //Battery temperature
-      static float T_elec = 0; //EV3 electronics temperature
-
-      static float R_bat_model_old = 0;//Old internal resistance of the battery model
-      float R_bat_model;    //Internal resistance of the battery model
-      static float R_bat = 0; //Internal resistance of the batteries
-      float slope_A;        //Slope obtained by linear interpolation
-      float intercept_b;    //Offset obtained by linear interpolation
-      const float I_1A = 0.05;      //Current carrying capacity at bottom of the curve
-      const float I_2A = 2.0;      //Current carrying capacity at the top of the curve
-
-      float R_1A = 0.0;          //Internal resistance of the batteries at 1A and V_bat
-      float R_2A = 0.0;          //Internal resistance of the batteries at 2A and V_bat
-
-      //Flag that prevents initialization of R_bat when the battery is charging
-      static unsigned char has_passed_7v5_flag = 'N';
-
-      float dT_bat_own = 0.0; //Batteries' own heat
-      float dT_bat_loss_to_elec = 0.0; // Batteries' heat loss to electronics
-      float dT_bat_gain_from_elec = 0.0; //Batteries' heat gain from electronics
-      float dT_bat_loss_to_room = 0.0; //Batteries' cooling from environment
-
-      float dT_elec_own = 0.0; //Electronics' own heat
-      float dT_elec_loss_to_bat = 0.0;//Electronics' heat loss to the battery pack
-      float dT_elec_gain_from_bat = 0.0;//Electronics' heat gain from battery packs
-      float dT_elec_loss_to_room = 0.0; //Electronics' heat loss to the environment
-
-      /***************************************************************************/
-
-      //Update the average current: I_bat_mean
-      if (index > 0)
-        {
-    I_bat_mean = ((index) * I_bat_mean + I_bat) / (index + 1) ;
-        }
-      else
-        {
-    I_bat_mean = I_bat;
-        }
-
-      index = index + 1;
-
-
-      //Calculate R_1A as a function of V_bat (internal resistance at 1A continuous)
-      R_1A  =   0.014071 * (V_bat * V_bat * V_bat * V_bat)
-        - 0.335324 * (V_bat * V_bat * V_bat)
-        + 2.933404 * (V_bat * V_bat)
-        - 11.243047 * V_bat
-        + 16.897461;
-
-      //Calculate R_2A as a function of V_bat (internal resistance at 2A continuous)
-      R_2A  =   0.014420 * (V_bat * V_bat * V_bat * V_bat)
-        - 0.316728 * (V_bat * V_bat * V_bat)
-        + 2.559347 * (V_bat * V_bat)
-        - 9.084076 * V_bat
-        + 12.794176;
-
-      //Calculate the slope by linear interpolation between R_1A and R_2A
-      slope_A  =  (R_1A - R_2A) / (I_1A - I_2A);
-
-      //Calculate intercept by linear interpolation between R1_A and R2_A
-      intercept_b  =  R_1A - slope_A * R_1A;
-
-      //Reload R_bat_model:
-      R_bat_model  =  slope_A * I_bat_mean + intercept_b;
-
-      //Calculate batteries' internal resistance: R_bat
-      if ((V_bat > 7.5) && (has_passed_7v5_flag == 'N'))
-        {
-    R_bat = R_bat_init; //7.5 V not passed a first time
-        }
-      else
-        {
-    //Only update R_bat with positive outcomes: R_bat_model - R_bat_model_old
-    //R_bat updated with the change in model R_bat is not equal value in the model!
-    if ((R_bat_model - R_bat_model_old) > 0)
-      {
-        R_bat = R_bat + R_bat_model - R_bat_model_old;
-      }
-      else // The negative outcome of R_bat_model added to only part of R_bat
-        {
-          R_bat = R_bat + ( R_bat_neg_gain * (R_bat_model - R_bat_model_old));
-        }
-    //Make sure we initialize R_bat later
-    has_passed_7v5_flag = 'Y';
-        }
-
-      //Save R_bat_model for use in the next function call
-      R_bat_model_old = R_bat_model;
-
-      //Debug code:
-  #ifdef __dbg1
-      if (index < 500)
-        {
-    printf("%c %f %f %f %f %f %f\n", has_passed_7v5_flag, R_1A, R_2A,
-           slope_A, intercept_b, R_bat_model - R_bat_model_old, R_bat);
-        }
-  #endif
-
-      /*****Calculate the 4 types of temperature change for the batteries******/
-
-      //Calculate the batteries' own temperature change
-      dT_bat_own = R_bat * I_bat * I_bat * sample_period  * battery_power_boost
-                   / heat_cap_bat;
-
-      //Calculate the batteries' heat loss to the electronics
-      if (T_bat > T_elec)
-        {
-    dT_bat_loss_to_elec = K_bat_loss_to_elec * (T_bat - T_elec)
-                          * sample_period;
-        }
-      else
-        {
-    dT_bat_loss_to_elec = 0.0;
-        }
-
-      //Calculate the batteries' heat gain from the electronics
-      if (T_bat < T_elec)
-        {
-    dT_bat_gain_from_elec = K_bat_gain_from_elec * (T_elec - T_bat)
-      * sample_period;
-        }
-      else
-        {
-    dT_bat_gain_from_elec = 0.0;
-        }
-
-      //Calculate the batteries' heat loss to environment
-      dT_bat_loss_to_room = K_bat_to_room * T_bat * sample_period;
-      /************************************************************************/
-
-
-
-      /*****Calculate the 4 types of temperature change for the electronics****/
-
-      //Calculate the electronics' own temperature change
-      dT_elec_own = K_elec_heat_slope * sample_period;
-
-      //Calculate the electronics' heat loss to the batteries
-      if (T_elec > T_bat)
-        {
-    dT_elec_loss_to_bat =   K_elec_loss_to_bat * (T_elec - T_bat)
-      * sample_period;
-        }
-      else
-        {
-    dT_elec_loss_to_bat = 0.0;
-        }
-
-      //Calculate the electronics' heat gain from the batteries
-      if (T_elec < T_bat)
-        {
-    dT_elec_gain_from_bat = K_elec_gain_from_bat * (T_bat - T_elec)
-      * sample_period;
-        }
-      else
-        {
-    dT_elec_gain_from_bat = 0.0;
-        }
-
-      //Calculate the electronics' heat loss to the environment
-      dT_elec_loss_to_room = K_elec_to_room * T_elec * sample_period;
-
-      /*****************************************************************************/
-      //Debug code:
-  #ifdef __dbg2
-      if (index < 500)
-        {
-    printf("%f %f %f %f %f <> %f %f %f %f %f\n",dT_bat_own, dT_bat_loss_to_elec,
-           dT_bat_gain_from_elec, dT_bat_loss_to_room, T_bat,
-           dT_elec_own, dT_elec_loss_to_bat, dT_elec_gain_from_bat,
-           dT_elec_loss_to_room, T_elec);
-        }
-  #endif
-
-
-
-      //Refresh battery temperature
-      T_bat =  T_bat + dT_bat_own + dT_bat_loss_to_elec
-        + dT_bat_gain_from_elec + dT_bat_loss_to_room;
-
-      //Refresh electronics temperature
-      T_elec =  T_elec + dT_elec_own + dT_elec_loss_to_bat
-        + dT_elec_gain_from_bat + dT_elec_loss_to_room;
-
-      return T_bat;
-
-    }
-#endif
-
-
-#ifdef DEBUG_VIRTUAL_BATT_TEMP
-static    int TempFile = -1;
-#endif
-
-
-#ifndef DISABLE_VIRTUAL_BATT_TEMP
-
-void      cUiCheckTemp(void);
-
-#define   CALL_INTERVAL     400   // [mS]
-
-#ifdef DEBUG_VIRTUAL_BATT_TEMP
-
-void      cUiInitTemp(void)
-{
-  char    Buffer[250];
-  int     BufferSize;
-  float   Const[11];
-  int     Tmp;
-  char    *Str;
-  LFILE   *pFile;
-
-  mkdir("../prjs/TempTest",DIRPERMISSIONS);
-  chmod("../prjs/TempTest",DIRPERMISSIONS);
-  sync();
-
-  Tmp  =  0;
-  pFile = fopen ("../prjs/Const/TempConst.rtf","r");
-  if (pFile != NULL)
-  {
-    do
-    {
-      Str           =  fgets(Buffer,250,pFile);
-      Buffer[249]   =  0;
-      if (Str != NULL)
-      {
-        if ((Buffer[0] != '/') && (Buffer[0] != '*') && (Buffer[0] != ' '))
-        {
-          Const[Tmp]  =  DATAF_NAN;
-          if (sscanf(Buffer,"%f",&Const[Tmp]) != 1)
-          {
-            Const[Tmp]  =  DATAF_NAN;
-          }
-          Tmp++;
-        }
-      }
-    }
-    while (Str != NULL);
-    fclose (pFile);
-
-    R_bat_init            =  Const[0];
-    heat_cap_bat          =  Const[1];
-    K_bat_loss_to_elec    =  Const[2];
-    K_bat_gain_from_elec  =  Const[3];
-    K_bat_to_room         =  Const[4];
-    battery_power_boost   =  Const[5];
-    R_bat_neg_gain        =  Const[6];
-    K_elec_heat_slope     =  Const[7];
-    K_elec_loss_to_bat    =  Const[8];
-    K_elec_gain_from_bat  =  Const[9];
-    K_elec_to_room        =  Const[10];
-
-  }
-
-  TempFile  =  open("../prjs/TempTest/TempFile.rtf",O_CREAT | O_WRONLY | O_APPEND | O_SYNC,FILEPERMISSIONS);
-  chmod("../prjs/TempTest/TempFile.rtf",FILEPERMISSIONS);
-  if (TempFile >= MIN_HANDLE)
-  {
-    if (Tmp)
-    {
-      BufferSize  =  snprintf(Buffer,250,"* TempConst.rtf ************************\n");
-    }
-    else
-    {
-      BufferSize  =  snprintf(Buffer,250,"* Build in *****************************\n");
-    }
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  R_bat_init           = %13.9f\n",R_bat_init);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  heat_cap_bat         = %13.9f\n",heat_cap_bat);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_bat_loss_to_elec   = %13.9f\n",K_bat_loss_to_elec);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_bat_gain_from_elec = %13.9f\n",K_bat_gain_from_elec);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_bat_to_room        = %13.9f\n",K_bat_to_room);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  battery_power_boost  = %13.9f\n",battery_power_boost);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  R_bat_neg_gain       = %13.9f\n",R_bat_neg_gain);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_elec_heat_slope    = %13.9f\n",K_elec_heat_slope);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_elec_loss_to_bat   = %13.9f\n",K_elec_loss_to_bat);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_elec_gain_from_bat = %13.9f\n",K_elec_gain_from_bat);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"  K_elec_to_room       = %13.9f\n",K_elec_to_room);
-    write(TempFile,Buffer,BufferSize);
-    BufferSize  =  snprintf(Buffer,250,"****************************************\n");
-    write(TempFile,Buffer,BufferSize);
-  }
-  UiInstance.TempTimer  =  (UiInstance.MilliSeconds - CALL_INTERVAL);
-  cUiCheckTemp();
-}
-
-
-void      cUiExitTemp(void)
-{
-  if (TempFile >= MIN_HANDLE)
-  {
-    close(TempFile);
-    TempFile  =  -1;
-  }
-}
-#endif
-
-#endif
-
-
 static IMGDATA DownloadSuccessSound[] = {
   opINFO, LC0(GET_VOLUME), LV0(0),
   opSOUND, LC0(PLAY), LV0(0), LCS, 'u','i','/','D','o','w','n','l','o','a','d','S','u','c','c','e','s','s', 0,
@@ -560,7 +210,6 @@ void      cUiAlive(void)
 RESULT    cUiInit(void)
 {
   RESULT  Result = OK;
-  ANALOG  *pAdcTmp;
   UBYTE   Tmp;
   char    Buffer[32];
   char    OsBuf[2000];
@@ -589,7 +238,6 @@ RESULT    cUiInit(void)
   UiInstance.ScreenPrgId        =  -1;
   UiInstance.ScreenObjId        =  -1;
 
-  UiInstance.PowerInitialized   =  0;
   UiInstance.ShutDown           =  0;
 
   UiInstance.PowerShutdown      =  0;
@@ -602,20 +250,15 @@ RESULT    cUiInit(void)
   UiInstance.VoltageState       =  0;
 
   UiInstance.pLcd               =  &UiInstance.LcdSafe;
-  UiInstance.pAnalog            =  &UiInstance.Analog;
 
   UiInstance.Browser.PrgId      =  0;
   UiInstance.Browser.ObjId      =  0;
 
   UiInstance.Tbatt              =  0.0;
-  UiInstance.Vbatt              =  9.0;
+  UiInstance.Vbatt              =  DEFAULT_BATTERY_VOLTAGE;
   UiInstance.Ibatt              =  0.0;
   UiInstance.Imotor             =  0.0;
   UiInstance.Iintegrated        =  0.0;
-#ifdef Linux_X86
-  UiInstance.Ibatt              =  0.1;
-  UiInstance.Imotor             =  0.0;
-#endif
 
   Result          =  dTerminalInit();
 
@@ -624,37 +267,12 @@ RESULT    cUiInit(void)
   UiInstance.LedLeftRedTriggerFile    = cUiLedOpenTriggerFile("ev3:left",  "red");
   UiInstance.LedRightGreenTriggerFile = cUiLedOpenTriggerFile("ev3:right", "green");
   UiInstance.LedLeftGreenTriggerFile  = cUiLedOpenTriggerFile("ev3:left",  "green");
-  UiInstance.PowerFile  =  open(POWER_DEVICE_NAME,O_RDWR);
-  UiInstance.AdcFile    =  open(ANALOG_DEVICE_NAME,O_RDWR | O_SYNC);
+  cUiPowerOpenBatteryFiles();
 
   dLcdInit((*UiInstance.pLcd).Lcd);
 
   snprintf(UiInstance.HwVers,HWVERS_SIZE,"compat");
   UiInstance.Hw = 0;
-
-  if (UiInstance.AdcFile >= MIN_HANDLE)
-  {
-    pAdcTmp  =  (ANALOG*)mmap(0, sizeof(ANALOG), PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, UiInstance.AdcFile, 0);
-
-    if (pAdcTmp == MAP_FAILED)
-    {
-#ifndef Linux_X86
-      LogErrorNumber(ANALOG_SHARED_MEMORY);
-      Result  =  FAIL;
-#endif
-    }
-    else
-    {
-      UiInstance.pAnalog  =  pAdcTmp;
-    }
-  }
-  else
-  {
-#ifndef Linux_X86
-    LogErrorNumber(ANALOG_DEVICE_FILE_NOT_FOUND);
-    Result  =  FAIL;
-#endif
-  }
 
   if (SPECIALVERS < '0')
   {
@@ -715,31 +333,30 @@ RESULT    cUiInit(void)
 
   cUiButtonClearAll();
 
-  UiInstance.BattIndicatorHigh      =  BATT_INDICATOR_HIGH;
-  UiInstance.BattIndicatorLow       =  BATT_INDICATOR_LOW;
-  UiInstance.BattWarningHigh        =  BATT_WARNING_HIGH;
-  UiInstance.BattWarningLow         =  BATT_WARNING_LOW;
-  UiInstance.BattShutdownHigh       =  BATT_SHUTDOWN_HIGH;
-  UiInstance.BattShutdownLow        =  BATT_SHUTDOWN_LOW;
-
-  UiInstance.Accu  =  0;
-  if (UiInstance.PowerFile >= MIN_HANDLE)
-  {
-    read(UiInstance.PowerFile,Buffer,2);
-    if (Buffer[0] == '1')
-    {
-      UiInstance.Accu               =  1;
-      UiInstance.BattIndicatorHigh  =  ACCU_INDICATOR_HIGH;
-      UiInstance.BattIndicatorLow   =  ACCU_INDICATOR_LOW;
-      UiInstance.BattWarningHigh    =  ACCU_WARNING_HIGH;
-      UiInstance.BattWarningLow     =  ACCU_WARNING_LOW;
-      UiInstance.BattShutdownHigh   =  ACCU_SHUTDOWN_HIGH;
-      UiInstance.BattShutdownLow    =  ACCU_SHUTDOWN_LOW;
-    }
+  // TODO: Handle other types of batteries.
+  // For now, we are assuming we have 6 AA Alkaline batteries or the LEGO
+  // rechargeable battery pack. We could use the POWER_SUPPLY_VOLTAGE_MAX_DESIGN
+  // and POWER_SUPPLY_VOLTAGE_MIN_DESIGN properties to try to guess these values
+  // for any type of battery. This should work for most cases though. BrickPi
+  // uses 8 AA batteries though.
+  if (UiInstance.Accu) {
+    UiInstance.BattIndicatorHigh  = ACCU_INDICATOR_HIGH;
+    UiInstance.BattIndicatorLow   = ACCU_INDICATOR_LOW;
+    UiInstance.BattWarningHigh    = ACCU_WARNING_HIGH;
+    UiInstance.BattWarningLow     = ACCU_WARNING_LOW;
+    UiInstance.BattShutdownHigh   = ACCU_SHUTDOWN_HIGH;
+    UiInstance.BattShutdownLow    = ACCU_SHUTDOWN_LOW;
+  } else {
+    UiInstance.BattIndicatorHigh  = BATT_INDICATOR_HIGH;
+    UiInstance.BattIndicatorLow   = BATT_INDICATOR_LOW;
+    UiInstance.BattWarningHigh    = BATT_WARNING_HIGH;
+    UiInstance.BattWarningLow     = BATT_WARNING_LOW;
+    UiInstance.BattShutdownHigh   = BATT_SHUTDOWN_HIGH;
+    UiInstance.BattShutdownLow    = BATT_SHUTDOWN_LOW;
   }
 
 #ifdef DEBUG_VIRTUAL_BATT_TEMP
-  cUiInitTemp();
+  cUiPowerInitTemperature();
 #endif
 
   return (Result);
@@ -790,7 +407,7 @@ RESULT    cUiExit(void)
   RESULT  Result = FAIL;
 
 #ifdef DEBUG_VIRTUAL_BATT_TEMP
-  cUiExitTemp();
+  cUiPowerExitTemperature();
 #endif
 
   Result  =  dTerminalExit();
@@ -810,16 +427,11 @@ RESULT    cUiExit(void)
   if (UiInstance.LedLeftGreenTriggerFile >= MIN_HANDLE) {
     close(UiInstance.LedLeftGreenTriggerFile);
   }
-
-  if (UiInstance.AdcFile >= MIN_HANDLE)
-  {
-    munmap(UiInstance.pAnalog,sizeof(ANALOG));
-    close(UiInstance.AdcFile);
+  if (UiInstance.BatteryVoltageNowFile >= MIN_HANDLE) {
+    close(UiInstance.BatteryVoltageNowFile);
   }
-
-  if (UiInstance.PowerFile >= MIN_HANDLE)
-  {
-    close(UiInstance.PowerFile);
+  if (UiInstance.BatteryCurrentNowFile >= MIN_HANDLE) {
+    close(UiInstance.BatteryCurrentNowFile);
   }
 
   Result  =  OK;
@@ -892,15 +504,9 @@ DATA8     cUiEscape(void)
 }
 
 
-void      cUiTestpin(DATA8 State)
+void cUiTestpin(DATA8 State)
 {
-  DATA8   Data8;
-
-  Data8  =  State;
-  if (UiInstance.PowerFile >= MIN_HANDLE)
-  {
-    write(UiInstance.PowerFile,&Data8,1);
-  }
+    // TODO: do we need a test pin?
 }
 
 
@@ -951,87 +557,6 @@ void      cUiWriteString(DATA8 *pString)
     pString++;
   }
 }
-
-#define   SHUNT_IN        0.11              //  [Ohm]
-#define   AMP_CIN         22.0              //  [Times]
-
-#define   EP2_SHUNT_IN    0.05              //  [Ohm]
-#define   EP2_AMP_CIN     15.0              //  [Times]
-
-#define   SHUNT_OUT       0.055             //  [Ohm]
-#define   AMP_COUT        19.0              //  [Times]
-
-#define   VCE             0.05              //  [V]
-#define   AMP_VIN         0.5               //  [Times]
-
-#define   AVR_CIN         300
-#define   AVR_COUT        30
-#define   AVR_VIN         30
-
-#define   CNT_V(C)    (((DATAF)C * (DATAF)ADC_REF) / ((DATAF)ADC_RES * (DATAF)1000.0))
-
-
-void      cUiUpdateCnt(void)
-{
-  if (UiInstance.PowerInitialized)
-  {
-    UiInstance.CinCnt  *= (DATAF)(AVR_CIN - 1);
-    UiInstance.CoutCnt *= (DATAF)(AVR_COUT - 1);
-    UiInstance.VinCnt  *= (DATAF)(AVR_VIN - 1);
-
-    UiInstance.CinCnt  +=  (DATAF)(*UiInstance.pAnalog).BatteryCurrent;
-    UiInstance.CoutCnt +=  (DATAF)(*UiInstance.pAnalog).MotorCurrent;
-    UiInstance.VinCnt  +=  (DATAF)(*UiInstance.pAnalog).Cell123456;
-
-    UiInstance.CinCnt  /= (DATAF)(AVR_CIN);
-    UiInstance.CoutCnt /= (DATAF)(AVR_COUT);
-    UiInstance.VinCnt  /= (DATAF)(AVR_VIN);
-  }
-  else
-  {
-    UiInstance.CinCnt   =  (DATAF)(*UiInstance.pAnalog).BatteryCurrent;
-    UiInstance.CoutCnt  =  (DATAF)(*UiInstance.pAnalog).MotorCurrent;
-    UiInstance.VinCnt   =  (DATAF)(*UiInstance.pAnalog).Cell123456;
-    UiInstance.PowerInitialized  =  1;
-  }
-}
-
-
-void      cUiUpdatePower(void)
-{
-#ifndef Linux_X86
-  DATAF   CinV;
-  DATAF   CoutV;
-
-  if ((UiInstance.Hw == FINAL) || (UiInstance.Hw == FINALB))
-  {
-    CinV                =  CNT_V(UiInstance.CinCnt) / AMP_CIN;
-    UiInstance.Vbatt    =  (CNT_V(UiInstance.VinCnt) / AMP_VIN) + CinV + VCE;
-
-    UiInstance.Ibatt    =  CinV / SHUNT_IN;
-    CoutV               =  CNT_V(UiInstance.CoutCnt) / AMP_COUT;
-    UiInstance.Imotor   =  CoutV / SHUNT_OUT;
-
-  }
-  else
-  {
-    CinV                =  CNT_V(UiInstance.CinCnt) / EP2_AMP_CIN;
-    UiInstance.Vbatt    =  (CNT_V(UiInstance.VinCnt) / AMP_VIN) + CinV + VCE;
-
-    UiInstance.Ibatt    =  CinV / EP2_SHUNT_IN;
-    UiInstance.Imotor   =  0;
-
-  }
-
-#endif
-#ifdef DEBUG_TEMP_SHUTDOWN
-
-  UiInstance.Vbatt  =  7.0;
-  UiInstance.Ibatt  =  5.0;
-
-#endif
-}
-
 
 //#define   TRACK_UPDATE
 
@@ -1494,340 +1019,6 @@ void      cUiRunScreen(void)
   }
 }
 
-#ifndef   DISABLE_LOW_VOLTAGE
-
-/*! \page pmbattsd Low Voltage Shutdown
- *
- *  <hr size="1"/>
- *\n
- *  Low voltage shutdown is testing the battery voltage against BATT_SHUTDOWN_LOW level and when the voltage is
- *  below that a running user program will be stopped, running motors will stop, a popup window will appear on the screen
- *  and a timer will be started. If the voltage not rises over the BATT_SHUTDOWN_LOW level within LOW_VOLTAGE_SHUTDOWN_TIME
- *  the brick will save to flash and power down.
-\verbatim
-
-
-                          V
-                          ^
-                          |
-                          |
-                          |
-                          |
-  XXXX_WARNING_HIGH       -    Make LEDs normal
-                          |
-                          |
-                          |    Keep LED colors
-                          |
-                          |
-  XXXX_WARNING_LOW        -    Make LEDs ORANGE
-                          |
-  XXXX_SHUTDOWN_HIGH      -         -         -         -
-                          |
-                          |    Reset shutdown timer
-                          |
-  XXXX_SHUTDOWN_LOW       -         -         -         -
-                          |
-                          |    Show popup and stop user program immediately
-                          |
-                          |    Power down after LOW_VOLTAGE_SHUTDOWN_TIME
-                          |
-                          |
-                          '-----------------------------------
-
-  XXXX = BATT/ACCU
-
- \endverbatim
- */
-
-void      cUiCheckVoltage(void)
-{ // 400mS
-
-  cUiUpdatePower();
-
-  if (UiInstance.Vbatt >= UiInstance.BattWarningHigh)
-  {
-    UiInstance.Warning &= ~WARNING_BATTLOW;
-  }
-
-  if (UiInstance.Vbatt <= UiInstance.BattWarningLow)
-  {
-    UiInstance.Warning |=  WARNING_BATTLOW;
-  }
-
-  if (UiInstance.Vbatt >= UiInstance.BattShutdownHigh)
-  { // Good
-
-    UiInstance.Warning &= ~WARNING_VOLTAGE;
-  }
-
-  if (UiInstance.Vbatt < UiInstance.BattShutdownLow)
-  { // Bad
-
-    UiInstance.Warning |=  WARNING_VOLTAGE;
-
-    ProgramEnd(USER_SLOT);
-
-    if ((UiInstance.MilliSeconds - UiInstance.VoltageTimer) >= LOW_VOLTAGE_SHUTDOWN_TIME)
-    { // Realy bad
-      #ifdef DEBUG
-      printf("Shutting down due to low battery\n");
-      #endif
-      UiInstance.ShutDown         =  1;
-    }
-  }
-  else
-  {
-    UiInstance.VoltageTimer  =  UiInstance.MilliSeconds;
-  }
-}
-
-#endif
-
-#ifdef ENABLE_HIGH_CURRENT
-/*! \page pmloadsd High Load Shutdown
- *
- *  <hr size="1"/>
- *\n
- *  High load shutdown is based on the total current "I" drawn from the battery. A virtual integrated current "Iint"
- *  simulates the load on and the temperature inside the battery and is maintained by integrating the draw current over time.
- *  LOAD_BREAK_EVEN is the level that defines if "Iint" integrates up or down.
- *  If or when "Iint" reaches the limit (LOAD_SHUTDOWN_HIGH or LOAD_SHUTDOWN_FAIL) the user program is stopped, motors are stopped
- *  and a popup screen appears on the display.
- *  The popup screen disappears when a button is pressed but no user program can be activated until the "Iint" has decreased below
- *  LOAD_BREAK_EVEN level.
- *
- \verbatim
-
-
-                          I
-                          ^
-  LOAD_SHUTDOWN_FAIL     -|-         -         -         -         -         -|-
-                          |                                                   |
-                          |                                                   |
-                          |                          Iint                     |
-  LOAD_SHUTDOWN_HIGH     -|-         -         -    -/-                       |
-                          |          ______         /.                        |
-                          |         /      \       / .                        |
-                          |        /        \_____/  .                        |
-                          |   ,---/-,             ,--- I                      |
-  LOAD_BREAK_EVEN        -|---'  /  '-----, ,-----'  .               I -------'
-                          |     /         | |        .                        .
-                          |____/          '-'        .                        .
-                          |                          .                        .
-                          '--------------------------|------------------------|------> T
-                          | B |  A  |  B  |C|  B  |A|D|                      |E|
-
-
-
-  A. When I is greater than LOAD_BREAK_EVEN, Iint increases with a slope given by the difference
-     (I - LOAD_BREAK_EVEN) multiplied by LOAD_SLOPE_UP.
-
-  B. When I is equal to LOAD_BREAK_EVEN, Iint stays at its level.
-
-  C. When I is lower than LOAD_BREAK_EVEN, Iint decreases with a slope given by the difference
-     (LOAD_BREAK_EVEN - I) multiplied by LOAD_SLOPE_DOWN.
-
-  D. When Iint reaches the LOAD_SHUTDOWN_HIGH level a running user program is stopped
-     and running motors are stopped.
-
-  E. When I reaches the LOAD_SHUTDOWN_FAIL level a running user program is stopped
-     and running motors are stopped.
-
- \endverbatim
- */
-
-
-void      cUiCheckPower(UWORD Time)
-{ // 400mS
-
-  DATA16  X,Y;
-  DATAF   I;
-  DATAF   Slope;
-
-  I  =  UiInstance.Ibatt + UiInstance.Imotor;
-
-  if (I > LOAD_BREAK_EVEN)
-  {
-    Slope  =  LOAD_SLOPE_UP;
-  }
-  else
-  {
-    Slope  =  LOAD_SLOPE_DOWN;
-  }
-
-  UiInstance.Iintegrated +=  (I - LOAD_BREAK_EVEN) * (Slope * (DATAF)Time / 1000.0);
-
-  if (UiInstance.Iintegrated < 0.0)
-  {
-    UiInstance.Iintegrated  =  0.0;
-  }
-  if (UiInstance.Iintegrated > LOAD_SHUTDOWN_FAIL)
-  {
-    UiInstance.Iintegrated  =  LOAD_SHUTDOWN_FAIL;
-  }
-
-  if ((UiInstance.Iintegrated >= LOAD_SHUTDOWN_HIGH) || (I >= LOAD_SHUTDOWN_FAIL))
-  {
-    UiInstance.Warning       |=  WARNING_CURRENT;
-    UiInstance.PowerShutdown  =  1;
-  }
-  if (UiInstance.Iintegrated <= LOAD_BREAK_EVEN)
-  {
-    UiInstance.Warning       &= ~WARNING_CURRENT;
-    UiInstance.PowerShutdown  =  0;
-  }
-
-  if (UiInstance.PowerShutdown)
-  {
-    if (UiInstance.ScreenBlocked == 0)
-    {
-      if (ProgramStatus(USER_SLOT) != STOPPED)
-      {
-        UiInstance.PowerState  =  1;
-      }
-    }
-    ProgramEnd(USER_SLOT);
-  }
-
-  switch (UiInstance.PowerState)
-  {
-    case 0 :
-    {
-      if (UiInstance.PowerShutdown)
-      {
-        UiInstance.PowerState++;
-      }
-    }
-    break;
-
-    case 1 :
-    {
-      if (!UiInstance.ScreenBusy)
-      {
-        if ((!UiInstance.VoltShutdown))
-        {
-          UiInstance.ScreenBlocked  =  1;
-          UiInstance.PowerState++;
-        }
-      }
-    }
-    break;
-
-    case 2 :
-    {
-      LCDCopy(&UiInstance.LcdSafe,&UiInstance.LcdSave,sizeof(UiInstance.LcdSave));
-      UiInstance.PowerState++;
-    }
-    break;
-
-    case 3 :
-    {
-      X  =  16;
-      Y  =  52;
-
-      dLcdDrawPicture((*UiInstance.pLcd).Lcd,FG_COLOR,X,Y,POP3_width,POP3_height,(UBYTE*)POP3_bits);
-
-      dLcdDrawIcon((*UiInstance.pLcd).Lcd,FG_COLOR,X + 48,Y + 10,LARGE_ICON,WARNSIGN);
-      dLcdDrawIcon((*UiInstance.pLcd).Lcd,FG_COLOR,X + 72,Y + 10,LARGE_ICON,WARN_POWER);
-      dLcdDrawLine((*UiInstance.pLcd).Lcd,FG_COLOR,X + 5,Y + 39,X + 138,Y + 39);
-      dLcdDrawIcon((*UiInstance.pLcd).Lcd,FG_COLOR,X + 56,Y + 40,LARGE_ICON,YES_SEL);
-      dLcdUpdate(UiInstance.pLcd);
-      cUiButtonClearAll();
-      UiInstance.PowerState++;
-    }
-    break;
-
-    case 4 :
-    {
-      if (cUiButtonGetShortPress(ENTER_BUTTON))
-      {
-        if (UiInstance.ScreenBlocked)
-        {
-          UiInstance.ScreenBlocked  =  0;
-        }
-        LCDCopy(&UiInstance.LcdSave,&UiInstance.LcdSafe,sizeof(UiInstance.LcdSafe));
-        dLcdUpdate(UiInstance.pLcd);
-        UiInstance.PowerState++;
-      }
-      if ((!UiInstance.PowerShutdown))
-      {
-        UiInstance.PowerState  =  0;
-      }
-    }
-    break;
-
-    case 5 :
-    {
-      if ((!UiInstance.PowerShutdown))
-      {
-        UiInstance.PowerState  =  0;
-      }
-    }
-    break;
-
-  }
-}
-#endif
-
-
-#ifndef DISABLE_VIRTUAL_BATT_TEMP
-
-/*! \page pmtempsd High Temperature Shutdown
- *
- *  <hr size="1"/>
- *\n
- *  High temperature shutdown is based on the total current drawn from the battery and the battery voltage. An estimated
- *  temperature rise is calculated from the battery voltage, current, internal resistance and time
- *
- *
- \verbatim
-
-
-
-
-
- \endverbatim
- */
-
-void      cUiCheckTemp(void)
-{
-  if ((UiInstance.MilliSeconds - UiInstance.TempTimer) >= CALL_INTERVAL)
-  {
-    UiInstance.TempTimer +=  CALL_INTERVAL;
-    UiInstance.Tbatt      =  new_bat_temp(UiInstance.Vbatt,(UiInstance.Ibatt * (DATAF)1.1));
-#ifdef DEBUG_TEMP_SHUTDOWN
-    UiInstance.Tbatt     +=  35.0;
-#endif
-#ifdef DEBUG_VIRTUAL_BATT_TEMP
-    char    Buffer[250];
-    int     BufferSize;
-
-    if (TempFile >= MIN_HANDLE)
-    {
-      BufferSize  =  snprintf(Buffer,250,"%8.1f,%9.6f,%9.6f,%11.6f\n",(float)UiInstance.MilliSeconds / (float)1000,UiInstance.Vbatt,UiInstance.Ibatt,UiInstance.Tbatt);
-      write(TempFile,Buffer,BufferSize);
-    }
-#endif
-  }
-
-  if (UiInstance.Tbatt >= TEMP_SHUTDOWN_WARNING)
-  {
-    UiInstance.Warning   |=  WARNING_TEMP;
-  }
-  else
-  {
-    UiInstance.Warning   &= ~WARNING_TEMP;
-  }
-
-
-  if (UiInstance.Tbatt >= TEMP_SHUTDOWN_FAIL)
-  {
-    ProgramEnd(USER_SLOT);
-    UiInstance.ShutDown         =  1;
-  }
-}
-#endif
-
 #ifndef   DISABLE_LOW_MEMORY
 
 void      cUiCheckMemory(void)
@@ -1886,7 +1077,7 @@ void      cUiUpdate(UWORD Time)
 
   cUiUpdateButtons(Time);
   cUiUpdateInput();
-  cUiUpdateCnt();
+  cUiPowerUpdateCnt();
 
 #ifdef MAX_FRAMES_PER_SEC
   UiInstance.DisplayTimer += (ULONG)Time;
@@ -1926,7 +1117,7 @@ void      cUiUpdate(UWORD Time)
         {
           if (!UiInstance.Accu)
           {
-            cUiCheckTemp();
+            cUiPowerCheckTemperature();
           }
         }
 #endif
@@ -1966,7 +1157,7 @@ void      cUiUpdate(UWORD Time)
 #ifndef DISABLE_LOW_VOLTAGE
         if (UiInstance.ReadyForWarnings)
         {
-          cUiCheckVoltage();
+          cUiPowerCheckVoltage();
         }
 #endif
       }
@@ -3051,10 +2242,9 @@ void      cUiWrite(void)
     {
       Data8  =  *(DATA8*)PrimParPointer();
 
-      if (UiInstance.PowerFile >= 0)
-      {
-        ioctl(UiInstance.PowerFile,0,(size_t)&Data8);
-      }
+      // TODO: do we want to actually power down the device?
+      // In the official firmware, this sets a flag in d_power that causes
+      // the brick to shut down when d_power is unloaded.
 
       DspStat  =  NOBREAK;
     }
