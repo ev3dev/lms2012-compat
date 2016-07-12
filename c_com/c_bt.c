@@ -746,178 +746,64 @@ UBYTE      BtStopScan(void)
   return(RtnVal);
 }
 
-
-UWORD     cBtReadCh0(UBYTE *pBuf, UWORD Length)
+static UWORD cBtRead(DATA8 ch, UBYTE *pBuf, UWORD Length)
 {
-  MSGBUF  *pMsgBuf;
-  UWORD   RtnLen = 0;
+    MSGBUF *pMsgBuf;
+    UWORD RtnLen = 0;
 
-  pMsgBuf = &(BtInstance.BtCh[0].MsgBuf);
+    pMsgBuf = &BtInstance.BtCh[ch].MsgBuf;
 
-  if (MSG_BUF_FULL == pMsgBuf->Status)
-  {
-    #ifdef DEBUG
-      printf("\n MSG_BUF_FULL - Reading from cCom on Bt Channel 0 number of bytes = %d\n",pMsgBuf->InPtr);
-    #endif
+    if (MSG_BUF_FULL == pMsgBuf->Status) {
+#ifdef DEBUG
+        printf("MSG_BUF_FULL on Bt Channel %d, number of bytes = %d\n",
+               ch, pMsgBuf->InPtr);
+#endif
+        memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
+        RtnLen           =  pMsgBuf->InPtr;
+        pMsgBuf->Status  =  MSG_BUF_EMPTY;
+    }
 
-    memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
-    RtnLen           =  pMsgBuf->InPtr;
-    pMsgBuf->Status  =  MSG_BUF_EMPTY;
-  }
-  return(RtnLen);
+    return RtnLen;
 }
 
-
-UWORD     cBtReadCh1(UBYTE *pBuf, UWORD Length)
+UWORD cBtReadCh0(UBYTE *pBuf, UWORD Length)
 {
-  MSGBUF  *pMsgBuf;
-  UWORD   RtnLen = 0;
-
-  pMsgBuf = &(BtInstance.BtCh[1].MsgBuf);
-
-  if (MSG_BUF_FULL == pMsgBuf->Status)
-  {
-
-    #ifdef DEBUG
-      printf("\n MSG_BUF_FULL on Bt Channel 1 %d bytes copied\n",pMsgBuf->InPtr);
-    #endif
-
-    memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
-    RtnLen           =  pMsgBuf->InPtr;
-    pMsgBuf->Status  =  MSG_BUF_EMPTY;
-  }
-  return(RtnLen);
+    return cBtRead(0, pBuf, Length);
 }
 
-
-UWORD     cBtReadCh2(UBYTE *pBuf, UWORD Length)
+UWORD cBtReadCh1(UBYTE *pBuf, UWORD Length)
 {
-  MSGBUF  *pMsgBuf;
-  UWORD   RtnLen = 0;
-
-  pMsgBuf = &(BtInstance.BtCh[2].MsgBuf);
-
-  if (MSG_BUF_FULL == pMsgBuf->Status)
-  {
-
-    #ifdef DEBUG
-      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
-    #endif
-
-    memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
-    RtnLen           =  pMsgBuf->InPtr;
-    pMsgBuf->Status  =  MSG_BUF_EMPTY;
-  }
-  return(RtnLen);
+    return cBtRead(1, pBuf, Length);
 }
 
-
-UWORD      cBtReadCh3(UBYTE *pBuf, UWORD Length)
+UWORD cBtReadCh2(UBYTE *pBuf, UWORD Length)
 {
-  MSGBUF  *pMsgBuf;
-  UWORD   RtnLen = 0;
-
-  pMsgBuf = &(BtInstance.BtCh[3].MsgBuf);
-
-  if (MSG_BUF_FULL == pMsgBuf->Status)
-  {
-
-    #ifdef DEBUG
-      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
-    #endif
-
-    memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
-    RtnLen           =  pMsgBuf->InPtr;
-    pMsgBuf->Status  =  MSG_BUF_EMPTY;
-  }
-  return(RtnLen);
+    return cBtRead(2, pBuf, Length);
 }
 
-
-UWORD      cBtReadCh4(UBYTE *pBuf, UWORD Length)
+UWORD cBtReadCh3(UBYTE *pBuf, UWORD Length)
 {
-  MSGBUF  *pMsgBuf;
-  UWORD   RtnLen = 0;
-
-  pMsgBuf = &(BtInstance.BtCh[4].MsgBuf);
-
-  if (MSG_BUF_FULL == pMsgBuf->Status)
-  {
-
-    #ifdef DEBUG
-      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
-    #endif
-
-    memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
-    RtnLen           =  pMsgBuf->InPtr;
-    pMsgBuf->Status  =  MSG_BUF_EMPTY;
-  }
-  return(RtnLen);
+    return cBtRead(3, pBuf, Length);
 }
 
-
-UWORD      cBtReadCh5(UBYTE *pBuf, UWORD Length)
+UWORD cBtReadCh4(UBYTE *pBuf, UWORD Length)
 {
-  MSGBUF  *pMsgBuf;
-  UWORD   RtnLen = 0;
-
-  pMsgBuf = &(BtInstance.BtCh[5].MsgBuf);
-
-  if (MSG_BUF_FULL == pMsgBuf->Status)
-  {
-
-    #ifdef DEBUG
-      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
-    #endif
-
-    memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
-    RtnLen           =  pMsgBuf->InPtr;
-    pMsgBuf->Status  =  MSG_BUF_EMPTY;
-  }
-  return(RtnLen);
+    return cBtRead(4, pBuf, Length);
 }
 
-
-UWORD      cBtReadCh6(UBYTE *pBuf, UWORD Length)
+UWORD cBtReadCh5(UBYTE *pBuf, UWORD Length)
 {
-  MSGBUF  *pMsgBuf;
-  UWORD   RtnLen = 0;
-
-  pMsgBuf = &(BtInstance.BtCh[6].MsgBuf);
-
-  if (MSG_BUF_FULL == pMsgBuf->Status)
-  {
-
-    #ifdef DEBUG
-      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
-    #endif
-
-    memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
-    RtnLen           =  pMsgBuf->InPtr;
-    pMsgBuf->Status  =  MSG_BUF_EMPTY;
-  }
-  return(RtnLen);
+    return cBtRead(5, pBuf, Length);
 }
 
-UWORD      cBtReadCh7(UBYTE *pBuf, UWORD Length)
+UWORD cBtReadCh6(UBYTE *pBuf, UWORD Length)
 {
-  MSGBUF  *pMsgBuf;
-  UWORD   RtnLen = 0;
+    return cBtRead(6, pBuf, Length);
+}
 
-  pMsgBuf = &(BtInstance.BtCh[7].MsgBuf);
-
-  if (MSG_BUF_FULL == pMsgBuf->Status)
-  {
-
-    #ifdef DEBUG
-      printf("\n MSG_BUF_FULL on Bt Channel 1\n");
-    #endif
-
-    memcpy(pBuf, pMsgBuf->Buf, (pMsgBuf->InPtr));
-    RtnLen           =  pMsgBuf->InPtr;
-    pMsgBuf->Status  =  MSG_BUF_EMPTY;
-  }
-  return(RtnLen);
+UWORD cBtReadCh7(UBYTE *pBuf, UWORD Length)
+{
+    return cBtRead(7, pBuf, Length);
 }
 
 void      DecodeBtStream(UBYTE BufNo)
