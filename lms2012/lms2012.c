@@ -3200,7 +3200,7 @@ void      ObjectReturn(void)
   CopyLocalsToPars(ObjectIdCaller);
 
   // Stop called object and start calling object
-#ifdef OLDCALL
+#ifdef ENABLE_OLDCALL
   ObjectDeQueue(VMInstance.ObjectId);
   ObjectEnQueue(ObjectIdCaller);
 #else
@@ -3273,7 +3273,7 @@ void      ObjectCall(void)
     (*VMInstance.pObjList[VMInstance.ObjectId]).ObjStatus   =  HALTED;
 
     // Start called object
-#ifdef OLDCALL
+#ifdef ENABLE_OLDCALL
     SetDispatchStatus(STOPBREAK);
     ObjectEnQueue(ObjectIdToCall);
 #else

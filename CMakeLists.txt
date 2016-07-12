@@ -38,6 +38,35 @@ option (LMS2012_DEBUG_MEMORY_USAGE "Enable memory usage debug messages in c_memo
 option (LMS2012_DEBUG_RECHARGABLE "Enable rechargable battery debug messages in c_ui")
 option (LMS2012_ENABLE_DEBUG_PULSE "Enable opUI_WRITE(ALLOW_PULSE) bytecode" Yes)
 
+option (LMS2012_ENABLE_AD_WORD_PROTECT "Enable A/D word result protection" Yes)
+option (LMS2012_ENABLE_BLOCK_ALIAS_LOCALS "Enable change of block locals if sub call alias (parallelism)")
+option (LMS2012_ENABLE_BUMPED "Enable touch sensor bumped" Yes)
+option (LMS2012_ENABLE_DAISYCHAIN "Enable daisy chaining")
+option (LMS2012_ENABLE_DAISYCHAIN_COM_CALL "Enable daisy chain communications call")
+option (LMS2012_ENABLE_FAST_DATALOG_BUFFER "Enable fast datalog buffer" Yes)
+option (LMS2012_ENABLE_FILENAME_CHECK "Enable c_memory filename check" Yes)
+option (LMS2012_ENABLE_HIGH_CURRENT "Enable shut down on high current")
+option (LMS2012_ENABLE_LOAD_TEST "Show integrated current in the top line")
+option (LMS2012_ENABLE_LOG_ASCII "Enable ASCII log instead of numeric")
+option (LMS2012_ENABLE_LOW_MEMORY "Enable check low memory" Yes)
+option (LMS2012_ENABLE_LOW_VOLTAGE "Enable shut down on low voltage")
+option (LMS2012_ENABLE_MEMORY_TEST "Show used memory in the top line")
+option (LMS2012_ENABLE_NEW_CALL_MUTEX "Enable smart object switching after return from non reentrant sub call (enables blocked thread call)" Yes)
+option (LMS2012_ENABLE_OLD_COLOR "Enable support for NXT color sensor" Yes)
+option (LMS2012_ENABLE_OLDCALL "Don't use optimised sub calls")
+option (LMS2012_ENABLE_PAR_ALIGNMENT "Enable possibility to align sub call parameter types" Yes)
+option (LMS2012_ENABLE_PERFORMANCE_TEST "Show performance bar in the top line")
+option (LMS2012_ENABLE_PREEMPTED_VM "Run VM as preempted")
+option (LMS2012_ENABLE_SDCARD_SUPPORT "Enable SD card")
+option (LMS2012_ENABLE_SOUND "Enable sound" Yes)
+option (LMS2012_ENABLE_STATUS_TEST "Enable status test")
+option (LMS2012_ENABLE_SYSTEM_BYTECODE "Enable the use of opSYSTEM command" Yes)
+option (LMS2012_ENABLE_UART_DATA_ERROR "Don't reset UART sensor if timeout or crc error" Yes)
+option (LMS2012_ENABLE_UPDATE_DISASSEMBLY "Enable disassemble of running update commands" Yes)
+option (LMS2012_ENABLE_USBSTICK_SUPPORT "Enable USB stick")
+option (LMS2012_ENABLE_VIRTUAL_BATT_TEMP "Enable guessing of battery temperature" Yes)
+
+
 # translate options into defines
 
 if (LMS2012_ENABLE_TERMINAL)
@@ -86,6 +115,47 @@ endif ()
 if (LMS2012_ENABLE_DEBUG_PULSE)
     add_definitions ("-DALLOW_DEBUG_PULSE")
 endif ()
+set (LMS2012_ENABLE_OPTIONS
+    OLDCALL
+    LOG_ASCII
+    HIGH_CURRENT
+    PERFORMANCE_TEST
+    LOAD_TEST
+    MEMORY_TEST
+    STATUS_TEST
+)
+foreach (OPTION ${LMS2012_ENABLE_OPTIONS})
+    if (LMS2012_ENABLE_${OPTION})
+        add_definitions ("-DENABLE_${OPTION}")
+    endif ()
+endforeach ()
+set (LMS2012_DISABLE_OPTIONS
+    OLD_COLOR
+    DAISYCHAIN
+    DAISYCHAIN_COM_CALL
+    FAST_DATALOG_BUFFER
+    BUMPED
+    LOW_VOLTAGE
+    LOW_MEMORY
+    UART_DATA_ERROR
+    PREEMPTED_VM
+    SDCARD_SUPPORT
+    USBSTICK_SUPPORT
+    VIRTUAL_BATT_TEMP
+    SOUND
+    PAR_ALIGNMENT
+    NEW_CALL_MUTEX
+    SYSTEM_BYTECODE
+    FILENAME_CHECK
+    AD_WORD_PROTECT
+    UPDATE_DISASSEMBLY
+    BLOCK_ALIAS_LOCALS
+)
+foreach (OPTION ${LMS2012_DISABLE_OPTIONS})
+    if (NOT LMS2012_ENABLE_${OPTION})
+        add_definitions ("-DDISABLE_${OPTION}")
+    endif ()
+endforeach ()
 
 # global compiler options
 

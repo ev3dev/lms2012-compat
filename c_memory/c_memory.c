@@ -2595,7 +2595,7 @@ void      cMemoryFile(void)
 
       if (Items)
       {
-#ifndef LOG_ASCII
+#ifndef ENABLE_LOG_ASCII
 
         DataF     =  (DATAF)Time;
         Bytes     =  0;
@@ -2725,7 +2725,7 @@ void      cMemoryFile(void)
               {
                 pSource       =  (DATA8*)(*pDescr).pArray;
 
-#ifndef LOG_ASCII
+#ifndef ENABLE_LOG_ASCII
                 Buffer[0]  =  0xFF;
                 Buffer[1]  =  0xFF;
                 Buffer[2]  =  0xFF;
@@ -2811,7 +2811,7 @@ void      cMemoryFile(void)
         }
         else
         {
-#ifndef LOG_ASCII
+#ifndef ENABLE_LOG_ASCII
           Buffer[0]  =  0xFF;
           Buffer[1]  =  0xFF;
           Buffer[2]  =  0xFF;

@@ -64,48 +64,7 @@ char      *HwId = "03";
 
 #endif
 
-
-//  FIRMWARE VARIANTS
-
-//#define   OLDCALL                       //!< Don't use optimised sub calls
-//#define   DISABLE_PRU_UARTS             //!< Don't use port 3 and 4 for UART sensors
-//#define   DISABLE_OLD_COLOR             //!< Don't support NXT color sensor
-//#define   DISABLE_ADC                   //!< Don't use ADC (no clock EMC test)
-//#define   ADC_BITBANGING                //!< Don't use SPI for a/d converter
-#define   DISABLE_DAISYCHAIN
-#define   DISABLE_DAISYCHAIN_COM_CALL
-//#define   DISABLE_FAST_DATALOG_BUFFER
-//#define   DISABLE_BUMPED
-//#define   LOG_ASCII
-//#define   DISABLE_FIQ_IIC
-#define   UART1_FAKE_INTERRUPT          //!< Don't use real interrupt on UART1 (linux prompt)
-#define   DISABLE_LOW_VOLTAGE           //!< Don't shut down on low voltage
-//#define   ENABLE_HIGH_CURRENT           //!< Don't shut down on high current
-//#define   DISABLE_LOW_MEMORY            //!< Don't check low memory
-//#define   DISABLE_UART_DATA_ERROR       //!< Don't reset UART sensor if timeout or crc error
-#define   DISABLE_PREEMPTED_VM          //!< Don't run VM as preempted
-#define   DISABLE_SDCARD_SUPPORT        //!< Don't use SD card
-#define   DISABLE_USBSTICK_SUPPORT      //!< Don't use USB stick
-//#define   ENABLE_PERFORMANCE_TEST       //!< Show performance bar in the top line
-//#define   ENABLE_LOAD_TEST              //!< Show integrated current in the top line
-//#define   ENABLE_MEMORY_TEST            //!< Show used memory in the top line
-//#define   ENABLE_STATUS_TEST
-//#define   DISABLE_VIRTUAL_BATT_TEMP
-//#define   DISABLE_SOUND
-//#define   DISABLE_PAR_ALIGNMENT         //!< Disable possibility to align sub call parameter types
-//#define   DISABLE_NEW_CALL_MUTEX        //!< Disable smart object switching after return from non reentrant sub call (enables blocked thread call)
-//#define   DISABLE_SYSTEM_BYTECODE       //!< Disable the use of opSYSTEM command
-//#define   DISABLE_FILENAME_CHECK        //!< Disable "c_memory" filename check
-//#define   DISABLE_AD_WORD_PROTECT       //!< Disable A/D word result protection
-//#define   DISABLE_UPDATE_DISASSEMBLY    //!< Disable disassemble of running update commands
-#define   DISABLE_BLOCK_ALIAS_LOCALS    //!< Disable change of block locals if sub call alias (parallelism)
-
 #define   TESTDEVICE    3
-
-//#ifdef Linux_X86
-//#define   DISABLE_DAISYCHAIN
-//#define   DISABLE_DAISYCHAIN_COM_CALL
-//#endif
 
 #ifndef PCASM
 #include  <asm/types.h>
