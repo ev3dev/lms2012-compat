@@ -2222,6 +2222,8 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
     }
     break;
 
+    // FIXME: The LIST_OPEN_HANDLES command is broken in multiple ways.
+    // See: https://github.com/mindboards/ev3sources-xtended/pull/3
     case LIST_OPEN_HANDLES:
     {
       UBYTE HCnt1, HCnt2;
