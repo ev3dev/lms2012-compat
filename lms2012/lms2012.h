@@ -213,12 +213,7 @@ char      *HwId = "03";
 
 #define   UI_PRIORITY           20                    //!< UI byte codes before switching VM thread
 #define   C_PRIORITY            200                   //!< C call byte codes
-
-#ifndef DISABLE_PREEMPTED_VM
-#define   PRG_PRIORITY          2000                  //!< Prg byte codes before switching VM thread
-#else
 #define   PRG_PRIORITY          200                   //!< Prg byte codes before switching VM thread
-#endif
 
 #define   BUTTON_DEBOUNCE_TIME        30
 #define   BUTTON_START_REPEAT_TIME    400
@@ -862,9 +857,6 @@ typedef   struct
 
   DATA8   OutDcm[OUTPUTS];        //!< Output port device types
   DATA8   OutConn[OUTPUTS];
-#ifndef DISABLE_PREEMPTED_VM
-  UWORD   PreemptMilliSeconds;
-#endif
 }
 ANALOG;
 

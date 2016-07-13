@@ -56,7 +56,6 @@ option (LMS2012_ENABLE_OLD_COLOR "Enable support for NXT color sensor" Yes)
 option (LMS2012_ENABLE_OLDCALL "Don't use optimised sub calls")
 option (LMS2012_ENABLE_PAR_ALIGNMENT "Enable possibility to align sub call parameter types" Yes)
 option (LMS2012_ENABLE_PERFORMANCE_TEST "Show performance bar in the top line")
-option (LMS2012_ENABLE_PREEMPTED_VM "Run VM as preempted")
 option (LMS2012_ENABLE_SDCARD_SUPPORT "Enable SD card")
 option (LMS2012_ENABLE_SOUND "Enable sound" Yes)
 option (LMS2012_ENABLE_STATUS_TEST "Enable status test")
@@ -139,7 +138,6 @@ set (LMS2012_DISABLE_OPTIONS
     LOW_VOLTAGE
     LOW_MEMORY
     UART_DATA_ERROR
-    PREEMPTED_VM
     SDCARD_SUPPORT
     USBSTICK_SUPPORT
     VIRTUAL_BATT_TEMP

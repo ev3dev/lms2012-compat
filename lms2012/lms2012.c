@@ -2119,36 +2119,6 @@ RESULT    mSchedInit(int argc,char *argv[])
   VMInstance.Pulse      =  0x00;
 #endif
 
-#ifndef DISABLE_PREEMPTED_VM
-  ANALOG  *pAdcTmp;
-
-  VMInstance.pAnalog     =  &VMInstance.Analog;
-  VMInstance.AdcFile     =  open(ANALOG_DEVICE_NAME,O_RDWR | O_SYNC);
-
-  if (VMInstance.AdcFile >= MIN_HANDLE)
-  {
-    pAdcTmp  =  (ANALOG*)mmap(0, sizeof(ANALOG), PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, VMInstance.AdcFile, 0);
-
-    if (pAdcTmp == MAP_FAILED)
-    {
-//#ifndef Linux_X86
-      LogErrorNumber(ANALOG_SHARED_MEMORY);
-//#endif
-    }
-    else
-    {
-      VMInstance.pAnalog  =  pAdcTmp;
-    }
-    close(VMInstance.AdcFile);
-  }
-  else
-  {
-//#ifndef Linux_X86
-    LogErrorNumber(ANALOG_DEVICE_FILE_NOT_FOUND);
-//#endif
-  }
-#endif
-
   // Reset time
 #ifndef Linux_X86
   tv.tv_sec   =  0;
@@ -2374,13 +2344,7 @@ RESULT    mSchedCtrl(UBYTE *pRestart)
   VMInstance.Pulse |=  0x80 >> VMInstance.ProgramId;
 #endif
 
-#ifndef DISABLE_PREEMPTED_VM
-  (*VMInstance.pAnalog).PreemptMilliSeconds  =  0;
-
-  while ((VMInstance.Priority) && ((*VMInstance.pAnalog).PreemptMilliSeconds < 2))
-#else
   while (VMInstance.Priority)
-#endif
   {
     if (VMInstance.Debug)
     {
@@ -2422,17 +2386,10 @@ RESULT    mSchedCtrl(UBYTE *pRestart)
     VMInstance.OldTime1 +=  Time;
 
 #ifdef DEBUG_BYTECODE_TIME
-#ifndef DISABLE_PREEMPTED_VM
-    if (Time >= 3)
-    {
-      printf("%-6d %-3d %-3d\n",Time,(*VMInstance.pAnalog).PreemptMilliSeconds,VMInstance.InstrCnt);
-    }
-#else
     if (Time >= 3)
     {
       printf("%-6d %-3d\n",Time,VMInstance.InstrCnt);
     }
-#endif
 #endif
     cComUpdate();
     cSoundUpdate();
@@ -2590,15 +2547,6 @@ RESULT    mSchedExit(void)
   Result    |=  cOutputExit();
 
   closelog();
-
-#ifndef DISABLE_PREEMPTED_VM
-  VMInstance.AdcFile     =  open(ANALOG_DEVICE_NAME,O_RDWR | O_SYNC);
-  if (VMInstance.AdcFile >= MIN_HANDLE)
-  {
-    munmap(VMInstance.pAnalog,sizeof(ANALOG));
-    close(VMInstance.AdcFile);
-  }
-#endif
 
   udev_unref(VMInstance.udev);
 

@@ -1218,9 +1218,6 @@ static enum hrtimer_restart Device1TimerInterrupt1(struct hrtimer *pTimer)
     {
       InputPoint2  =  0;
     }
-#ifndef DISABLE_PREEMPTED_VM
-    ((*pAnalog).PreemptMilliSeconds)++;
-#endif
   }
 
   if (!Color)
