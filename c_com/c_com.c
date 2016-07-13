@@ -186,7 +186,7 @@ RESULT    cComInit(void)
     ComInstance.MailBox[Cnt].WriteCnt =  0;
     ComInstance.MailBox[Cnt].Name[0]  =  0;
 
-    snprintf((char*)(&(ComInstance.MailBox[Cnt].Name[0])), 50, "%d", Cnt);
+    snprintf(ComInstance.MailBox[Cnt].Name, 50, "%d", Cnt);
     memset(ComInstance.MailBox[Cnt].Content, 0, MAILBOX_CONTENT_SIZE);
     ComInstance.MailBox[Cnt].Type      =  DATA_A;
   }
@@ -593,7 +593,7 @@ void      cComCreateBeginDl(TXBUF *pTxBuf, UBYTE *pName)
   char      TmpFileName[vmFILENAMESIZE];
 
   FileHandle = -1;
-  pDlMsg    =  (BEGIN_DL*) &(pTxBuf->Buf[0]);
+  pDlMsg    =  (BEGIN_DL*)pTxBuf->Buf;
 
   if ((strlen((char *)pTxBuf->Folder) + strlen((char *)pName) + 1) <= vmFILENAMESIZE)
   {
@@ -684,8 +684,8 @@ void      cComCreateContinueDl(RXBUF *pRxBuf, TXBUF *pTxBuf)
   CONTINUE_DL   *pContinueDl;
   RPLY_BEGIN_DL *pRplyBeginDl;
 
-  pRplyBeginDl =  (RPLY_BEGIN_DL*)&(pRxBuf->Buf[0]);
-  pContinueDl  =  (CONTINUE_DL*)&(pTxBuf->Buf[0]);
+  pRplyBeginDl =  (RPLY_BEGIN_DL*)pRxBuf->Buf;
+  pContinueDl  =  (CONTINUE_DL*)pTxBuf->Buf;
 
   pContinueDl->CmdSize   =  SIZEOF_CONTINUEDL - sizeof(CMDSIZE);
   pContinueDl->MsgCount  =  (pRplyBeginDl->MsgCount)++;
@@ -754,7 +754,7 @@ void      cComSystemReply(RXBUF *pRxBuf, TXBUF *pTxBuf)
 
       RPLY_BEGIN_DL   *pRplyBeginDl;
 
-      pRplyBeginDl  =  (RPLY_BEGIN_DL*)&(pRxBuf->Buf[0]);
+      pRplyBeginDl  =  (RPLY_BEGIN_DL*)pRxBuf->Buf;
 
       if ((SUCCESS == pRplyBeginDl->Status) || (END_OF_FILE == pRplyBeginDl->Status))
       {
@@ -803,7 +803,7 @@ void      cComSystemReply(RXBUF *pRxBuf, TXBUF *pTxBuf)
     {
 
       RPLY_CONTINUE_DL   *pRplyContinueDl;
-      pRplyContinueDl  =  (RPLY_CONTINUE_DL*)&(pRxBuf->Buf[0]);
+      pRplyContinueDl  =  (RPLY_CONTINUE_DL*)pRxBuf->Buf;
 
       if ((SUCCESS == pRplyContinueDl->Status) || (END_OF_FILE == pRplyContinueDl->Status))
       {
@@ -1033,7 +1033,7 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
         pRxBuf->pFile->Size    +=  (ULONG)(pBeginDl->FileSizeNsb2) << 16;
         pRxBuf->pFile->Size    +=  (ULONG)(pBeginDl->FileSizeMsb)  << 24;
 
-        if (OK == cComCheckForSpace(&(ComInstance.Files[FileHandle].Name[0]), pRxBuf->pFile->Size))
+        if (OK == cComCheckForSpace(ComInstance.Files[FileHandle].Name, pRxBuf->pFile->Size))
         {
           pRxBuf->pFile->Length   =  (ULONG)0;
           pRxBuf->pFile->Pointer  =  (ULONG)0;
@@ -2268,7 +2268,7 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
 
       pWriteMailbox   =  (WRITE_MAILBOX*)pRxBuf->Buf;
 
-      if(1 == cComFindMailbox(&(pWriteMailbox->Name[0]), &No))
+      if(1 == cComFindMailbox(pWriteMailbox->Name, &No))
       {
         pWriteMailboxPayload  =  (WRITE_MAILBOX_PAYLOAD*)&(pWriteMailbox->Name[(pWriteMailbox->NameSize)]);
         PayloadSize           =  (UWORD)(pWriteMailboxPayload->SizeLsb);
@@ -3509,7 +3509,7 @@ void      cComOpenMailBox(void)
 
   if (OK != ComInstance.MailBox[No].Status)
   {
-    snprintf((char*)(&(ComInstance.MailBox[No].Name[0])), 50,"%s",(char*)pBoxName);
+    snprintf(ComInstance.MailBox[No].Name, 50,"%s",(char*)pBoxName);
     memset(ComInstance.MailBox[No].Content, 0, MAILBOX_CONTENT_SIZE);
     ComInstance.MailBox[No].Type      =  Type;
     ComInstance.MailBox[No].Status    =  OK;

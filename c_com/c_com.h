@@ -1512,7 +1512,7 @@ typedef   struct
 
 typedef   struct
 {
-  UBYTE   Name[50];
+  char    Name[50];
   UBYTE   Status;
   UBYTE   FifoSize;
   UBYTE   Type;
