@@ -360,7 +360,7 @@ subcall   SearchScreen                                                //  void S
   DATA8   State                                                       //
   DATAS   String LCDNAMESIZE                                          //
   DATAS   Name DEVICENAMESIZE                                         //
-  DATA8   Parred                                                      //
+  DATA8   Paired                                                      //
   DATA8   Connected                                                   //
   DATA8   Type                                                        //
   DATA8   Visible                                                     //
@@ -421,29 +421,29 @@ NextEntry:                                                            //        
                                                                       //          {
   // Draw entry name                                                  //
   MOVE16_8(Entry,Item)                                                //            Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible)
   UI_DRAW(TEXT,FG_COLOR,SEARCH_LINE_STARTX,Ypos,String)               //            I_DRAW(TEXT,1,SEARCH_LINE_STARTX,Ypos,String)
                                                                       //
   // Draw star                                                        //
-  JR_FALSE(Parred,NotParred)                                          //            if (Parred)
+  JR_FALSE(Paired,NotPaired)                                          //            if (Paired)
                                                                       //            {
   JR_EQ8(Type,LMS_ENCRYPT_NONE,NotEncrypted1)                             //              if (Type)
                                                                       //              {
-  // Show parred and encrypted icon                                   //
+  // Show paired and encrypted icon                                   //
   UI_DRAW(ICON,FG_COLOR,SEARCH_STAR_STARTX,Yipos,MENU_ICON,ICON_LOCKSTAR) //            UI_DRAW(ICON,FG_COLOR,SEARCH_STAR_STARTX,Yipos,MENU_ICON,ICON_LOCKSTAR)
                                                                       //
   JR(EndEncrypted1)                                                   //              }
                                                                       //              else
 NotEncrypted1:                                                        //              {
                                                                       //
-  // Show parred icon                                                 //
+  // Show paired icon                                                 //
   UI_DRAW(ICON,FG_COLOR,SEARCH_STAR_STARTX,Yipos,MENU_ICON,ICON_STAR) //                UI_DRAW(ICON,FG_COLOR,SEARCH_STAR_STARTX,Yipos,MENU_ICON,ICON_STAR)
                                                                       //
 EndEncrypted1:                                                        //              }
                                                                       //
-  JR(EndParred)                                                       //            }
+  JR(EndPaired)                                                       //            }
                                                                       //            else
-NotParred:                                                            //            {
+NotPaired:                                                            //            {
   JR_EQ8(Type,LMS_ENCRYPT_NONE,NotEncrypted2)                             //              if (Type)
                                                                       //              {
   // Show encrypted icon                                              //
@@ -455,7 +455,7 @@ NotEncrypted2:                                                        //        
                                                                       //
                                                                       //
 EndEncrypted2:                                                        //              }
-EndParred:                                                            //            }
+EndPaired:                                                            //            }
                                                                       //
   // Draw checkbox                                                    //
   JR_FALSE(Connected,NotConnected)                                    //            if (Connected)
@@ -560,7 +560,7 @@ NoUpdate:                                                             //      }
   JR_NEQ16(ExtPointer,0,Not0)                                         //        if (ExtPointer == 0)
                                                                       //        {
   MOVE16_8(Pointer,Item)                                              //          Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible)
                                                                       //
   JR_FALSE(Connected,NotConnected2)                                   //          if (Connected)
                                                                       //          {
@@ -570,17 +570,17 @@ NoUpdate:                                                             //      }
                                                                       //          else
 NotConnected2:                                                        //          {
                                                                       //
-  JR_FALSE(Parred,NotParred2)                                         //            if (Parred)
+  JR_FALSE(Paired,NotPaired2)                                         //            if (Paired)
                                                                       //            {
   CALL(Action3Screen,Pointer,1)                                       //              Action3Screen(Pointer,1)
                                                                       //
-  JR(EndParred2)                                                      //            }
+  JR(EndPaired2)                                                      //            }
                                                                       //            else
-NotParred2:                                                           //            {
+NotPaired2:                                                           //            {
                                                                       //
   CALL(Action1Screen,Pointer,1)                                       //              Action1Screen(Pointer,1)
                                                                       //
-EndParred2:                                                           //            }
+EndPaired2:                                                           //            }
 EndConnected2:                                                        //          }
 Not0:                                                                 //        }
                                                                       //
@@ -675,7 +675,7 @@ subcall   HiddenScreen                                                //  void H
                                                                       //
   DATA8   State                                                       //
   DATAS   String WIFIPASSKEYSIZE                                      //
-  DATA8   Parred                                                      //
+  DATA8   Paired                                                      //
   DATA8   Connected                                                   //
   DATA8   Type                                                        //
   DATA8   Visible                                                     //
@@ -757,7 +757,7 @@ subcall   EncrypScreen                                                //  void E
                                                                       //
   DATA8   Run                                                         //
   DATA8   State                                                       //
-  DATA8   Parred                                                      //
+  DATA8   Paired                                                      //
   DATA8   Connected                                                   //
   DATA8   Type                                                        //
                                                                       //
@@ -900,7 +900,7 @@ subcall   Action1Screen                                               //  void A
   DATA8   State                                                       //
   DATAS   String LCDNAMESIZE                                          //
   DATAS   Name DEVICENAMESIZE                                         //
-  DATA8   Parred                                                      //
+  DATA8   Paired                                                      //
   DATA8   Connected                                                   //
   DATA8   Type                                                        //
   DATA8   Visible                                                     //
@@ -928,7 +928,7 @@ Loop:                                                                 //    {
                                                                       //
   // Show short device name                                           //
   MOVE16_8(Entry,Item)                                                //      Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible)//COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible)//COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible)
   UI_DRAW(SELECT_FONT,1)                                              //      UI_DRAW(SELECT_FONT,1)
   UI_DRAW(TEXT,FG_COLOR,Xpos,Ypos,String)                             //      UI_DRAW(TEXT,FG_COLOR,Xpos,Ypos,String)
   UI_DRAW(SELECT_FONT,0)                                              //      UI_DRAW(SELECT_FONT,0)
@@ -966,7 +966,7 @@ TooHigh:                                                              //      }
                                                                       //      {
   // Get device name                                                  //
   MOVE16_8(Entry,Item)                                                //        Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Paired,Connected,Type,Visible)
                                                                       //
   JR_NEQ16(Pointer,0,Not0)                                            //        if (Pointer == 0)
                                                                       //        {
@@ -1025,7 +1025,7 @@ subcall   Action2Screen                                               //  void A
   DATA8   State                                                       //
   DATAS   String LCDNAMESIZE                                          //
   DATAS   Name DEVICENAMESIZE                                         //
-  DATA8   Parred                                                      //
+  DATA8   Paired                                                      //
   DATA8   Connected                                                   //
   DATA8   Type                                                        //
   DATA8   Visible                                                     //
@@ -1053,7 +1053,7 @@ Loop:                                                                 //    {
                                                                       //
   // Show short device name                                           //
   MOVE16_8(Entry,Item)                                                //          Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible)//COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible)//COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible)
   UI_DRAW(SELECT_FONT,1)                                              //      UI_DRAW(SELECT_FONT,1)
   UI_DRAW(TEXT,FG_COLOR,Xpos,Ypos,String)                             //      UI_DRAW(TEXT,FG_COLOR,Xpos,Ypos,String)
   UI_DRAW(SELECT_FONT,0)                                              //      UI_DRAW(SELECT_FONT,0)
@@ -1107,7 +1107,7 @@ TooHigh:                                                              //      }
                                                                       //      {
   // Get device name                                                  //
   MOVE16_8(Entry,Item)                                                //        Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Paired,Connected,Type,Visible)
                                                                       //
   JR_NEQ16(Pointer,0,Not0)                                            //        if (Pointer == 0)
                                                                       //        {
@@ -1188,7 +1188,7 @@ subcall   Action3Screen                                               //  void A
   DATA8   State                                                       //
   DATAS   String LCDNAMESIZE                                          //
   DATAS   Name DEVICENAMESIZE                                         //
-  DATA8   Parred                                                      //
+  DATA8   Paired                                                      //
   DATA8   Connected                                                   //
   DATA8   Type                                                        //
   DATA8   Visible                                                     //
@@ -1216,7 +1216,7 @@ Loop:                                                                 //    {
                                                                       //
   // Show short device name                                           //
   MOVE16_8(Entry,Item)                                                //      Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible)
   UI_DRAW(SELECT_FONT,1)                                              //      UI_DRAW(SELECT_FONT,1)
   UI_DRAW(TEXT,FG_COLOR,Xpos,Ypos,String)                             //      UI_DRAW(TEXT,FG_COLOR,Xpos,Ypos,String)
   UI_DRAW(SELECT_FONT,0)                                              //      UI_DRAW(SELECT_FONT,0)
@@ -1278,7 +1278,7 @@ TooHigh:                                                              //      }
                                                                       //      {
   // Get device name                                                  //
   MOVE16_8(Entry,Item)                                                //        Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Paired,Connected,Type,Visible)
                                                                       //
   JR_NEQ16(Pointer,0,Not0)                                            //        if (Pointer == 0)
                                                                       //        {
@@ -1317,7 +1317,7 @@ Not2:                                                                 //        
                                                                       //          {
   // Get device connect state                                         //
   MOVE16_8(Entry,Item)                                                //        Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,DEVICENAMESIZE,Name,Paired,Connected,Type,Visible)
                                                                       //
   JR_FALSE(Connected,NotConnected3)                                   //            if (Connected)
                                                                       //            {

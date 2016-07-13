@@ -181,7 +181,7 @@ typedef struct
   bdaddr_t  Adr;
   UBYTE     DevClass[3];
   UBYTE     Connected;
-  UBYTE     Parred;
+  UBYTE     Paired;
   UBYTE     ChNo;
 }SEARCHLIST;
 
@@ -312,7 +312,7 @@ UBYTE     cBtGetNoOfDevListEntries(void);
 UBYTE     cBtGetDevListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, UBYTE *pName, SBYTE Length);
 UBYTE     cBtDeleteFavourItem(UBYTE *pName);
 UBYTE     cBtGetNoOfSearchListEntries(void);
-UBYTE     cBtGetSearchListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, SBYTE *pParred, UBYTE *pName, SBYTE Length);
+UBYTE     cBtGetSearchListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, SBYTE *pPaired, UBYTE *pName, SBYTE Length);
 UBYTE     cBtGetHciBusyFlag(void);
 void      DecodeMode1(UBYTE BufNo);
 

@@ -2093,7 +2093,7 @@ UBYTE     BtClearSearchListEntry(UBYTE Index)
     memset(&(BtInstance.SearchList[Index].Adr.b[0]), 0, sizeof(bdaddr_t));
     BtInstance.SearchList[Index].Name[0]    =  0;
     BtInstance.SearchList[Index].Connected  =  FALSE;
-    BtInstance.SearchList[Index].Parred     =  FALSE;
+    BtInstance.SearchList[Index].Paired     =  FALSE;
     RtnVal = OK;
   }
   return(RtnVal);
@@ -2753,7 +2753,7 @@ void      cBtCloseDevConnection(UBYTE Index)
 void      cBtSetSearchConnectedStatus(UBYTE Index)
 {
   BtInstance.SearchList[Index].Connected  = TRUE;
-  BtInstance.SearchList[Index].Parred     = TRUE;
+  BtInstance.SearchList[Index].Paired     = TRUE;
 }
 
 
@@ -2922,7 +2922,7 @@ UWORD     cBtHandleHCI(void)
                 if (0 == bacmp(&(BtInstance.NonVol.DevList[Tmp].Adr), &(info_rssi->bdaddr)))
                 {
                   // The device was in the dev list -> it is paired -> Check for connected...
-                  BtInstance.SearchList[BtInstance.SearchIndex].Parred    = TRUE;
+                  BtInstance.SearchList[BtInstance.SearchIndex].Paired    = TRUE;
                   BtInstance.SearchList[BtInstance.SearchIndex].Connected = BtInstance.NonVol.DevList[Tmp].Connected;
 
                   // Update Class of Device
@@ -2935,7 +2935,7 @@ UWORD     cBtHandleHCI(void)
 
             if (FALSE == DevStatus)
             {
-              BtInstance.SearchList[BtInstance.SearchIndex].Parred    = FALSE;
+              BtInstance.SearchList[BtInstance.SearchIndex].Paired    = FALSE;
               BtInstance.SearchList[BtInstance.SearchIndex].Connected = FALSE;
             }
 
@@ -3433,13 +3433,13 @@ UBYTE     cBtGetNoOfSearchListEntries(void)
 }
 
 
-UBYTE     cBtGetSearchListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, SBYTE *pParred, UBYTE *pName, SBYTE Length)
+UBYTE     cBtGetSearchListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, SBYTE *pPaired, UBYTE *pName, SBYTE Length)
 {
   UBYTE   RtnVal;
 
   snprintf((char*)pName,Length, "%s", (char *)&(BtInstance.SearchList[Item].Name[0]));
   *pConnected  =  BtInstance.SearchList[Item].Connected;
-  *pParred     =  BtInstance.SearchList[Item].Parred;
+  *pPaired     =  BtInstance.SearchList[Item].Paired;
   *pType       =  cBtGetBtType(&(BtInstance.SearchList[Item].DevClass[0]));
 
   RtnVal = TRUE;

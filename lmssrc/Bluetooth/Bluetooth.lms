@@ -352,7 +352,7 @@ subcall   ConnectionsScreen                                           //  void C
   DATA8   Run                                                         //
   DATA8   State                                                       //
   DATAS   String LCDNAMESIZE                                          //
-  DATA8   Parred                                                      //
+  DATA8   Paired                                                      //
   DATA8   Connected                                                   //
   DATA8   Type                                                        //
   DATA8   Item                                                        //
@@ -412,7 +412,7 @@ NextEntry:                                                            //        
                                                                       //          {
   // Draw entry name                                                  //
   MOVE16_8(Entry,Item)                                                //
-  COM_GET(FAVOUR_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type) //    COM_GET(FAVOUR_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type)
+  COM_GET(FAVOUR_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type) //    COM_GET(FAVOUR_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type)
   UI_DRAW(TEXT,FG_COLOR,CONN_LINE_STARTX,Ypos,String)                 //            I_DRAW(TEXT,FG_COLOR,CONN_LINE_STARTX,Ypos,String)
                                                                       //
   // Draw entry icon                                                  //
@@ -592,7 +592,7 @@ subcall   ActionScreen                                                //  void A
   DATA8   State                                                       //
   DATAS   String LCDNAMESIZE                                          //
   DATAS   Name BRICKNAMESIZE                                          //
-  DATA8   Parred                                                      //
+  DATA8   Paired                                                      //
   DATA8   Connected                                                   //
   DATA8   Type                                                        //
   DATA8   Visible                                                     //
@@ -622,13 +622,13 @@ Loop:                                                                 //    {
   MOVE16_8(Entry,Item)                                                //
   JR_NEQ8(ItemType,FAVOURITE,NotFavourite)                            //      if (ItemType == FAVOURITE)
                                                                       //      {
-  COM_GET(FAVOUR_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type) // COM_GET(FAVOUR_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type)
+  COM_GET(FAVOUR_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type) // COM_GET(FAVOUR_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type)
                                                                       //
   JR(EndFavourite)                                                    //      }
                                                                       //      else
 NotFavourite:                                                         //      {
                                                                       //
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible)
                                                                       //
 EndFavourite:                                                         //      }
   UI_DRAW(SELECT_FONT,1)                                              //      UI_DRAW(SELECT_FONT,1)
@@ -698,13 +698,13 @@ TooHigh:                                                              //      }
   MOVE16_8(Entry,Item)                                                //
   JR_NEQ8(ItemType,FAVOURITE,NotFavourite2)                           //        if (ItemType == FAVOURITE)
                                                                       //        {
-  COM_GET(FAVOUR_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Parred,Connected,Type) //  COM_GET(FAVOUR_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Parred,Connected,Type)
+  COM_GET(FAVOUR_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Paired,Connected,Type) //  COM_GET(FAVOUR_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Paired,Connected,Type)
                                                                       //
   JR(EndFavourite2)                                                   //        }
                                                                       //        else
 NotFavourite2:                                                        //        {
                                                                       //
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Paired,Connected,Type,Visible)
                                                                       //
 EndFavourite2:                                                        //        }
                                                                       //
@@ -732,13 +732,13 @@ Not0:                                                                 //        
   MOVE16_8(Entry,Item)                                                //
   JR_NEQ8(ItemType,FAVOURITE,NotFavourite3)                           //            if (ItemType == FAVOURITE)
                                                                       //            {
-  COM_GET(FAVOUR_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Parred,Connected,Type) //      COM_GET(FAVOUR_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Parred,Connected,Type)
+  COM_GET(FAVOUR_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Paired,Connected,Type) //      COM_GET(FAVOUR_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Paired,Connected,Type)
                                                                       //
   JR(EndFavourite3)                                                   //            }
                                                                       //            else
 NotFavourite3:                                                        //            {
                                                                       //
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,BRICKNAMESIZE,Name,Paired,Connected,Type,Visible)
                                                                       //
 EndFavourite3:                                                        //            }
                                                                       //
@@ -811,7 +811,7 @@ subcall   SearchScreen                                                //  void S
   DATA8   Run                                                         //
   DATA8   State                                                       //
   DATAS   String LCDNAMESIZE                                          //
-  DATA8   Parred                                                      //
+  DATA8   Paired                                                      //
   DATA8   Connected                                                   //
   DATA8   Type                                                        //
   DATA8   Visible                                                     //
@@ -870,19 +870,19 @@ NextEntry:                                                            //        
                                                                       //          {
   // Draw entry name                                                  //
   MOVE16_8(Entry,Item)                                                //            Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible)
   UI_DRAW(TEXT,FG_COLOR,SEARCH_LINE_STARTX,Ypos,String)               //            UI_DRAW(TEXT,FG_COLOR,SEARCH_LINE_STARTX,Ypos,String)
                                                                       //
   // Draw entry icon                                                  //
   UI_DRAW(ICON,FG_COLOR,SEARCH_ICON_STARTX,Yipos,MENU_ICON,Type)      //            UI_DRAW(ICON,FG_COLOR,SEARCH_ICON_STARTX,Yipos,MENU_ICON,Type)
                                                                       //
   // Draw star                                                        //
-  JR_FALSE(Parred,NotParred)                                          //            if (Parred)
+  JR_FALSE(Paired,NotPaired)                                          //            if (Paired)
                                                                       //            {
-  // Show parred icon                                                 //
+  // Show paired icon                                                 //
   UI_DRAW(ICON,FG_COLOR,SEARCH_STAR_STARTX,Yipos,MENU_ICON,ICON_STAR) //              UI_DRAW(ICON,FG_COLOR,SEARCH_STAR_STARTX,Yipos,MENU_ICON,ICON_STAR)
                                                                       //
-NotParred:                                                            //            }
+NotPaired:                                                            //            }
   // Draw checkbox                                                    //
   JR_FALSE(Connected,NotConnected)                                    //            if (Connected)
                                                                       //            {
@@ -933,20 +933,20 @@ NoUpdate:                                                             //      }
   UI_BUTTON(SHORTPRESS,ENTER_BUTTON,State)                            //      UI_BUTTON(SHORTPRESS,ENTER_BUTTON,State)
   JR_FALSE(State,NotEnter)                                            //      if (State)
                                                                       //      {
-  // Get parred state                                                 //
+  // Get paired state                                                 //
   MOVE16_8(Entry,Item)                                                //        Item  =  Entry
-  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Parred,Connected,Type,Visible)
-  JR_FALSE(Parred,NotParred2)                                         //        if (Parred)
+  COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible) // COM_GET(SEARCH_ITEM,HARDWARE,Item,LCDNAMESIZE,String,Paired,Connected,Type,Visible)
+  JR_FALSE(Paired,NotPaired2)                                         //        if (Paired)
                                                                       //        {
   CALL(ActionScreen,Pointer,0)                                        //          ActionScreen(Pointer,0)
   MOVE8_8(1,Update)                                                   //          Update      =  1
                                                                       //
-  JR(EndParred2)                                                      //        }
+  JR(EndPaired2)                                                      //        }
                                                                       //        else
-NotParred2:                                                           //        {
+NotPaired2:                                                           //        {
   CALL(ActionScreen,Pointer,0)                                        //          ActionScreen(Pointer,0)
   MOVE8_8(1,Update)                                                   //          Update      =  1
-EndParred2:                                                           //        }
+EndPaired2:                                                           //        }
 NotEnter:                                                             //      }
   UI_BUTTON(SHORTPRESS,BACK_BUTTON,State)                             //      UI_BUTTON(SHORTPRESS,BACK_BUTTON,State)
   JR_FALSE(State,NotBackButton)                                       //      if (State != FALSE)

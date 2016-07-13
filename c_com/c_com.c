@@ -4084,7 +4084,7 @@ void      cComWriteFile(void)
  *    \param  (DATA8)    ITEM        - Item - index in search list             \n
  *    \param  (DATA8)    LENGTH      - Max length of returned string           \n
  *    \return (DATA8)    NAME        - First character in character string     \n
- *    \return (DATA8)    PARRED      - Parred [0,1]                            \n
+ *    \return (DATA8)    PAIRED      - Paired [0,1]                            \n
  *    \return (DATA8)    CONNECTED   - Connected [0,1]                         \n
  *    \return (DATA8)    TYPE        - \ref bttypes                            \n
  *    \return (DATA8)    VISIBLE     - Visible [0,1]                           \n
@@ -4108,7 +4108,7 @@ void      cComWriteFile(void)
  *    \param  (DATA8)    ITEM        - Item - index in favourite list          \n
  *    \param  (DATA8)    LENGTH      - Max length of returned string           \n
  *    \return (DATA8)    NAME        - First character in character string     \n
- *    \return (DATA8)    PARRED      - Parred [0,1]                            \n
+ *    \return (DATA8)    PAIRED      - Paired [0,1]                            \n
  *    \return (DATA8)    CONNECTED   - Connected [0,1]                         \n
  *    \return (DATA8)    TYPE        - \ref bttypes                            \n
  *
@@ -4185,7 +4185,7 @@ void      cComGet(void)
   DATA8   Length;
   DATA8   *pPin;
   DATA8   Items;
-  DATA8   Parred;
+  DATA8   Paired;
   DATA8   Connected;
   DATA8   Visible;
   DATA8   Type;
@@ -4457,14 +4457,14 @@ void      cComGet(void)
         break;
         case HW_BT:
         {
-          Parred      =  0;
+          Paired      =  0;
           Connected   =  0;
           Type        =  ICON_UNKNOWN;
           Visible     =  1;
 
           if (NULL != pName)
           {
-            cBtGetSearchListEntry(Item, &Connected, &Type, &Parred, (UBYTE*)pName, Length);
+            cBtGetSearchListEntry(Item, &Connected, &Type, &Paired, (UBYTE*)pName, Length);
           }
 
           DspStat   =  NOBREAK;
@@ -4472,7 +4472,7 @@ void      cComGet(void)
         break;
         case HW_WIFI:
         {
-          Parred      =  0;
+          Paired      =  0;
           Connected   =  0;
           Type        =  0;
           Visible     =  0;
@@ -4492,7 +4492,7 @@ void      cComGet(void)
             }
             if (Flags & KNOWN)
             {
-              Parred = 1;
+              Paired = 1;
             }
             if (Flags & WPA2)
             {
@@ -4504,7 +4504,7 @@ void      cComGet(void)
         }
         break;
       }
-      *(DATA8*)PrimParPointer()  =  Parred;
+      *(DATA8*)PrimParPointer()  =  Paired;
       *(DATA8*)PrimParPointer()  =  Connected;
       *(DATA8*)PrimParPointer()  =  Type;
       *(DATA8*)PrimParPointer()  =  Visible;
@@ -4567,7 +4567,7 @@ void      cComGet(void)
         break;
         case HW_BT:
         {
-          Parred      =  1;                      // Only in favour list if parred
+          Paired      =  1;                      // Only in favour list if paired
           Connected   =  0;
           Type        =  ICON_UNKNOWN;
 
@@ -4580,7 +4580,7 @@ void      cComGet(void)
         break;
         case HW_WIFI:
         {
-          Parred      =  0;                      // Only in favour list if parred
+          Paired      =  0;                      // Only in favour list if paired
           Connected   =  0;
           Type        =  0;
 
@@ -4595,7 +4595,7 @@ void      cComGet(void)
             }
             if (Flags & KNOWN)
             {
-              Parred = 1;
+              Paired = 1;
             }
             if (Flags & WPA2)
             {
@@ -4612,7 +4612,7 @@ void      cComGet(void)
         break;
       }
 
-      *(DATA8*)PrimParPointer()  =  Parred;
+      *(DATA8*)PrimParPointer()  =  Paired;
       *(DATA8*)PrimParPointer()  =  Connected;
       *(DATA8*)PrimParPointer()  =  Type;
     }

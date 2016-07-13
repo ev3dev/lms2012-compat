@@ -1563,7 +1563,7 @@ subcall   ConnecScreen                                                //  void C
   DATA8   Run                                                         //
   DATA8   BtState                                                     //
   DATAS   BtString BRICKNAMESIZE                                      //
-  DATA8   Parred                                                      //
+  DATA8   Paired                                                      //
   DATA8   Connected                                                   //
   DATA8   BtType                                                      //
   DATA8   Items                                                       //
