@@ -2881,7 +2881,7 @@ RESULT cWiFiTransmitBeacon(void)
 
   cWiFiSetBtSerialNo(); // Be sure to have updated data :-)
   cWiFiSetBrickName();  // -
-  sprintf(Buffer,"Serial-Number: %s\nPort: %d\nName: %s\nProtocol: EV3\n", BtSerialNo, TCP_PORT, BrickName);
+  sprintf(Buffer,"Serial-Number: %s\r\nPort: %d\r\nName: %s\r\nProtocol: EV3\r\n", BtSerialNo, TCP_PORT, BrickName);
 
   UdpTxCount =  sendto(UdpSocketDescriptor, Buffer, strlen(Buffer), 0, (struct sockaddr *)&ServerAddr, sizeof(ServerAddr));
   if(UdpTxCount < 0)
