@@ -276,7 +276,7 @@ int cWiFiPopulateKnownApList(void)
         while (fread(&OneApRecord, sizeof OneApRecord, 1, PersistentFile) == 1) {
             memcpy(&(ApStoreTable[ArrayIterator++]), &OneApRecord, sizeof(aps));
 #ifdef DEBUG
-            printf("Populating ApStoreTable[x] == KnownList\n\r");
+            printf("Populating ApStoreTable[x] == KnownList\n");
             printf("\nApStoreTable[%d].mac_address = %s\n", (ArrayIterator - 1),
                    ApStoreTable[ArrayIterator - 1].mac_address);
             printf("\nApStoreTable[%d].security = %s\n", (ArrayIterator - 1),
@@ -364,8 +364,8 @@ int cWiFiStoreKnownApList(void)
     strcat(FileName, WIFI_PERSISTENT_FILENAME);
 
 #ifdef DEBUG
-    printf("AP_FLAG_ADJUST_FOR_STORAGE = %X\n\r", AP_FLAG_ADJUST_FOR_STORAGE);
-    printf("Persistent FileName = %s ApStoreTableSize = %d\n\r", FileName,
+    printf("AP_FLAG_ADJUST_FOR_STORAGE = %X\n", AP_FLAG_ADJUST_FOR_STORAGE);
+    printf("Persistent FileName = %s ApStoreTableSize = %d\n", FileName,
            ApStoreTableSize);
 #endif
 
@@ -381,18 +381,18 @@ int cWiFiStoreKnownApList(void)
                 OneApRecord.ap_flags &= AP_FLAG_ADJUST_FOR_STORAGE;
 
 #ifdef  DEBUG
-                printf("cWiFiStoreKnownApList ApStoreTableSize = %d, ArrayIterator = %d\n\r",
+                printf("cWiFiStoreKnownApList ApStoreTableSize = %d, ArrayIterator = %d\n",
                        ApStoreTableSize, ArrayIterator);
-                printf("OneApRecord.ap_flags before: %X\n\r", OneApRecord.ap_flags);
+                printf("OneApRecord.ap_flags before: %X\n", OneApRecord.ap_flags);
 #endif
 
                 fwrite(&OneApRecord, sizeof OneApRecord, 1, PersistentFile);
             }
 
 #ifdef DEBUG
-            printf("OneApRecord.ap_flags after, just after save: %X\n\r",
+            printf("OneApRecord.ap_flags after, just after save: %X\n",
                    OneApRecord.ap_flags);
-            printf("Writing KnownList I.e. ApStoreTable[x] to Persistent file\n\r");
+            printf("Writing KnownList I.e. ApStoreTable[x] to Persistent file\n");
             printf("\nApStoreTable[%d].mac_address = %s\n", (ArrayIterator),
                    ApStoreTable[ArrayIterator].mac_address);
             printf("\nApStoreTable[%d].security = %s\n", (ArrayIterator),
@@ -410,7 +410,7 @@ int cWiFiStoreKnownApList(void)
         fclose(PersistentFile);
     } else {
 #ifdef DEBUG
-        printf("Handle to PersistentFile == NULL :-(\n\r");
+        printf("Handle to PersistentFile == NULL :-(\n");
 #endif
 
         RetVal = -1;
@@ -488,7 +488,7 @@ RESULT cWiFiRemoveNetwork(void)
     size_t LenCmdReturn = sizeof(CmdReturn) - 1;
 
 #ifdef DEBUG
-    printf("Remove Network called\n\r");
+    printf("Remove Network called\n");
 #endif
 
     memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
@@ -505,17 +505,17 @@ RESULT cWiFiRemoveNetwork(void)
         CmdReturn[LenCmdReturn] = '\0';
 
 #ifdef DEBUG
-        printf("Remove returns %s - RetVal = %d\n\r", CmdReturn, RetVal);
+        printf("Remove returns %s - RetVal = %d\n", CmdReturn, RetVal);
 #endif
 
         if (strstr(CmdReturn, "OK")) {
 #ifdef DEBUG
-            printf("Remove Network returned OK\n\r");
+            printf("Remove Network returned OK\n");
 #endif
             Ret = OK;
         } else {
 #ifdef DEBUG
-            printf("Remove Network was NOT OK :-(\n\r");
+            printf("Remove Network was NOT OK :-(\n");
 #endif
         }
     }
@@ -785,7 +785,7 @@ RESULT cWiFiTerminate(void)
         CmdReturn[LenCmdReturn] = '\0';
 
 #ifdef DEBUG
-        printf("WiFi terminate : RetVal %d , CmdReturn %s\n\r", RetVal, CmdReturn);
+        printf("WiFi terminate : RetVal %d , CmdReturn %s\n", RetVal, CmdReturn);
 #endif
 
         if (strstr(CmdReturn, "OK") != NULL) {
@@ -808,12 +808,12 @@ RESULT cWiFiAddNetwork(void)
     memset(aCmdReturn, 0x00, LenaCmdReturn); // Reset to be sure!!
 
 #ifdef DEBUG
-    printf("Beginning of AddNetwork\n\r");
+    printf("Beginning of AddNetwork\n");
 #endif
 
     if (ctrl_conn) {
 #ifdef DEBUG
-        printf("Internal in AddNetwork - before the real call\n\r");
+        printf("Internal in AddNetwork - before the real call\n");
 #endif
 
 #ifdef DEBUG
@@ -825,12 +825,12 @@ RESULT cWiFiAddNetwork(void)
         aCmdReturn[LenaCmdReturn] = '\0';
 
 #ifdef DEBUG
-        printf("Add returns %s - RetVal = %d\n\r", aCmdReturn, RetVal);
+        printf("Add returns %s - RetVal = %d\n", aCmdReturn, RetVal);
 #endif
 
         if ((aCmdReturn[0] == '0') && (aCmdReturn[1] == 10)) { // LF
 #ifdef DEBUG
-            printf("0 (zero) in return at AddNetwork\n\r");
+            printf("0 (zero) in return at AddNetwork\n");
 #endif
 
             Ret = OK;
@@ -857,7 +857,7 @@ RESULT cWiFiSetScanSsidToOne(void)
     memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
 #ifdef DEBUG
-    printf("\n\rEntry of SET_ScanSsidToOne to ONE\n\r");
+    printf("\nEntry of SET_ScanSsidToOne to ONE\n");
 #endif
 
     if (ctrl_conn) {
@@ -894,7 +894,7 @@ RESULT cWiFiSetSsid(char *Ssid)
     memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
 
 #ifdef DEBUG
-    printf("\n\rEntry of SET_SSID in c_wifi\n\r");
+    printf("\nEntry of SET_SSID in c_wifi\n");
 #endif
 
     if (ctrl_conn) {
@@ -1191,7 +1191,7 @@ RESULT cWiFiFindMacAddr(void)
         Result = OK;
 
         #ifdef DEBUG
-          printf("cWiFiFindMacAddr -> MAC adresse = %s\n\r", MyHwMacAddress);
+          printf("cWiFiFindMacAddr -> MAC adresse = %s\n", MyHwMacAddress);
         #endif
 
         break;
@@ -1487,7 +1487,7 @@ RESULT cWiFiWpaStatus(void)
       CmdReturn[LenCmdReturn] = '\0';
 
       #ifdef DEBUG
-        printf("cWiFiWpaStatus = %s\n\r", CmdReturn);
+        printf("cWiFiWpaStatus = %s\n", CmdReturn);
       #endif
     }
   }
@@ -1516,7 +1516,7 @@ RESULT cWiFiDisconnect(void)
     if(strstr(CmdReturn, "OK") != NULL)
     {
       #ifdef DEBUG
-        printf("Disconnect OK\n\r");
+        printf("Disconnect OK\n");
       #endif
 
       Ret = OK;
@@ -1535,7 +1535,7 @@ RESULT cWiFiReconnect(void)
   memset(CmdReturn, 0x00, LenCmdReturn);        // Reset to be sure!!
 
   #ifdef DEBUG
-    printf("Start of Reconnect...\n\r");
+    printf("Start of Reconnect...\n");
   #endif
 
   if(ctrl_conn != NULL)
@@ -1547,7 +1547,7 @@ RESULT cWiFiReconnect(void)
     if(strstr(CmdReturn, "OK") != NULL)
     {
       #ifdef DEBUG
-        printf("Reconnect OK\n\r");
+        printf("Reconnect OK\n");
       #endif
 
       Ret = OK;
@@ -1652,7 +1652,7 @@ RESULT cWiFiMakeConnectionToAp(int Index)
   int Tries;
 
     #ifdef DEBUG
-    	printf("cWiFiMakeConnectionToAp() with Index %d, WiFiStatus = %d\n\r", Index, WiFiStatus);
+    	printf("cWiFiMakeConnectionToAp() with Index %d, WiFiStatus = %d\n", Index, WiFiStatus);
     #endif
 
     Tries = 0;
@@ -1661,7 +1661,7 @@ RESULT cWiFiMakeConnectionToAp(int Index)
       if(cWiFiAddNetwork() == OK)
       {
         #ifdef DEBUG
-          printf("Try no: %d\n\r", Tries);
+          printf("Try no: %d\n", Tries);
         #endif
 
         LocalResult = OK;
@@ -1670,7 +1670,7 @@ RESULT cWiFiMakeConnectionToAp(int Index)
       else
       {
         #ifdef DEBUG
-          printf("AddNetwork returns garbage\n\r");
+          printf("AddNetwork returns garbage\n");
         #endif
 
         sleep(3);               // Force some cycles
@@ -1818,7 +1818,7 @@ RESULT cWiFiMakeConnectionToAp(int Index)
     cWiFiRequestIpAdr(LogicalIfName);
 
     #ifdef DEBUG
-      printf("Here is the (new) IP address: %s\n\r", MyIp4Address);
+      printf("Here is the (new) IP address: %s\n", MyIp4Address);
     #endif
 
     if(strstr(MyIp4Address, "???") == NULL)
@@ -1924,7 +1924,7 @@ RESULT cWiFiMakePsk(char *ApSsid, char *PassPhrase, int Index)  // Make the pre-
 
   #ifdef DEBUG
     printf("\ncWiFiMakePsk\n");
-    printf("\n\rSSID = %s, PassPhrase = %s, Index = %d\n", ApSsid, PassPhrase, Index);
+    printf("\nSSID = %s, PassPhrase = %s, Index = %d\n", ApSsid, PassPhrase, Index);
   #endif
 
   // Construct CommandLine
@@ -2412,7 +2412,7 @@ RESULT cWiFiGetLogicalName(void)  // Get the Logical Name of the Interface
 RESULT cWiFiGetStatus(void)
 {
   #ifdef DEBUG
-    printf("WiFiStatus => GetResult = %d\n\r", WiFiStatus);
+    printf("WiFiStatus => GetResult = %d\n", WiFiStatus);
   #endif
   return WiFiStatus;
 }
@@ -2442,13 +2442,13 @@ RESULT  cWiFiInitTcpServer()
   /*  Create a listening socket IPv4, TCP and only single protocol */
 
   #ifdef DEBUG
-    printf("Start of cWiFiInitTcpServer()...TCPListenServer = %d \n\r", TCPListenServer);
+    printf("Start of cWiFiInitTcpServer()...TCPListenServer = %d \n", TCPListenServer);
   #endif
 
   if ( TCPListenServer == 0)   // close(TCPListenServer);
   {
     #ifdef DEBUG
-      printf("TCPListenServer == 0 in cWiFiInitTcpServer()...\n\r");
+      printf("TCPListenServer == 0 in cWiFiInitTcpServer()...\n");
     #endif
 
 	  if ( (TCPListenServer  = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
@@ -2485,7 +2485,7 @@ RESULT  cWiFiInitTcpServer()
 	  {
     	#ifdef DEBUG
 		    printf("\nError calling bind()\n");
-		    printf("errno = %d\n\r", errno);
+		    printf("errno = %d\n", errno);
     	#endif
 
 		return Result;  // Bail out with a SOFT error in WiFiStatus
@@ -2651,7 +2651,7 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                           }
                                           else
                                             printf("DataRead shows FAIL: %d", DataRead);
-                                            printf("\n\r");
+                                            printf("\n");
                                         #endif
 
                                         if(DataRead == 0)   // We've a disconnect
@@ -2705,7 +2705,7 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                                         DataRead = 0;                   // Signal NO data yet
 
                                         #ifdef DEBUG
-                                          printf("\n\r*************** NEW TX *************\n");
+                                          printf("\n*************** NEW TX *************\n");
                                           printf("TCP_WAIT_ON_LENGTH TcpRestLen = %d, Length = %d\n", TcpRestLen, Length);
                                         #endif
 
@@ -2887,7 +2887,7 @@ RESULT cWiFiTransmitBeacon(void)
   if(UdpTxCount < 0)
   {
 	  #ifdef DEBUG
-      printf("\nUDP SendTo ERROR : %d\n\r", UdpTxCount);
+      printf("\nUDP SendTo ERROR : %d\n", UdpTxCount);
     #endif
 
     cWiFiUdpClientClose();  // Kill the auto-beacon stuff

@@ -114,7 +114,7 @@ try_again:
 	res = strlcpy(ctrl->dest.sun_path, ctrl_path,
 			 sizeof(ctrl->dest.sun_path));*/
 	// HER_PER strcpy insted of - above better function
-//	printf("\n\rctrl_path = %s\n\r", ctrl_path);
+//	printf("\nctrl_path = %s\n", ctrl_path);
 	strcpy(ctrl->dest.sun_path, ctrl_path);
 
 /*	if (res >= sizeof(ctrl->dest.sun_path)) {
