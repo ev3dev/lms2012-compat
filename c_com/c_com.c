@@ -135,7 +135,7 @@ RESULT    cComInit(void)
 
   if (ComInstance.Cmdfd >= 0)
   {
-    memset(ComInstance.TxBuf[0].Buf,0,sizeof(ComInstance.TxBuf[0].Buf));
+    memset(ComInstance.TxBuf[USBDEV].Buf,0,sizeof(ComInstance.TxBuf[USBDEV].Buf));
 
     Result  =  OK;
   }
