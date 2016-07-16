@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 2.8)
 project (lms2012-compat C)
 
+set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include (GNUInstallDirs)
 
 # compiler configuration options
@@ -168,6 +169,9 @@ pkg_check_modules (LMS2012_DEPS REQUIRED
     alsa
     bluez
     dbus-1
+    gio-2.0
+    gio-unix-2.0
+    glib-2.0
     libudev
     libusb-1.0
 )

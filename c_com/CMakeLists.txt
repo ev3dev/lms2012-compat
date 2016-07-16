@@ -1,4 +1,6 @@
 
+include (gdbus)
+
 set (SOURCE_FILES
     c_bt.c
     c_com.c
@@ -9,10 +11,18 @@ set (SOURCE_FILES
     os_internal.c
     os_unix.c
     wpa_ctrl.c
+    ${CMAKE_CURRENT_BINARY_DIR}/connman.c
+)
+
+add_gdbus_codegen(connman
+    INTERFACE_PREFIX net.connman
+    C_NAMESPACE Connman
+    XML_FILES net.connman.xml
 )
 
 add_library (c_com OBJECT ${SOURCE_FILES})
 target_include_directories (c_com PUBLIC
+    ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_SOURCE_DIR}/lms2012
     ${CMAKE_SOURCE_DIR}/c_input
     ${CMAKE_SOURCE_DIR}/c_memory

@@ -1,0 +1,173 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+    <interface name="net.connman.Manager">
+        <method name="GetProperties">
+            <arg name="properties" type="a{sv}" direction="out"/>
+        </method>
+        <method name="SetProperty">
+            <arg name="name" type="s" direction="in"/>
+            <arg name="value" type="v" direction="in"/>
+        </method>
+        <method name="GetTechnologies">
+            <arg name="technologies" type="a(oa{sv})" direction="out"/>
+        </method>
+        <method name="RemoveProvider">
+            <arg name="provider" type="o" direction="in"/>
+            <annotation name="org.freedesktop.DBus.Deprecated" value="true"/>
+        </method>
+        <method name="GetServices">
+            <arg name="services" type="a(oa{sv})" direction="out"/>
+        </method>
+        <method name="GetPeers">
+            <arg name="peers" type="a(oa{sv})" direction="out"/>
+        </method>
+        <method name="ConnectProvider">
+            <arg name="provider" type="a{sv}" direction="in"/>
+            <arg name="path" type="o" direction="out"/>
+            <annotation name="org.freedesktop.DBus.Deprecated" value="true"/>
+        </method>
+        <method name="RegisterAgent">
+            <arg name="path" type="o" direction="in"/>
+        </method>
+        <method name="UnregisterAgent">
+            <arg name="path" type="o" direction="in"/>
+        </method>
+        <method name="RegisterCounter">
+            <arg name="path" type="o" direction="in"/>
+            <arg name="accuracy" type="u" direction="in"/>
+            <arg name="period" type="u" direction="in"/>
+        </method>
+        <method name="UnregisterCounter">
+            <arg name="path" type="o" direction="in"/>
+        </method>
+        <method name="CreateSession">
+            <arg name="settings" type="a{sv}" direction="in"/>
+            <arg name="notifier" type="o" direction="in"/>
+            <arg name="session" type="o" direction="out"/>
+        </method>
+        <method name="DestroySession">
+            <arg name="session" type="o" direction="in"/>
+        </method>
+        <method name="RequestPrivateNetwork">
+            <arg name="path" type="o" direction="out"/>
+            <arg name="settings" type="a{sv}" direction="out"/>
+            <arg name="socket" type="h" direction="out"/>
+        </method>
+        <method name="ReleasePrivateNetwork">
+            <arg name="path" type="o" direction="in"/>
+        </method>
+        <method name="RegisterPeerService">
+            <arg name="specification" type="a{sv}" direction="in"/>
+            <arg name="master" type="b" direction="in"/>
+        </method>
+        <method name="UnregisterPeerService">
+            <arg name="specification" type="a{sv}" direction="in"/>
+        </method>
+        <signal name="PropertyChanged">
+            <arg name="name" type="s"/>
+            <arg name="value" type="v"/>
+        </signal>
+        <signal name="TechnologyAdded">
+            <arg name="path" type="o"/>
+            <arg name="properties" type="a{sv}"/>
+        </signal>
+        <signal name="TechnologyRemoved">
+            <arg name="path" type="o"/>
+        </signal>
+        <signal name="ServicesChanged">
+            <arg name="changed" type="a(oa{sv})"/>
+            <arg name="removed" type="ao"/>
+        </signal>
+        <signal name="PeersChanged">
+            <arg name="changed" type="a(oa{sv})"/>
+            <arg name="removed" type="ao"/>
+        </signal>
+        <property name="State" type="s" access="read"/>
+        <property name="OfflineMode" type="v" access="readwrite"/>
+    </interface>
+    <interface name="net.connman.Technology">
+        <method name="GetProperties">
+            <arg name="properties" type="a{sv}" direction="out"/>
+            <!-- <annotation name="org.freedesktop.DBus.Deprecated" value="true"/> -->
+        </method>
+        <method name="SetProperty">
+            <arg name="name" type="s" direction="in"/>
+            <arg name="value" type="v" direction="in"/>
+        </method>
+        <method name="Scan"/>
+        <signal name="PropertyChanged">
+            <arg name="name" type="s"/>
+            <arg name="value" type="v"/>
+        </signal>
+        <property name="Powered" type="b" access="readwrite"/>
+        <property name="Connected" type="b" access="read"/>
+        <property name="Name" type="s" access="read"/>
+        <property name="Type" type="s" access="read"/>
+        <property name="Tethering" type="b" access="readwrite"/>
+        <property name="TetheringIdentifier" type="s" access="readwrite"/>
+        <property name="TetheringPassphrase" type="s" access="readwrite"/>
+    </interface>
+    <interface name="net.connman.Service">
+        <method name="GetProperties">
+            <arg name="properties" type="a{sv}" direction="out"/>
+            <!-- <annotation name="org.freedesktop.DBus.Deprecated" value="true"/> -->
+        </method>
+        <method name="SetProperty">
+            <arg name="name" type="s" direction="in"/>
+            <arg name="value" type="v" direction="in"/>
+        </method>
+        <method name="ClearProperty">
+            <arg name="name" type="s" direction="in"/>
+        </method>
+        <method name="Connect"/>
+        <method name="Disconnect"/>
+        <method name="Remove"/>
+        <method name="MoveBefore">
+            <arg name="service" type="o" direction="in"/>
+        </method>
+        <method name="MoveAfter">
+            <arg name="service" type="o" direction="in"/>
+        </method>
+        <signal name="PropertyChanged">
+            <arg name="name" type="s"/>
+            <arg name="value" type="v"/>
+        </signal>
+        <property name="State" type="s" access="read"/>
+        <property name="Error" type="s" access="read"/>
+        <property name="Name" type="s" access="read"/>
+        <property name="Type" type="s" access="read"/>
+        <property name="Security" type="as" access="read"/>
+        <property name="Strength" type="y" access="read"/>
+        <property name="Favorite" type="b" access="read"/>
+        <property name="Immutable" type="b" access="read"/>
+        <property name="AutoConnect" type="b" access="readwrite"/>
+        <property name="Roaming" type="b" access="read"/>
+        <property name="Nameservers" type="as" access="read"/>
+        <property name="Nameservers.Configuration" type="as" access="readwrite">
+            <annotation name="org.gtk.GDBus.C.Name" value="NameserversConfiguration"/>
+        </property>
+        <property name="Timeservers" type="as" access="read"/>
+        <property name="Timeservers.Configuration" type="as" access="readwrite">
+            <annotation name="org.gtk.GDBus.C.Name" value="TimeserversConfiguration"/>
+        </property>
+        <property name="Domains" type="as" access="read"/>
+        <property name="Domains.Configuration" type="as" access="readwrite">
+            <annotation name="org.gtk.GDBus.C.Name" value="DomainsConfiguration"/>
+        </property>
+        <property name="IPv4" type="a{sv}" access="read"/>
+        <property name="IPv4.Configuration" type="a{sv}" access="readwrite">
+            <annotation name="org.gtk.GDBus.C.Name" value="IPv4Configuration"/>
+        </property>
+        <property name="IPv6" type="a{sv}" access="read"/>
+        <property name="IPv6.Configuration" type="a{sv}" access="readwrite">
+            <annotation name="org.gtk.GDBus.C.Name" value="IPv6Configuration"/>
+        </property>
+        <property name="Proxy" type="a{sv}" access="read"/>
+        <property name="Proxy.Configuration" type="a{sv}" access="readwrite">
+            <annotation name="org.gtk.GDBus.C.Name" value="ProxyConfiguration"/>
+        </property>
+        <property name="Provider" type="a{sv}" access="read"/>
+        <property name="Ethernet" type="a{sv}" access="read"/>
+    </interface>
+</node>
