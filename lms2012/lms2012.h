@@ -444,12 +444,12 @@ char      *HwId = "03";
 
 #define   KB                    1024
 
-enum
-{
-  FALSE = 0,
-  TRUE  = 1,
-};
-
+#ifndef FALSE
+#define FALSE 0
+#endif
+#ifndef TRUE
+#define TRUE 1
+#endif
 
 /*! \page connections Connections
  *

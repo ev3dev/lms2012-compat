@@ -8,9 +8,6 @@ set (SOURCE_FILES
     c_i2c.c
     c_md5.c
     c_wifi.c
-    os_internal.c
-    os_unix.c
-    wpa_ctrl.c
     ${CMAKE_CURRENT_BINARY_DIR}/connman.c
 )
 

@@ -58,6 +58,8 @@
  *\n\n
  */
 
+#include <glib.h>
+
 #include "c_dynload.h"
 
 #include "lms2012.h"
@@ -2575,6 +2577,7 @@ int       main(int argc,char *argv[])
     {
       do
       {
+        g_main_context_iteration(NULL, FALSE);
         Result  =  mSchedCtrl(&Restart);
       }
       while (Result == OK);

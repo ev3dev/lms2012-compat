@@ -26,12 +26,12 @@
 //!
 //! \verbatim
 //**********************************************************************
-define appv 'WiFi V1.02'                                              //
+define appv 'WiFi V2.00'                                              //
 //**********************************************************************
                                                                       //
 define    LCDNAMESIZE     12                                          //  Max characters shown on LCD
 define    DEVICENAMESIZE  120                                         //  Max characters for device name
-define    MACIPSIZE       16                                          //  Max characters for MAC and IP shown on LCD
+define    MACIPSIZE       18                                          //  Max characters for MAC and IP shown on LCD
                                                                       //
 define    HARDWARE        HW_WIFI                                     //  Actual hardware to access
 define    SEARCH          0                                           //
@@ -274,17 +274,7 @@ Not1:                                                                 //        
   CALL(ShowBlock)                                                     //          ShowBlock()
   COM_SET(SET_ON_OFF,HARDWARE,On)                                     //          COM_SET(SET_ON_OFF,HARDWARE,On)
   CALL(ShowWait,State)                                                //          ShowWait(State)
-
-//! \todo WiFi on status hack
-  JR_NEQ8(On,1,NotTurnedOn)
-  
-  UI_WRITE(SET_BUSY,1)
-  TIMER_WAIT(12000,Timer)
-  TIMER_READY(Timer)
-  UI_WRITE(SET_BUSY,0)
-  
-NotTurnedOn:  
-  
+                                                                      //
   UI_DRAW(BMPFILE,FG_COLOR,ENTRY_STARTX,ENTRY_STARTY,'144x82_POP4')   //      Draw bitmap
   UI_DRAW(UPDATE)                                                     //      UI_DRAW(UPDATE)
                                                                       //
@@ -342,7 +332,8 @@ define    SEARCH_BAR_HEIGHT     48                                    //
 subcall   SearchScreen                                                //  void SearchScreen(void)
 {                                                                     //  {
   DATA16  Entry                                                       //
-  DATA16  OldEntries                                                  //
+  DATA16  ListState                                                   //
+  DATA16  OldListState                                                //
   DATA16  Count                                                       //
   DATA16  Tmp                                                         //
   DATA16  TmpY                                                        //
@@ -366,7 +357,7 @@ subcall   SearchScreen                                                //  void S
   DATA8   Visible                                                     //
   DATA8   Item                                                        //
                                                                       //
-  MOVE16_16(0,OldEntries)                                             //    OldEntries  =  0
+  MOVE16_16(0,OldListState)                                           //    OldListState =  0
   MOVE16_16(0,Pointer)                                                //    Pointer     =  0
   MOVE16_16(0,Start)                                                  //    Start       =  0
   MOVE8_8(1,Run)                                                      //    Run         =  1
@@ -377,9 +368,10 @@ Loop:                                                                 //    {
   // Check menu entries                                               //
   COM_GET(SEARCH_ITEMS,HARDWARE,Item)                                 //      COM_GET(SEARCH_ITEMS,HARDWARE,Item)
   MOVE8_16(Item,Entries)                                              //      Entries  =  Item
-  JR_EQ16(Entries,OldEntries,NoChange)                                //      if (Entries != OldEntries)
+  COM_GET(LIST_STATE,HARDWARE,ListState)                              //      COM_GET(LIST_STATE,HARDWARE,ListState)
+  JR_EQ16(ListState,OldListState,NoChange)                            //      if (ListState != OldListState)
                                                                       //      {
-  MOVE16_16(Entries,OldEntries)                                       //        OldEntries  =  Entries
+  MOVE16_16(ListState,OldListState)                                   //        OldListState = ListState
   MOVE8_8(1,Update)                                                   //        Update      =  1
 NoChange:                                                             //      }
                                                                       //
@@ -626,9 +618,6 @@ NotEnter:                                                             //      }
   JR_FALSE(State,NotBackButton)                                       //      if (State != FALSE)
                                                                       //      {
                                                                       //
-//  CALL(ShowBlock)                                                     //        ShowBlock()
-//  COM_SET(SET_SEARCH,HARDWARE,0)                                      //        COM_SET(SET_SEARCH,HARDWARE,0)
-//  UI_WRITE(SET_BUSY,0)                                                //        UI_WRITE(SET_BUSY,0)
                                                                       //
   MOVE8_8(0,Run)                                                      //        Run  =  0
                                                                       //

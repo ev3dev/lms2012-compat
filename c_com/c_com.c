@@ -4708,13 +4708,12 @@ void      cComGet(void)
 
     case GET_NETWORK:
     {
-      UBYTE   Flags;
       UBYTE   MaxStrLen;
 
       Hardware  =  *(DATA8*)PrimParPointer();
       Length    =  *(DATA8*)PrimParPointer();
 
-      // Lenght are the maximum length for all
+      // Length are the maximum length for all
       // 3 strings returned (pName, pMac and pIp)
       if ((vmBRICKNAMESIZE >= vmMACSIZE) && (vmBRICKNAMESIZE >= vmIPSIZE))
       {
@@ -4774,30 +4773,10 @@ void      cComGet(void)
         break;
         case HW_WIFI:
         {
-          if ((NULL != pName) && (NULL != pMac) && (NULL != pIp))
-          {
-            if(OK == cWiFiGetOnStatus())
-            {
-              Flags = cWiFiGetFlags((int)0);
-              if (Flags & CONNECTED)
-              {
-                cWiFiGetIpAddr((char*)pIp);
-                cWiFiGetMyMacAddr((char*)pMac);
-                cWiFiGetName((char*)pName, 0, Length);
-              }
-              else
-              {
-                cWiFiGetMyMacAddr((char*)pMac);
-                snprintf((char*)pName, Length, "%s","NONE");
-                snprintf((char*)pIp, 3, "%s","??");
-              }
-            }
-            else
-            {
-              snprintf((char*)pMac, 3, "%s","??");
-              snprintf((char*)pName, Length, "%s","NONE");
-              snprintf((char*)pIp, 3, "%s", "??");
-            }
+          if (pName && pMac && pIp) {
+            cWiFiGetIpAddr((char*)pIp);
+            cWiFiGetMyMacAddr((char*)pMac);
+            cWiFiGetName((char*)pName, 0, Length);
           }
         }
         break;
@@ -4816,19 +4795,20 @@ void      cComGet(void)
       {
         case HW_USB:
         {
+          // TODO: need to check that musb gadget was successfully loaded
           Status = 1;
         }
         break;
         case HW_BT:
         {
+          // TODO: need to add function to check connman bluetooth technology
           Status = 1;
         }
         break;
         case HW_WIFI:
         {
-          if(OK == cWiFiKnownDongleAttached())
-          {
-        	Status = 1;
+          if (cWiFiTechnologyPresent() == OK) {
+            Status = 1;
           }
         }
         break;
@@ -5481,7 +5461,7 @@ void      cComSet(void)
         {
           Index   =  cWiFiGetApListSize();
           cWiFiSetName((char*)pName, (int)Index);
-          cWiFiIncApListSize();
+          // cWiFiIncApListSize();
           DspStat =  NOBREAK;
         }
         break;

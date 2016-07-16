@@ -37,10 +37,6 @@
 #include <errno.h>
 #include <bytecodes.h>
 
-#include "wpa_ctrl.h"
-
-#include "common.h"
-
 #include "lms2012.h"
 
 #define WIFI_PERSISTENT_PATH    vmSETTINGS_DIR          // FileSys guidance ;-)
@@ -132,132 +128,51 @@ typedef enum
 }
 TCP_STATES;
 
-enum                                        // WiFi AP flags "capabilities" and state
-{
-  VISIBLE = 0x1,
-  CONNECTED = 0x02,
-  WPA2 = 0x04,
-  KNOWN = 0x08,
-  UNKNOWN = 0x80
-};
-
-#define AP_FLAG_ADJUST_FOR_STORAGE ((unsigned char)(~(VISIBLE + CONNECTED + UNKNOWN)))  // Set/reset for persistent storage
-
-enum                                        // The Brick WiFi state
-{
-  NO_CONNECTION = 0x0,
-  CONNECTION_MADE = 0x01,
-  SEARCHING = 0x02,
-};
-
-typedef struct
-{
-  char mac_address[MAC_ADDRESS_LENGTH];     // as it tells
-  char frequency[FREQUENCY_LENGTH];         // additional info - not used
-  char signal_level[SIGNAL_LEVEL_LENGTH];   // -
-  char security[SECURITY_LENGTH];           // Only WPA2 or NONE
-  char friendly_name[FRIENDLY_NAME_LENGTH]; // The name, the user will see aka SSID
-  char key_management[KEY_MGMT_LENGTH];
-  char pre_shared_key[PSK_LENGTH];          // Preshared Key (Encryption)
-  char pairwise_ciphers[PAIRWISE_LENGTH];
-  char group_ciphers[GROUP_LENGTH];
-  char proto[PROTO_LENGTH];
-  unsigned char ap_flags;                   // Holds the capabilities etc. of the AP
-}
-aps;
+// WiFi AP flags "capabilities" and state
+typedef enum {
+    VISIBLE   = 0x01,
+    CONNECTED = 0x02,
+    WPA2      = 0x04,
+    KNOWN     = 0x08,
+    UNKNOWN   = 0x80,
+} WIFI_STATE_FLAGS;
 
 // Common Network stuff
 // --------------------
-
-RESULT  cWiFiGetIpAddr(char* IpAddress);
-
-RESULT  cWiFiGetMyMacAddr(char* MacAddress);
-
-RESULT cWiFiKnownDongleAttached(void);      // Known H/W
-
-//UDP functions
-//-------------
-
-RESULT  cWiFiTxingBeacons(void);        // Are we active in tx beacons??
-
-void cWiFiUdpClientClose(void);
+RESULT cWiFiGetIpAddr(char* IpAddress);
+RESULT cWiFiGetMyMacAddr(char* MacAddress);
+RESULT cWiFiTechnologyPresent(void);
 
 // TCP functions
 // -------------
-
-RESULT cWiFiTcpConnected(void);         // TCP connection established?
-
-//RESULT cWiFiTcpTempClose(void);
-
 UWORD cWiFiWriteTcp(UBYTE* Buffer, UWORD Length);
-
 UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length);
 
 // WPA and AP stuff
 // ----------------
-void cWiFiMoveUpInList(int Index);      // Direct UI function
-
-void cWiFiMoveDownInList(int Index);    // Direct UI function
-
-void cWiFiDeleteInList(int Index);      // Direct UI function
-
-RESULT cWiFiGetApMacAddr(char* MacAddr, int Index);
-
-RESULT cWiFiGetHiddenMacAddr(char* MacAddr, int Index);
-
-RESULT cWiFiGetName(char *ApName, int Index, char Length);  // Get the FriendlyName owned by ApTable[Index]
-
-RESULT cWiFiSetName(char *ApName, int Index);  // Set the FriendlyName @ ApTable[Index]  // Hidden!?
-
-RESULT cWiFiSetSsid(char *Ssid);
-
-RESULT cWiFiSetKeyManagToWpa2(void);
-
-RESULT cWiFiSetKeyManagToNone(void);
-
+void cWiFiMoveUpInList(int Index);
+void cWiFiMoveDownInList(int Index);
+RESULT cWiFiGetName(char *ApName, int Index, char Length);
+RESULT cWiFiSetName(char *ApName, int Index);
 RESULT cWiFiGetIndexFromName(char *Name, UBYTE *Index);
-
 void cWiFiSetEncryptToWpa2(int Index);
-
 void cWiFiSetEncryptToNone(int Index);
-
-void cWiFiSetKnown(int Index);
-
 void cWiFiDeleteAsKnown(int LocalIndex);
-
-unsigned char cWiFiGetFlags(int Index);  // Get Flags owned by ApTable[Index]
-
+WIFI_STATE_FLAGS cWiFiGetFlags(int Index);
 RESULT cWiFiConnectToAp(int Index);
-
 RESULT cWiFiMakePsk(char *ApSsid, char *PassPhrase, int Index);
-
+DATA16 cWifiGetListState(void);
 int cWiFiGetApListSize(void);
-
-void cWiFiIncApListSize(void);
-
-RESULT cWiFiAddHidden(char *HiddenApName, char *Security, char *PassWord);
-
 RESULT cWiFiScanForAPs(void);
-
 RESULT cWiFiGetOnStatus(void);
 
 // Common Control
 // --------------
-
 RESULT    cWiFiGetStatus(void);
-
-void      cWiFiSetBtSerialNo(void);
-
-void      cWiFiSetBrickName(void);
-
 void      cWiFiControl(void);
-
 RESULT    cWiFiTurnOn(void);        // TURN ON
-
 RESULT    cWiFiTurnOff(void);       // TURN OFF
-
 RESULT    cWiFiExit(void);
-
 RESULT    cWiFiInit(void);
 
 #endif /* C_WIFI_H_ */

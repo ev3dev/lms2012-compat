@@ -2,6 +2,7 @@
  * LEGO® MINDSTORMS EV3
  *
  * Copyright (C) 2010-2013 The LEGO Group
+ * Copyright (C) 2016 David Lechner <david@lechnolgy.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,153 +37,76 @@
  *
  */
 
+#include <gio/gio.h>
+
 #include "c_wifi.h"
+#include "connman.h"
 
+#ifdef DEBUG_WIFI
+#define pr_dbg(f, ...) printf(f, ##__VA_ARGS__)
+#else
+#define pr_dbg(f, ...) while (0) { }
+#endif
 
-// Volatile data
-// Used for search AP's (all active - known/new)
-#define MAX_AP_ENTRIES 16
-static aps ApTable[MAX_AP_ENTRIES];
-static int ApTableSize = 0;
+typedef struct {
+    char mac_address[MAC_ADDRESS_LENGTH];     // as it tells
+    char frequency[FREQUENCY_LENGTH];         // additional info - not used
+    char signal_level[SIGNAL_LEVEL_LENGTH];   // -
+    char security[SECURITY_LENGTH];           // Only WPA2 or NONE
+    char friendly_name[FRIENDLY_NAME_LENGTH]; // The name, the user will see aka SSID
+    char key_management[KEY_MGMT_LENGTH];
+    char pre_shared_key[PSK_LENGTH];          // Preshared Key (Encryption)
+    char pairwise_ciphers[PAIRWISE_LENGTH];
+    char group_ciphers[GROUP_LENGTH];
+    char proto[PROTO_LENGTH];
+    WIFI_STATE_FLAGS ap_flags;                // Holds the capabilities etc. of the AP
+} aps;
 
-// Persistent data
-// Used for storing OLD and KNOWN AP's
-#define MAX_AP_STORAGE_ENTRIES 16
-static aps ApStoreTable[MAX_AP_STORAGE_ENTRIES];
-static int ApStoreTableSize; 
-
-static aps TempApStorage;     // As the name says - used when moving around in the list(s)
-
-static char BtSerialNo[13];   // Storage for the BlueTooth Serial Number
-
+static char BtSerialNo[13];              // Storage for the BlueTooth Serial Number
 static char BrickName[NAME_LENGTH + 1];  // BrickName for discovery and/or friendly info
+static char MyBroadCastAdr[16];          // Broadcast address (the MASK included)
 
-static char MyIp4Address[16]; // Our / "The local IP" address
+static struct timeval TimerStartVal, TimerCurrentVal;
 
-static char MyBroadCastAdr[16]; // Broadcast address (the MASK included)
+static unsigned int TimeOut = 0;
 
-static char MyHwMacAddress[18]; // HardWare MAC address
+static char Buffer[1024];
 
-static char LogicalIfName[6]; //Only wlan0->wlan9 + /0x0
+static uint TcpReadBufPointer = 0;
 
-/*// Known friends - i.e. friendly pc's etc. STORED as a PASS-NAME
-#define MAX_ACCESS_NAME_LENGTH 20
-#define MAX_ACCESS_NAME_COUNT 20
-static char AccessNameTable[MAX_ACCESS_NAME_COUNT][MAX_ACCESS_NAME_LENGTH];
-*/
-
-#define WPA_SUPPLICANT_GLOBAL_SOCKET    "/var/run/wpa_supplicant-global"
-#define WPA_SUPPLICANT_CONTROL_SOCKET   "/var/run/wpa_supplicant"
-
-// The HARDWARE_SEARCH_STRING is hardcoded for now - future releases will/should have
-// the HARDWARE_SEARCH_STRINGS (S!) loaded from a file which has an ASCII definition
-// of available H/W and a description of the drivers to load. I.e. a simple and download-
-// able way of integrating new and more drivers. NO commandline stuff.
-
-#define HARDWARE_SEARCH_STRING_01         "ID 0846:9030 NetGear, Inc."
-#define WIFI_VENDOR_ID_01    "0846"
-#define WIFI_DONGLE_ID_01    "9030"
-
-#define HARDWARE_SEARCH_STRING_02         "ID 7392:7811 Edimax Technology Co., Ltd"
-#define WIFI_VENDOR_ID_02    "7392"
-#define WIFI_DONGLE_ID_02    "7811"
-
-
-// The following could be set to variable/editable strings via methodes, but for now....
-
-//static char* ControlPath = "/var/run/wpa_supplicant/";
-//static char* CtrlConfigPathName = "/etc/wpa_supplicant.conf";
-
-#define WPA_APPLIKATION_PATH            ""  // Not defined yet
-
-static struct wpa_ctrl *ctrl_conn;      // Control "handle" for the wpa_control interface
-
-struct timeval TimerStartVal, TimerCurrentVal;
-struct timeval DongleCheckStartVal, DongleCheckCurrentVal;
-
-unsigned int TimeOut = 0;
-
-char Buffer[1024];
-char *BufPtr = Buffer;
-int BufLen = sizeof(Buffer);
-
-KNOWN_HW KnownWiFiDongle = HW_NOT_KNOWN;
-
-UBYTE TcpReadBuffer[1024];
-uint TcpReadBufPointer = 0;
-
-WIFI_STATE WiFiConnectionState = WIFI_NOT_INITIATED;
-WIFI_INIT_STATE InitState = NOT_INIT;
+static WIFI_STATE WiFiConnectionState = WIFI_NOT_INITIATED;
+static WIFI_INIT_STATE InitState = NOT_INIT;
 // UDP
-int UdpSocketDescriptor = 0;
-char Server[32];  // PlaceHolder for the UDP listen Server Name/IP
-int UdpRxCount, UdpTxCount;
-struct sockaddr_in ServerAddr;
-socklen_t ServerAddrLen = sizeof(ServerAddr);
-fd_set UdpReadFlags, UdpWriteFlags;
-struct timeval UdpWait;
-int BroadCast = 1;
-BEACON_MODE BeaconTx = NO_TX;
-TCP_STATES TcpState = TCP_DOWN;
-int WiFiStatus = OK;
-RESULT WiFiOnStatus = FAIL;
-int TcpConnectionSocket = 0;                /*  connection socket         */
-struct sockaddr_in servaddr, client_addr;
-int TCPListenServer = 0;
-UWORD TcpTotalLength = 0;
-UWORD TcpRestLen = 0;
-UBYTE TcpReadState = TCP_IDLE;
+static int UdpSocketDescriptor = 0;
+static int UdpTxCount;
+static struct sockaddr_in ServerAddr;
+static int BroadCast = 1;
+static BEACON_MODE BeaconTx = NO_TX;
+static TCP_STATES TcpState = TCP_DOWN;
+static RESULT WiFiStatus = OK;
+static int TcpConnectionSocket = 0;
+static struct sockaddr_in servaddr;
+static int TCPListenServer = 0;
+static UWORD TcpTotalLength = 0;
+static UWORD TcpRestLen = 0;
+static UBYTE TcpReadState = TCP_IDLE;
+
+static ConnmanManager *connman_manager = NULL;
+static ConnmanTechnology *ethernet_technology = NULL;
+static ConnmanTechnology *wifi_technology = NULL;
+static GList *service_list = NULL;
+static DATA16 service_list_state = 1;
 
 // ******************************************************************************
 
 // Start the Timer
-void cWiFiStartTimer(void)
+static void cWiFiStartTimer(void)
 {
     gettimeofday(&TimerStartVal, NULL);
 }
 
-RESULT cWiFiKillUdHcPc(void)
-{
-    RESULT Ret = FAIL;
-    char Cmd[48];
-
-    // Only one instance at a time :-)
-
-#ifdef DEBUG
-    printf("We'll try to kill udhcpc\n");
-#endif
-    strcpy(Cmd, "killall udhcpc &> /dev/null");
-
-#ifdef DEBUG
-    printf("\nCmd = %s\n", Cmd);
-#endif
-
-    if (system(Cmd) == 0) {
-#ifdef DEBUG
-        printf("\nThe kill Cmd returns OK!!\n");
-#endif
-        Ret = OK;
-    }
-
-    return Ret;
-}
-
-void cWiFiStartDongleCheckTimer(void)
-{
-    // Get starttime
-    gettimeofday(&DongleCheckStartVal, NULL);
-}
-
-int cWiFiTimeFromLastDongleCheck(void)
-{
-    // Get elapsed time from last dongle check
-    gettimeofday(&DongleCheckCurrentVal, NULL);
-
-    return (int)(DongleCheckCurrentVal.tv_sec - DongleCheckStartVal.tv_sec);
-}
-
 // Get Elapsed time in seconds
-int cWiFiCheckTimer(void)
+static int cWiFiCheckTimer(void)
 {
     // Get actual time and calculate elapsed time
     gettimeofday(&TimerCurrentVal, NULL);
@@ -190,340 +114,369 @@ int cWiFiCheckTimer(void)
     return (int)(TimerCurrentVal.tv_sec - TimerStartVal.tv_sec);
 }
 
-// Used primarily for debug (development :-))
-void wpa_control_message_callback(char *message, size_t length)
-{
-#ifdef DEBUG
-    printf("%s\n", message);
-#endif
-}
-
-int do_wpa_command(struct wpa_ctrl *control, char *command)
-{
-    char command_return[10];
-    // Leave space for a terminating ASCIIZ
-    size_t len_command_return = sizeof(command_return) - 1;
-    int ret_value;
-
-    memset(command_return, 0x00, len_command_return); // Reset to be sure!!
-
-    // add more "nanny"ware look into good ref.... 8-)
-    if (control != NULL) {
-        ret_value = wpa_ctrl_request(control, command, strlen(command),
-                                     command_return, &len_command_return,
-                                     wpa_control_message_callback);
-
-        command_return[len_command_return] = '\0';
-    } else {
-        ret_value = -1;
-    }
-
-    return ret_value;
-}
-
-// Opens - i.e. startup the WpaSupplicant in the background
-int cWiFiStartWpaSupplicant(char *ConfigPath, char *IFName)
-{
-    // Fire up the WPA Supplicant - returns 0 (zero) if OK
-    char StartCmd[128];
-
-    // Build the command string for startting the Control
-    strcpy(StartCmd, "./wpa_supplicant -Dwext -i");
-    strcat(StartCmd, IFName);
-    strcat(StartCmd, " -c");
-    strcat(StartCmd, ConfigPath);
-    strcat(StartCmd, " -B");
-    strcat(StartCmd, "&> /dev/null");
-
-#ifdef DEBUG
-    printf("\nStart WPA_Supplicant: %s\n", StartCmd);
-#endif
-
-    return system(StartCmd);
-}
-
-struct wpa_ctrl *cWiFiOpenCtrlInterFace(char *CtrlPath, char *InterFace)
-{
-    char OpenCtrlCmd[64];
-
-    strcpy(OpenCtrlCmd, CtrlPath);
-    strcat(OpenCtrlCmd, InterFace);
-
-    return wpa_ctrl_open(OpenCtrlCmd);
-}
-
-// Read already know "stuff" from the persistent storage at startup
-int cWiFiPopulateKnownApList(void)
-{
-    int RetVal = 0;
-    char FileName[128];
-    FILE *PersistentFile = NULL;
-    int ArrayIterator = 0;
-    aps OneApRecord;
-
-    strcpy(FileName, WIFI_PERSISTENT_PATH);
-    strcat(FileName, "/");
-    strcat(FileName, WIFI_PERSISTENT_FILENAME);
-
-    ApStoreTableSize = 0; // ZERO size - NO known - if none in file
-    PersistentFile = fopen(FileName, "rb");
-
-#ifdef DEBUG
-    printf("\nKnownlist:\n");
-#endif
-
-    if (PersistentFile) {
-        while (fread(&OneApRecord, sizeof OneApRecord, 1, PersistentFile) == 1) {
-            memcpy(&(ApStoreTable[ArrayIterator++]), &OneApRecord, sizeof(aps));
-#ifdef DEBUG
-            printf("Populating ApStoreTable[x] == KnownList\n");
-            printf("\nApStoreTable[%d].mac_address = %s\n", (ArrayIterator - 1),
-                   ApStoreTable[ArrayIterator - 1].mac_address);
-            printf("\nApStoreTable[%d].security = %s\n", (ArrayIterator - 1),
-                   ApStoreTable[ArrayIterator - 1].security);
-            printf("\nApStoreTable[%d].friendly_name = %s\n", (ArrayIterator - 1),
-                   ApStoreTable[ArrayIterator - 1].friendly_name);
-            printf("\nApStoreTable[%d].pre_shared_key = %s\n", (ArrayIterator - 1),
-                   ApStoreTable[ArrayIterator - 1].pre_shared_key);
-            printf("\nApStoreTable[%d].ap_flags = %d\n", (ArrayIterator - 1),
-                   ApStoreTable[ArrayIterator - 1].ap_flags);
-#endif
-        }
-        fclose(PersistentFile);
-        ApStoreTableSize = ArrayIterator; // Store the KNOWN table size
-
-        //******************************* TEST STUFF ****************************
-        //
-        // Used for a stable "environment" - i.e. the AP's are stable and always there :-)
-        //
-//#define TEST
-#undef TEST
-#ifdef TEST
-        printf("\nSimulated KnownList:\n");
-
-        ApStoreTableSize = 5;
-
-        strcpy(ApStoreTable[0].mac_address, "00:24:01:43:69:6e");
-        strcpy(ApStoreTable[0].security, "[WPA2-PSK-CCMP][WPS][ESS]");
-        strcpy(ApStoreTable[0].friendly_name, "FFF");
-        strcpy(ApStoreTable[0].pre_shared_key,
-               "dbc9c6cf6d4d8e9405842d2e4ab726f33f10de62c30254ff19512af0f");
-        ApStoreTable[0].ap_flags = 0x0C;
-
-        strcpy(ApStoreTable[1].mac_address, "00:24:01:43:69:01");
-        strcpy(ApStoreTable[1].security, "[WPA2]");
-        strcpy(ApStoreTable[1].friendly_name, "OOO");
-        strcpy(ApStoreTable[1].pre_shared_key, "");
-        ApStoreTable[1].ap_flags = 0x0C;
-
-        strcpy(ApStoreTable[2].mac_address, "00:24:01:43:69:02");
-        strcpy(ApStoreTable[2].security, "[WPA2-PSK-CCMP]");
-        strcpy(ApStoreTable[2].friendly_name, "AAA");
-        strcpy(ApStoreTable[2].pre_shared_key, "");
-        ApStoreTable[2].ap_flags = 0x0C;
-
-        strcpy(ApStoreTable[3].mac_address, "00:24:01:43:69:03");
-        strcpy(ApStoreTable[3].security, "[WPA2-PSK-CCMP][ESS]");
-        strcpy(ApStoreTable[3].friendly_name, "JJJ");
-        strcpy(ApStoreTable[3].pre_shared_key, "");
-        ApStoreTable[3].ap_flags = 0x0C;
-
-        strcpy(ApStoreTable[4].mac_address, "00:24:01:43:69:04");
-        strcpy(ApStoreTable[4].security, "[WPA2-PSK][ESS]");
-        strcpy(ApStoreTable[4].friendly_name, "KKK");
-        strcpy(ApStoreTable[4].pre_shared_key, "");
-        ApStoreTable[4].ap_flags = 0x0C;
-
-        /*strcpy(ApStoreTable[5].mac_address, "00:24:01:43:69:05");
-        strcpy(ApStoreTable[5].security, "");
-        strcpy(ApStoreTable[5].friendly_name, "Hugo05");
-        strcpy(ApStoreTable[5].pre_shared_key, "");
-        ApStoreTable[5].ap_flags = 0x08;*/
-#endif
-    //*************************** End of TEST STUFF ****************************
-
-    } else {
-        RetVal = -1;
-    }
-
-    return RetVal;
-}
-
-// At exit of main application
-// Store known "stuff" in the (new) correct order
-int cWiFiStoreKnownApList(void)
-{
-    int RetVal = 0;
-    char FileName[128];
-    FILE *PersistentFile = NULL;
-    int ArrayIterator = 0;
-    aps OneApRecord;
-
-    strcpy(FileName, WIFI_PERSISTENT_PATH);
-    strcat(FileName, "/");
-    strcat(FileName, WIFI_PERSISTENT_FILENAME);
-
-#ifdef DEBUG
-    printf("AP_FLAG_ADJUST_FOR_STORAGE = %X\n", AP_FLAG_ADJUST_FOR_STORAGE);
-    printf("Persistent FileName = %s ApStoreTableSize = %d\n", FileName,
-           ApStoreTableSize);
-#endif
-
-    PersistentFile = fopen(FileName, "wb");
-    if (PersistentFile) {
-        for(ArrayIterator = 0; ArrayIterator < ApTableSize; ArrayIterator++) {
-
-            // if (((ApStoreTable[ArrayIterator].ap_flags) & KNOWN) == KNOWN) NOT USED only HARD known ones
-            if (((ApTable[ArrayIterator].ap_flags) & KNOWN) == KNOWN) {
-                //memcpy(&OneApRecord, &(ApStoreTable[ArrayIterator]), sizeof(aps)); NOT USED only HARD known ones
-                memcpy(&OneApRecord, &(ApTable[ArrayIterator]), sizeof(aps));
-
-                OneApRecord.ap_flags &= AP_FLAG_ADJUST_FOR_STORAGE;
-
-#ifdef  DEBUG
-                printf("cWiFiStoreKnownApList ApStoreTableSize = %d, ArrayIterator = %d\n",
-                       ApStoreTableSize, ArrayIterator);
-                printf("OneApRecord.ap_flags before: %X\n", OneApRecord.ap_flags);
-#endif
-
-                fwrite(&OneApRecord, sizeof OneApRecord, 1, PersistentFile);
-            }
-
-#ifdef DEBUG
-            printf("OneApRecord.ap_flags after, just after save: %X\n",
-                   OneApRecord.ap_flags);
-            printf("Writing KnownList I.e. ApStoreTable[x] to Persistent file\n");
-            printf("\nApStoreTable[%d].mac_address = %s\n", (ArrayIterator),
-                   ApStoreTable[ArrayIterator].mac_address);
-            printf("\nApStoreTable[%d].security = %s\n", (ArrayIterator),
-                   ApStoreTable[ArrayIterator].security);
-            printf("\nApStoreTable[%d].friendly_name = %s\n", (ArrayIterator),
-                   ApStoreTable[ArrayIterator].friendly_name);
-            printf("\nApStoreTable[%d].pre_shared_key = %s\n", (ArrayIterator),
-                   ApStoreTable[ArrayIterator].pre_shared_key);
-            printf("\nApStoreTable[%d].ap_flags = %d\n", (ArrayIterator),
-                   ApStoreTable[ArrayIterator].ap_flags);
-#endif
-        }
-        //RetVal = ApStoreTableSize;NOT USED only HARD known ones
-        RetVal = ApTableSize;
-        fclose(PersistentFile);
-    } else {
-#ifdef DEBUG
-        printf("Handle to PersistentFile == NULL :-(\n");
-#endif
-
-        RetVal = -1;
-    }
-
-    return RetVal;
-}
-
-// Restore a preserved record to ACTUAL
-void cWiFiRestoreActualApRecord(int Destination)
-{
-    memcpy(&(ApTable[Destination].mac_address), &TempApStorage, sizeof(aps));
-}
-
-// Preserve an ACTUAL record
-void cWiFiPreserveActualApRecord(int Index)
-{
-    memcpy(&TempApStorage, &(ApTable[Index].mac_address), sizeof(aps));
-}
-
-void cWiFiMoveUpInStoreList(int Index)
-{
-    // Make entry "n" become "n-1" i.e. index--
-    if (Index > 0) {
-        memcpy(&(ApStoreTable[Index - 1]), &(ApStoreTable[Index]), sizeof(aps));
-    }
-}
-
-void cWiFiMoveDownInStoreList(int Index)
-{
-    // Make entry "n" become "n+1" i.e. index++
-    if (Index < (MAX_AP_STORAGE_ENTRIES - 2)) {
-        memcpy(&(ApStoreTable[Index + 1]), &(ApStoreTable[Index]), sizeof(aps));
-    }
-}
-
-void cWiFiMoveUpInActualList(int Index)
-{
-    // Make "n" become "n-1" - lower index, but higher order (newer/active etc.)
-    if (Index > 0) {
-        memcpy(&(ApTable[Index - 1]), &(ApTable[Index]), sizeof(aps));
-    }
-}
-
-void cWiFiMoveDownInActualList(int Index)
-{
-    // Make "n" become "n+1" - lower priority (older/inactive etc.)
-    if (Index < (MAX_AP_ENTRIES - 2)) {
-        memcpy(&(ApTable[Index + 1]), &(ApTable[Index]), sizeof(aps));
-    }
-}
-
-// Direct UI function
+/**
+ * @brief           Attempt to move a service up in the service list.
+ *
+ * ConnMan does it's own ordering of services, so don't expect this to have a
+ * visible effect.
+ *
+ * @param Index     The index of the service to move.
+ */
 void cWiFiMoveUpInList(int Index)
 {
-    // Make "n" become "n-1" and "n-1" moved down to "n"
+    ConnmanService *service;
+    GDBusProxy *previous;
+    GError *error = NULL;
 
-     if (Index > 0) {
-        // We can move up
-        cWiFiPreserveActualApRecord(Index - 1);
-        // n to n-1
-        memcpy(&(ApTable[Index - 1]), &(ApTable[Index]), sizeof(aps));
-        cWiFiRestoreActualApRecord(Index);
+    service = g_list_nth_data(service_list, Index);
+    previous = G_DBUS_PROXY(g_list_nth_data(service_list, Index - 1));
+
+    g_return_if_fail(service != NULL);
+    g_return_if_fail(previous != NULL);
+
+    if (!connman_service_call_move_before_sync(service,
+        g_dbus_proxy_get_object_path(previous), NULL, &error))
+    {
+        g_printerr("Failed to move up: %s\n", error->message);
+        g_error_free(error);
     }
 }
 
-RESULT cWiFiRemoveNetwork(void)
+/**
+ * @brief           Attempt to move a service down in the service list.
+ *
+ * ConnMan does it's own ordering of services, so don't expect this to have
+ * a visible effect.
+ *
+ * @param Index     The index of the service to move.
+ */
+void cWiFiMoveDownInList(int Index)
 {
-    RESULT Ret = FAIL;
-    char CmdReturn[10];
-#ifdef DEBUG
-    int RetVal;
-#endif
-    // We leave space for a terminating /0x00
-    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
+    ConnmanService *service;
+    GDBusProxy *next;
+    GError *error = NULL;
 
-#ifdef DEBUG
-    printf("Remove Network called\n");
-#endif
+    service = g_list_nth_data(service_list, Index);
+    next = G_DBUS_PROXY(g_list_nth_data(service_list, Index + 1));
 
-    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
+    g_return_if_fail(service != NULL);
+    g_return_if_fail(next != NULL);
 
-    if (ctrl_conn)
+    if (!connman_service_call_move_before_sync(service,
+        g_dbus_proxy_get_object_path(next), NULL, &error))
     {
-#ifdef DEBUG
-        RetVal = 
-#endif
-        wpa_ctrl_request(ctrl_conn, "REMOVE_NETWORK all",
-                         strlen("REMOVE_NETWORK all"),
-                         CmdReturn, &LenCmdReturn, NULL);
-        sleep(3); // Force some cycles
-        CmdReturn[LenCmdReturn] = '\0';
+        g_printerr("Failed to move down: %s\n", error->message);
+        g_error_free(error);
+    }
+}
 
-#ifdef DEBUG
-        printf("Remove returns %s - RetVal = %d\n", CmdReturn, RetVal);
-#endif
+void cWiFiSetEncryptToWpa2(int Index)
+{
+    // TODO: Connman does not allow us to select the security.
+}
 
-        if (strstr(CmdReturn, "OK")) {
-#ifdef DEBUG
-            printf("Remove Network returned OK\n");
-#endif
-            Ret = OK;
-        } else {
-#ifdef DEBUG
-            printf("Remove Network was NOT OK :-(\n");
-#endif
+void cWiFiSetEncryptToNone(int Index)
+{
+    // TODO: Connman does not allow us to select the security.
+}
+
+/**
+ * @brief           Remove the specified service from the list of known services
+ *
+ * @param Index     The index of the service in the service list.
+ */
+void cWiFiDeleteAsKnown(int Index)
+{
+    ConnmanService *service = g_list_nth_data(service_list, Index);
+    GError *error = NULL;
+
+    if (service && !connman_service_call_remove_sync(service, NULL, &error)) {
+        g_printerr("Failed to remove service: %s\n", error->message);
+        g_error_free(error);
+    }
+}
+
+/**
+ * @brief               Get the IP address of the first service.
+ *
+ * If there are no services, IpAddress is set to "??".
+ *
+ * @param IpAddress     Preallocated character array.
+ * @return              OK if there is a valid IP address.
+ */
+RESULT cWiFiGetIpAddr(char* IpAddress)
+{
+    ConnmanService *service;
+    RESULT Result = FAIL;
+
+    service = g_list_nth_data(service_list, 0);
+    if (service) {
+        GVariant *ipv4;
+        GVariant *address;
+
+        ipv4 = connman_service_get_ipv4(service);
+        address = g_variant_lookup_value(ipv4, "Address", NULL);
+
+        sprintf(IpAddress, "%s", g_variant_get_string(address, NULL));
+        Result = OK;
+
+        g_variant_unref(address);
+        // ipv4 does not need to be unrefed
+    } else {
+        strcpy(IpAddress, "??");
+    }
+
+    return Result;
+}
+
+/**
+ * @brief               Get the MAC address of the first service.
+ *
+ * If there are no services, MacAddress is set to "??".
+ *
+ * @param MacAddress    Preallocated character array.
+ * @return              OK if there is a valid MAC address or FAIL if there is
+ *                      no connection.
+ */
+RESULT cWiFiGetMyMacAddr(char* MacAddress)
+{
+    RESULT Result = FAIL;
+
+    if (service_list) {
+        GVariant *enet;
+        GVariant *address;
+
+        enet = connman_service_get_ethernet(CONNMAN_SERVICE(service_list->data));
+        address = g_variant_lookup_value(enet, "Address", NULL);
+
+        sprintf(MacAddress, "%s", g_variant_get_string(address, NULL));
+        Result = OK;
+
+        g_variant_unref(address);
+        // enet does not need to be unrefed
+    } else {
+        strcpy(MacAddress, "??");
+    }
+
+    return Result;
+}
+
+/**
+ * @brief Checks if WiFi is present on the system
+ *
+ * Also returns OK if ethernet (wired) technology is present.
+ *
+ * @return OK if present, otherwise FAIL
+ */
+RESULT cWiFiTechnologyPresent(void)
+{
+    return (wifi_technology || ethernet_technology) ? OK : FAIL;
+}
+
+/**
+ * @brief           Get the name of a service (WiFi AP).
+ *
+ * Sets ApName to "None" if there is not a service at that index.
+ *
+ * @param ApName    Preallocated char array to store the name.
+ * @param Index     The index of the service.
+ * @param Length    The length of ApName.
+ * @return          OK if there was a service at the specified index.
+ */
+RESULT cWiFiGetName(char *ApName, int Index, char Length)
+{
+    ConnmanService *service;
+    RESULT Result = FAIL;
+
+    service = g_list_nth_data(service_list, Index);
+    if (service) {
+        snprintf(ApName, Length, "%s", connman_service_get_name(service));
+        Result = OK;
+    } else {
+        strcpy(ApName, "None");
+    }
+
+    return Result;
+}
+
+RESULT cWiFiSetName(char *ApName, int Index)
+{
+    RESULT Result = FAIL;
+
+    // TODO: This needs to be made to work with ConnMan agent.
+
+    return Result;
+}
+
+/**
+ * @brief           Gets flags about service properties.
+ *
+ * @param Index     The index in the service list to check.
+ * @return          The flags.
+ */
+WIFI_STATE_FLAGS cWiFiGetFlags(int Index)
+{
+    ConnmanService *service;
+    WIFI_STATE_FLAGS flags = VISIBLE; // ConnMan does list services that are not visible
+
+    service = g_list_nth_data(service_list, Index);
+    if (service) {
+        const gchar *state;
+        const gchar *const *security;
+
+        state = connman_service_get_state(service);
+        if (g_strcmp0(state, "ready") == 0 || g_strcmp0(state, "online") == 0) {
+            flags |= CONNECTED;
+        }
+        security = connman_service_get_security(service);
+        for (; *security; security++) {
+            if (g_strcmp0(*security, "psk") == 0) {
+                flags |= WPA2;
+            }
+        }
+        if (connman_service_get_favorite(service)) {
+            flags |= KNOWN;
         }
     }
 
-    return Ret;
+    return flags;
 }
 
-RESULT cWiFiTcpClose(void)
+/**
+ * @brief           Connect to the service at the specified index.
+ *
+ * @param Index     Index of the service in the service_list.
+ */
+RESULT cWiFiConnectToAp(int Index)
+{
+    ConnmanService *proxy;
+    GError *error = NULL;
+    RESULT Result = FAIL;
+
+    WiFiStatus = BUSY;
+    pr_dbg("cWiFiConnectToAp(int Index = %d)\n", Index);
+
+    proxy = g_list_nth_data(service_list, Index);
+    g_return_if_fail(proxy != NULL);
+
+    // TODO: need to make this async so that we can handle agent request for passphrase
+    if (connman_service_call_connect_sync(proxy, NULL, &error)) {
+        Result = OK;
+        pr_dbg("cWiFiMakeConnectionToAp(Index = %d) == OK)\n", Index);
+        WiFiConnectionState = UDP_NOT_INITIATED;
+        WiFiStatus = OK;
+    } else {
+        WiFiConnectionState = READY_FOR_AP_SEARCH;
+        WiFiStatus = FAIL;
+        g_printerr("Connect failed: %s\n", error->message);
+    }
+
+    return Result;
+}
+
+// Make the pre-shared key from
+// Supplied SSID and PassPhrase
+// And store it in ApTable[Index]
+RESULT cWiFiMakePsk(char *ApSsid, char *PassPhrase, int Index)
+{
+    RESULT Return = FAIL;
+
+    // TODO: How does this work with ConnMan?
+
+    return Return;
+}
+
+/**
+ * @brief           Gets the index of a service for a given name
+ *
+ * @param Name      The name to search for.
+ * @param Index     Pointer to store the index if found.
+ * @return          OK if a match was found, otherwise FAIL
+ */
+RESULT cWiFiGetIndexFromName(char *Name, UBYTE *Index)
+{
+    GList *item;
+    RESULT Result = FAIL;
+
+    *Index = 0;
+    for (item = service_list; item; item = g_list_next(item)) {
+        ConnmanService *service = item->data;
+        const char *service_name = connman_service_get_name(service);
+
+        if (g_strcmp0(service_name, Name) == 0) {
+            Result = OK;
+            break;
+        }
+        (*Index)++;
+    }
+
+    return Result;
+}
+
+/**
+ * @brief           Scan for new access points
+ *
+ * If WiFi is not present or turned off, this does nothing (returns FAIL).
+ *
+ * @return          OK if scan was successful, otherwise FAIL.
+ */
+RESULT cWiFiScanForAPs()
+{
+    RESULT Result = FAIL;
+    GError *error = NULL;
+
+    pr_dbg("cWiFiScanForAPs\n");
+
+    if (wifi_technology && connman_technology_get_powered(wifi_technology)) {
+        if (connman_technology_call_scan_sync(wifi_technology, NULL, &error)) {
+            Result = OK;
+        } else {
+            g_printerr("WiFi scan failed: %s\n", error->message);
+            g_error_free(error);
+        }
+    }
+
+    return Result;
+}
+
+/**
+ * @brief           Gets a value that changes each time the service list changes.
+ *
+ * @return          The value.
+ */
+DATA16 cWifiGetListState(void)
+{
+    return service_list_state;
+}
+
+/**
+ * @brief           Get the size of the service list.
+ *
+ * @return          The size.
+ */
+int cWiFiGetApListSize(void)
+{
+    return g_list_length(service_list);
+}
+
+RESULT cWiFiGetStatus(void)
+{
+    pr_dbg("WiFiStatus => GetResult = %d\n", WiFiStatus);
+
+    return WiFiStatus;
+}
+
+static void cWiFiUdpClientClose(void)
+{
+    WiFiStatus = FAIL;                          // Async announcement of FAIL
+    WiFiConnectionState = WIFI_INITIATED;
+    BeaconTx = NO_TX;                           // Disable Beacon
+    if (close(UdpSocketDescriptor) == 0) {
+        WiFiStatus = OK;                          // Socket kill
+    }
+}
+
+static RESULT cWiFiTcpClose(void)
 {
     int res;
     UBYTE buffer[128];
@@ -539,18 +492,14 @@ RESULT cWiFiTcpClose(void)
 
     if (shutdown(TcpConnectionSocket, 2) < 0) {
         do {
-#ifdef DEBUG
-            printf("In the do_while\n");
-#endif
+            pr_dbg("In the do_while\n");
             res = read(TcpConnectionSocket, buffer, 100);
             if (res < 0 ) {
                 break;
             }
         } while (res != 0);
 
-#ifdef DEBUG
-        printf("\nError calling Tcp shutdown()\n");
-#endif
+        pr_dbg("\nError calling Tcp shutdown()\n");
     }
 
     TcpConnectionSocket = 0;
@@ -560,1902 +509,22 @@ RESULT cWiFiTcpClose(void)
     return Result;
 }
 
-void cWiFiUdpClientClose(void)
-{
-    WiFiStatus = FAIL;                          // Async announcement of FAIL
-    WiFiConnectionState = WIFI_INITIATED;
-    BeaconTx = NO_TX;                           // Disable Beacon
-    if (close(UdpSocketDescriptor) == 0) {
-        WiFiStatus = OK;                          // Socket kill
-    }
-}
-
-// Direct UI function
-void cWiFiMoveDownInList(int Index)
-{
-    // Make "n" become "n+1" and "n+1" moved up to "n"
-    if (Index < (MAX_AP_ENTRIES - 2)) {
-        cWiFiPreserveActualApRecord(Index + 1);
-        memcpy(&(ApTable[Index + 1]), &(ApTable[Index]), sizeof(aps));
-        cWiFiRestoreActualApRecord(Index);
-    }
-}
-
-// Direct UI function
-// Delete "n" - making "n+1, n+2" => "n, n+1"
-void cWiFiDeleteInList(int Index)
-{
-    int i;
-
-    WiFiStatus = FAIL; // Until other....
-
-    // DO NOT outside or ACTIVE!!
-    if ((Index < ApTableSize) && ((ApTable[0].ap_flags & CONNECTED) != CONNECTED)) {
-        for (i = Index + 1; i < (ApTableSize + 1); i++) {
-            memcpy(&(ApTable[i - 1]), &(ApTable[i]), sizeof(aps));
-        }
-        ApTableSize--;
-        WiFiStatus = OK; // Somecleaning done :-)
-    }
-}
-
-// Delete "n" - making "n+1, n+2" => "n, n+1"
-void cWiFiDeleteInStoreList(int Index)
-{
-    int i;
-
-    if (Index < ApStoreTableSize) {
-      for (i = Index; i < (ApStoreTableSize - 1); i++) {
-          memcpy(&(ApStoreTable[i]), &(ApStoreTable[i + 1]), sizeof(aps));
-      }
-      ApStoreTableSize--;
-    }
-}
-
-// Lower priority
-void cWifiMoveAllActualDown(int SourcePointer)
-{
-    int i;
-
-    i = SourcePointer - 1;
-    do {
-        cWiFiMoveDownInActualList(i--);
-    } while(i >= 0);
-}
-
-// Lower priority
-void cWiFiMoveAllStoreDown(int SourcePointer)
-{
-    int i;
-
-    i = SourcePointer - 1;
-    do {
-        cWiFiMoveDownInStoreList(i--);
-    } while(i >= 0);
-}
-
-// Move from STORED to ACTUAL
-void cWiFiCopyStoreToActual(int StoreIndex, int ActualIndex)
-{
-    memcpy(&(ApTable[StoreIndex]), &(ApStoreTable[ActualIndex]), sizeof(aps));
-}
-
-// Move from ACTUAL to STORED
-void cWiFiCopyActualToStore(int ActualIndex, int StoreIndex)
-{
-    memcpy(&(ApStoreTable[StoreIndex]), &(ApTable[ActualIndex]), sizeof(aps));
-}
-
-// Check for entry in STORED list - if present -> DELETE it
-RESULT cWiFiCheckAndDelete(int Index)
-{
-    int FoundIndex;
-    RESULT Found = FAIL;
-    int i;
-
-    for (i = 0; i < ApStoreTableSize; i++) {
-        if (strcmp(ApTable[Index].mac_address, ApStoreTable[i].mac_address) == 0) {
-            FoundIndex = i;
-            Found = OK;
-        }
-    }
-    if (Found == OK) {
-        cWiFiDeleteInStoreList(FoundIndex);
-        // If found and deleted
-        ApStoreTableSize--;
-    }
-
-    return Found; // true if FOUND and DELETED
-}
-
-// When a connection is made to a new AP
-void cWiFiAddToKnownApList(int Index)
-{
-    // Place in Persistent data as TOP item - ALWAYS
-    int SourcePointer;
-
-    // First adjust for storage - is the table already full??
-    if (ApStoreTableSize < (MAX_AP_STORAGE_ENTRIES - 1)) {
-        SourcePointer = ApStoreTableSize;
-    } else {
-        SourcePointer = ApStoreTableSize-1;
-    }
-
-    // Move all entries one down
-    cWiFiMoveAllStoreDown(SourcePointer);
-    // Copy to TOP
-    cWiFiCopyActualToStore(Index, 0);
-
-    ApStoreTableSize++;
-    if (ApStoreTableSize > (MAX_AP_STORAGE_ENTRIES - 1)) {
-        ApStoreTableSize = (MAX_AP_STORAGE_ENTRIES - 1);
-    }
-}
-
-// Preserve a STORED record
-void cWiFiPreserveStorageApRecord(int Index)
-{
-    memcpy(&TempApStorage, &(ApStoreTable[Index].mac_address), sizeof(aps));
-}
-
-// Restore a preserved record to STORED
-void cWiFiRestoreStorageApRecord(int Destination)
-{
-    memcpy(&(ApStoreTable[Destination].mac_address), &TempApStorage, sizeof(aps));
-}
-
-// Merge newly scanned and visible AP's with the KNOWN LIST
-// Prioritized - LAST used first, second used next (every-
-// thing visible and known) also prioritized first.
-// 1) KNOWN and VISIBLE first
-// 2) VISIBLE
-// 3) KNOWN but NOT visible
-RESULT cWiFiMergeActualAndKnownTable(void)
-{
-    int KnownListIterator;
-    int VisibleListIterator;
-    RESULT Found = FAIL;
-    int KnownCounter = 0; // Points into the KNOWN part of the scanned
-    int i;
-
-    for (KnownListIterator = 0; KnownListIterator < ApStoreTableSize; KnownListIterator++) {
-        VisibleListIterator = 0;
-        Found = FAIL;
-
-        do {
-            if (strcmp(ApTable[VisibleListIterator].mac_address,
-                       ApStoreTable[KnownListIterator].mac_address) == 0)
-            {   // Known and visible
-                // Move this Known to ApTable[KnownListIterator]
-
-                // First Save entry @ ApTable[VisibleListIterator]
-
-                // Then move all between KnownCounter (topmost) and VisibleListIterator (lowest) 1 position down
-
-                for(i = VisibleListIterator; i > KnownCounter; i--) {
-                    cWiFiMoveDownInActualList(i - 1);
-                }
-
-                cWiFiCopyStoreToActual(KnownListIterator, KnownCounter);  // Move from STORED to ACTUAL
-
-                ApTable[KnownCounter].ap_flags |=  (KNOWN + VISIBLE);     // Set flags
-
-                Found = OK;
-                KnownCounter++; // Used for populate rest of list with KNOWN if any
-            }
-
-            if (Found == FAIL) {
-                VisibleListIterator++;
-                if (VisibleListIterator >= MAX_AP_ENTRIES) {
-                    Found = OK; // Even if NOT found
-                    // Add to KNOWN but NOT visible in bottom of list
-                    cWiFiCopyStoreToActual(ApTableSize, KnownListIterator);
-
-                    ApTable[ApTableSize].ap_flags |=  KNOWN;
-                    ApTable[ApTableSize].ap_flags &= ~(CONNECTED);
-                    ApTable[ApTableSize].ap_flags &= ~(VISIBLE);
-                    ApTableSize++;
-                }
-            }
-        }
-        while(Found == FAIL);
-    }
-
-    return OK;
-}
-
-RESULT cWiFiTerminate(void)
-{
-    RESULT Ret = FAIL;
-    char CmdReturn[10];
-#ifdef DEBUG
-    int RetVal;
-#endif
-    // We leave space for a terminating /0x00
-    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
-
-    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-    if (ctrl_conn) {
-#ifdef DEBUG
-        RetVal =
-#endif
-        wpa_ctrl_request(ctrl_conn, "TERMINATE", strlen("TERMINATE"), CmdReturn,
-                         &LenCmdReturn, NULL);
-        CmdReturn[LenCmdReturn] = '\0';
-
-#ifdef DEBUG
-        printf("WiFi terminate : RetVal %d , CmdReturn %s\n", RetVal, CmdReturn);
-#endif
-
-        if (strstr(CmdReturn, "OK") != NULL) {
-            Ret = OK;
-        }
-    }
-
-    return Ret;
-}
-
-RESULT cWiFiAddNetwork(void)
-{
-    RESULT Ret = FAIL;
-    char aCmdReturn[128];
-#ifdef DEBUG
-    int RetVal;
-#endif
-    size_t LenaCmdReturn = sizeof(aCmdReturn) - 1; // We leave space for a terminating /0x00
-
-    memset(aCmdReturn, 0x00, LenaCmdReturn); // Reset to be sure!!
-
-#ifdef DEBUG
-    printf("Beginning of AddNetwork\n");
-#endif
-
-    if (ctrl_conn) {
-#ifdef DEBUG
-        printf("Internal in AddNetwork - before the real call\n");
-#endif
-
-#ifdef DEBUG
-        RetVal =
-#endif
-        wpa_ctrl_request(ctrl_conn, "ADD_NETWORK", strlen("ADD_NETWORK"),
-                         aCmdReturn, &LenaCmdReturn, NULL);
-        sleep(3); // Force some cycles
-        aCmdReturn[LenaCmdReturn] = '\0';
-
-#ifdef DEBUG
-        printf("Add returns %s - RetVal = %d\n", aCmdReturn, RetVal);
-#endif
-
-        if ((aCmdReturn[0] == '0') && (aCmdReturn[1] == 10)) { // LF
-#ifdef DEBUG
-            printf("0 (zero) in return at AddNetwork\n");
-#endif
-
-            Ret = OK;
-        } else {
-#ifdef DEBUG
-            printf("AddNetwork NOT OK 0 = %d, 1 = %d !!\n", aCmdReturn[0], aCmdReturn[1]);
-#endif
-        }
-    }
-
-    return Ret;
-}
-
-// The WPA_Supplicant should also be happy, when APs are invisible
-RESULT cWiFiSetScanSsidToOne(void)
-{
-    RESULT Ret = FAIL;
-    char CmdReturn[10];
-    char Cmd[128];
-    // We leave space for a terminating /0x00
-    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
-
-    WiFiStatus = BUSY;
-    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-#ifdef DEBUG
-    printf("\nEntry of SET_ScanSsidToOne to ONE\n");
-#endif
-
-    if (ctrl_conn) {
-        strcpy(Cmd, "SET_NETWORK 0 scan_ssid 1");
-
-        wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn, NULL);
-
-        CmdReturn[LenCmdReturn] = '\0';
-
-#ifdef DEBUG
-        printf("ap_scan: CMD= %s, Return= %s", Cmd, CmdReturn);
-#endif
-
-        if (strstr(CmdReturn, "OK") != NULL) {
-            Ret = OK;
-            WiFiStatus = OK;
-        } else {
-            WiFiStatus = FAIL;
-        }
-    }
-
-    return Ret;
-}
-
-RESULT cWiFiSetSsid(char *Ssid)
-{
-    RESULT Ret = FAIL;
-    char CmdReturn[10];
-    char Cmd[128];
-    // We leave space for a terminating /0x00
-    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
-
-    WiFiStatus = BUSY;
-    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-#ifdef DEBUG
-    printf("\nEntry of SET_SSID in c_wifi\n");
-#endif
-
-    if (ctrl_conn) {
-        strcpy(Cmd, "SET_NETWORK 0 ssid \"");
-        strcat(Cmd, Ssid);
-        strcat(Cmd, "\"");
-
-        wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn,
-                         NULL);
-
-        CmdReturn[LenCmdReturn] = '\0';
-
-#ifdef DEBUG
-        printf("SetSSID: CMD= %s, Return= %s", Cmd, CmdReturn);
-#endif
-
-        if (strstr(CmdReturn, "OK") != NULL) {
-            Ret = OK;
-            WiFiStatus = OK;
-        } else {
-            WiFiStatus = FAIL;
-        }
-    }
-
-    return Ret;
-}
-
-RESULT cWiFiSetKeyManagToWpa2(void)
-{
-    RESULT Ret = FAIL;
-    char CmdReturn[10];
-    // We leave space for a terminating /0x00
-    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
-
-    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-    if (ctrl_conn) {
-        wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 key_mgmt WPA-PSK",
-                         strlen("SET_NETWORK 0 key_mgmt WPA-PSK"), CmdReturn,
-                         &LenCmdReturn, NULL);
-
-        CmdReturn[LenCmdReturn] = '\0';
-        if (strstr(CmdReturn, "OK") != NULL) {
-            Ret = OK;
-        }
-    }
-
-    return Ret;
-}
-
-RESULT cWiFiSetKeyManagToNone(void)
-{
-    RESULT Ret = FAIL;
-    char CmdReturn[10];
-    // We leave space for a terminating /0x00
-    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
-
-    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-    if (ctrl_conn) {
-        wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 key_mgmt NONE",
-                         strlen("SET_NETWORK 0 key_mgmt NONE"), CmdReturn,
-                         &LenCmdReturn, NULL);
-
-        CmdReturn[LenCmdReturn] = '\0';
-        if (strstr(CmdReturn, "OK") != NULL) {
-            Ret = OK;
-        }
-    }
-
-    return Ret;
-}
-
-RESULT cWiFiSetPsk(char *Psk)
-{
-    RESULT Ret = FAIL;
-    char CmdReturn[10];
-    char Cmd[128];
-    // We leave space for a terminating /0x00
-    size_t LenCmdReturn = sizeof(CmdReturn) - 1;
-
-    memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-    if (ctrl_conn) {
-        strcpy(Cmd, "SET_NETWORK 0 psk ");
-        strcat(Cmd, Psk);
-
-        wpa_ctrl_request(ctrl_conn, Cmd, strlen(Cmd), CmdReturn, &LenCmdReturn,
-                         NULL);
-
-        CmdReturn[LenCmdReturn] = '\0';
-        if (strstr(CmdReturn, "OK") != NULL) {
-            Ret = OK;
-      }
-    }
-
-    return Ret;
-}
-
-RESULT cWiFiGetApMacAddr(char* MacAddr, int Index)
-{
-  // Get the MAC address of the Indexed AP
-  RESULT Result = FAIL;
-  if(!(Index > (ApTableSize - 1)))
-  {
-    strcpy(MacAddr, ApTable[Index].mac_address);
-    Result = OK;
-  }
-  return Result;
-}
-
-void cWiFiSetEncryptToWpa2(int Index)
-{
-  WiFiStatus = BUSY;  // NOT async, but if...
-
-  ApTable[Index].ap_flags |= WPA2;
-
-  #ifdef DEBUG
-    printf("\nApTable[Index = %d].security before = %s\n", Index, ApTable[Index].security);
-  #endif
-
-  strcpy(ApTable[Index].security, "WPA2");
-
-  #ifdef DEBUG
-    printf("\nApTable[Index = %d].security after = %s\n", Index, ApTable[Index].security);
-  #endif
-
-    WiFiStatus = OK; // Clean properety settings
-}
-
-void cWiFiSetEncryptToNone(int Index)
-{
-  WiFiStatus = BUSY;  // NOT async, but if...
-  ApTable[Index].ap_flags &= ~WPA2;
-  strcpy(ApTable[Index].security, "NONE");
-  WiFiStatus = OK;    // Clean properety settings
-}
-
-void cWiFiSetKnown(int Index)
-{
-  ApTable[Index].ap_flags |= KNOWN;
-}
-
-void cWiFiDeleteAsKnown(int LocalIndex)
-{
-  // Leave entry only remove the KNOWN flag
-  WiFiStatus = OK;
-  ApTable[LocalIndex].ap_flags &= ~KNOWN;
-}
-
-RESULT cWiFiAddHidden(char *HiddenApName, char *Security, char *PassWord)
-{
-  RESULT Result = FAIL;
-  int Index = ApTableSize;
-
-      if(ApTableSize < MAX_AP_ENTRIES)
-      {
-        Index = ApTableSize++;
-        if(ApTableSize >= MAX_AP_ENTRIES) // Can only be <=, but....
-          ApTableSize = MAX_AP_ENTRIES;
-      }
-      else
-      {
-        ApTableSize = MAX_AP_ENTRIES;     // To be sure..
-        Index = MAX_AP_ENTRIES - 1;
-      }
-
-      ApTable[Index].ap_flags = 0;        // Clear flags - valid values set below
-      strcpy(ApTable[Index].friendly_name, HiddenApName);
-
-      if(strstr(Security, "WPA2") != NULL)
-      {
-        ApTable[Index].ap_flags |= WPA2;
-        strcpy(ApTable[Index].security, "WPA2");  // Only exact
-      }
-
-      ApTable[Index].ap_flags |= KNOWN;           // It's hidden so.... we must know it
-                                                  // else we would not be here ;-)
-
-      if(cWiFiMakePsk(HiddenApName, PassWord, Index) == OK)
-      {
-        Result = OK;
-      }
-
-  return Result;
-}
-
-RESULT cWiFiGetHiddenMacAddr(char* MacAddr, int Index)
-{
-  // Get the MAC address of the Indexed "HIDDEN" AP
-  RESULT Result = FAIL;
-  char IwConfigCmd[32];
-  FILE *FilePointer;
-
-  if(!(Index > (ApTableSize - 1)))
-  {
-    // First get the "HIDDEN" MAC addr.
-    strcpy(IwConfigCmd, "iwconfig");
-    strcat(IwConfigCmd, " ");
-    strcat(IwConfigCmd, LogicalIfName);
-    FilePointer   = popen(IwConfigCmd, "r");
-    if (FilePointer)
-    {
-      char *OneLine = NULL;
-      char *TempPointer;
-      size_t NumberOfBytes;
-
-      while((getline(&OneLine, &NumberOfBytes, FilePointer) > 0) && OneLine)
-      {
-        if((OneLine = strstr(OneLine, "Access Point:")) > 0)
-        {
-          OneLine += 14;
-          TempPointer = OneLine + 17;
-          *TempPointer = '\0';
-          strcpy(MacAddr, OneLine);
-          Result = OK;
-          break;
-        }
-      }
-    }
-    pclose(FilePointer);
-    // Store it and return it
-    strcpy(ApTable[Index].mac_address, MacAddr);
-    Result = OK;
-  }
-  return Result;
-}
-
-RESULT  cWiFiGetIpAddr(char* IpAddress)
-{
-  RESULT Result = FAIL;
-
-  if(strstr(MyIp4Address, "???") == NULL)
-  {
-    strcpy(IpAddress, MyIp4Address);
-    Result = OK;
-  }
-  return Result;
-}
-
-RESULT  cWiFiGetMyMacAddr(char* MacAddress)
-{
-  RESULT Result = FAIL;
-
-  if(strstr(MyHwMacAddress, "??") == NULL)
-  {
-    strcpy(MacAddress, MyHwMacAddress);
-    Result = OK;
-  }
-  return Result;
-}
-
-RESULT cWiFiFindMacAddr(void)
-{
-  // Get the MAC address of the HardWare Interface using the Logical "InterFace"
-  // e.g. wlan0 and store it in the fixed location
-  // MyHwMacAddress
-
-  RESULT Result = FAIL;
-  char IfConfigCmd[32];
-  strcpy(IfConfigCmd, "ifconfig");
-  strcat(IfConfigCmd, " ");
-  strcat(IfConfigCmd, LogicalIfName);
-  FILE *FilePointer = popen(IfConfigCmd, "r");
-
-  const char *Source;
-  char *Destination;
-
-
-  if (FilePointer)
-  {
-    char *OneLine = NULL;
-    char *TempPointer;
-    size_t NumberOfBytes;
-
-    while((getline(&OneLine, &NumberOfBytes, FilePointer) > 0) && OneLine)
-    {
-      if((OneLine = strstr(OneLine, "HWaddr")) > 0)
-      {
-        OneLine+=7;
-        TempPointer = OneLine + 17;
-        *TempPointer = '\0';
-
-        Source = OneLine;
-        Destination = OneLine;
-
-        do   // new
-        {
-          while(*Source == ':')
-            ++Source;
-        }
-        while((*Destination++ = *Source++) != '\0');
-        strcpy(MyHwMacAddress, OneLine);
-        Result = OK;
-
-        #ifdef DEBUG
-          printf("cWiFiFindMacAddr -> MAC adresse = %s\n", MyHwMacAddress);
-        #endif
-
-        break;
-      }
-    }
-  }
-  pclose(FilePointer);
-  return Result;
-}
-
-RESULT cWiFiDeepDongleSearch(void)
-{
-  // Is a KNOWN Dongle attached? We uses the
-  // "KNOWN Manufacture ID and Device ID" to
-  // detect the HardWare Dongle. No Drivers has to
-  // be loaded before using :-)
-
-  RESULT Result = OK;
-  /*RESULT Result = FAIL;
-
-  FILE *FilePointer = NULL;
-  char FindDongle[10];
-  char *OneLine = NULL;
-  size_t NumberOfBytes;
-
-  strcpy(FindDongle, "lsusb");
-
-  FilePointer = popen(FindDongle, "r");
-
-  if (FilePointer)
-  {
-    while((getline(&OneLine, &NumberOfBytes, FilePointer) > 0) && OneLine)
-    {
-      if((OneLine = strstr(OneLine, HARDWARE_SEARCH_STRING)) > 0)
-      {
-        Result = OK;
-        break;
-      }
-    }
-    pclose(FilePointer);
-  }*/
-  return Result;
-}
-
-RESULT cWiFiKnownDongleAttached(void)
-{
-  RESULT Result = OK;
-  /*FILE *pIdVendor = NULL;
-  FILE *pIdProduct = NULL;
-  char VendorBuffer[64];
-  char ProductBuffer[64];
-  //char *VendorId;
-  //char *ProductId;
-  RESULT Result = FAIL;
-
-  pIdVendor = fopen("/sys/bus/usb/devices/1-1/idVendor", "r");
-
-  pIdProduct = fopen("/sys/bus/usb/devices/1-1/idProduct", "r");
-
-  if((pIdVendor != NULL) && (pIdProduct != NULL))
-  {
-    if(fgets(VendorBuffer, sizeof (VendorBuffer), pIdVendor) != NULL)
-    {
-      if(fgets(ProductBuffer, sizeof (ProductBuffer), pIdProduct) != NULL)
-      {
-        if((strstr(ProductBuffer, WIFI_DONGLE_ID) > 0) && (strstr(VendorBuffer, WIFI_VENDOR_ID) > 0))
-          Result = OK;
-      }
-    }
-  }
-
-  if(pIdVendor != NULL)
-    fclose(pIdVendor);
-
-  if(pIdProduct != NULL)
-    fclose(pIdProduct);
-
-  if(Result != OK) // Not found - Do we have a hub?
-  {
-    Result = cWiFiDeepDongleSearch();
-  }*/
-  return Result;
-}
-
-RESULT cWiFiFindIpAddr(void)
-{
-  // Get the IP addresses of the Interface named in the var "InterFaceName"
-  // e.g. wlan0, wlan2.. and store it in the fixed locations
-  // MyIp4Address, MyBroadCastAdr
-
-  RESULT Result = FAIL;
-  char IfConfigCmd[32];
-  strcpy(IfConfigCmd, "ifconfig");
-  strcat(IfConfigCmd, " ");
-  strcat(IfConfigCmd, LogicalIfName);
-
-  #ifdef DEBUG
-    printf("\nIfConfigCmd = %s\n", IfConfigCmd);
-  #endif
-
-  FILE *FilePointer = popen(IfConfigCmd, "r");
-
-  if (FilePointer)
-  {
-    char *OneLine = NULL;
-    char *TempPointer;
-    size_t NumberOfBytes;
-    uint TempIp0;
-    uint TempIp1;
-    uint TempIp2;
-    uint TempIp3;
-
-    while((getline(&OneLine, &NumberOfBytes, FilePointer) > 0) && OneLine)
-    {
-      if((OneLine = strstr(OneLine, "inet addr:")) > 0)
-      {
-        OneLine+=10;
-        if ((TempPointer = strchr(OneLine, ' ')) > 0)
-        {
-          *TempPointer = '\0';
-          strcpy(MyIp4Address, OneLine);
-
-          OneLine = TempPointer + 1;
-          if((OneLine = strstr(OneLine, "Bcast:")) > 0)
-          {
-            OneLine+=6;
-            if ((TempPointer = strchr(OneLine, ' ')) > 0)
-            {
-              *TempPointer = '\0';
-              strcpy(MyBroadCastAdr, OneLine);
-              if(strstr(MyBroadCastAdr, "0.0.0.0"))
-              {
-                sscanf(MyIp4Address, "%d.%d.%d.%d", &TempIp3, &TempIp2, &TempIp1, &TempIp0);
-                 sprintf(MyBroadCastAdr, "%d.%d.%d.%d", TempIp3, TempIp2, TempIp1, 255);
-              }
-
-              Result = OK;
-              break;
-            }
-          }
-        }
-      }
-    }
-    pclose(FilePointer);
-  }
-  return Result;
-}
-
-RESULT cWiFiRequestIpAdr(char *Interface)
-{
-  RESULT Ret = FAIL;
-  char Cmd[48];
-
-  #ifdef DEBUG
-    printf("\nIP address = %s\n", MyIp4Address);
-  #endif
-
-  // strcpy(Cmd, "busybox udhcpc -t 5 -q -i");
-  // strcpy(Cmd, "busybox udhcpc -t5 -A2 -n -i");
-  // added quit on lease
-  strcpy(Cmd, "udhcpc -t5 -A2 -nq -i");
-  strcat(Cmd, Interface);
-  strcat(Cmd, " &> /dev/null");
-
-  #ifdef DEBUG
-    printf("\nCmd = %s\n", Cmd);
-  #endif
-
-  if(system(Cmd) == 0)
-  {
-    #ifdef DEBUG
-      printf("\nsystem(Cmd) == 0\n");
-    #endif
-
-    cWiFiFindIpAddr(); // Get and Store IP address
-
-    #ifdef DEBUG
-      printf("\nAfter cWiFiFindIpAddr()\n");
-    #endif
-
-    Ret = OK;
-  }
-  return Ret;
-}
-
-RESULT cWiFiSetPairWiseCcmp(void)
-{
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
-
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-  if(ctrl_conn != NULL)
-  {
-    wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 pairwise CCMP TKIP",
-                     strlen("SET_NETWORK 0 pairwise CCMP TKIP"), CmdReturn,
-                     &LenCmdReturn, NULL);
-
-    CmdReturn[LenCmdReturn] = '\0';
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      Ret = OK;
-    }
-  }
-  return Ret;
-}
-
-RESULT cWiFiSetGroupCcmp(void)
-{
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
-
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-  if(ctrl_conn != NULL)
-  {
-    wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 group CCMP TKIP",
-                     strlen("SET_NETWORK 0 group CCMP TKIP"), CmdReturn,
-                     &LenCmdReturn, NULL);
-    CmdReturn[LenCmdReturn] = '\0';
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      Ret = OK;
-    }
-  }
-  return Ret;
-}
-
-
-
-RESULT cWiFiSetProtoRsn(void)
-{
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
-
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-  if(ctrl_conn != NULL)
-  {
-    wpa_ctrl_request(ctrl_conn, "SET_NETWORK 0 proto RSN", strlen("SET_NETWORK 0 proto RSN"),
-                     CmdReturn, &LenCmdReturn, NULL);
-
-    CmdReturn[LenCmdReturn] = '\0';
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      Ret = OK;
-    }
-  }
-  return Ret;
-}
-
-RESULT cWiFiSetEnableNetwork(void)
-{
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
-
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-  if(ctrl_conn != NULL)
-  {
-    wpa_ctrl_request(ctrl_conn, "ENABLE_NETWORK 0", strlen("ENABLE_NETWORK 0"),
-                     CmdReturn, &LenCmdReturn, NULL);
-
-    CmdReturn[LenCmdReturn] = '\0';
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      Ret = OK;
-    }
-  }
-  return Ret;
-}
-
-RESULT cWiFiWpaStatus(void)
-{
-  RESULT Ret = FAIL;
-  char CmdReturn[256];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
-
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-  do
-  {
-    // TODO Some escape
-    if(ctrl_conn != NULL)
-    {
-      wpa_ctrl_request(ctrl_conn, "STATUS", strlen("STATUS"), CmdReturn,
-                       &LenCmdReturn, NULL);
-
-      CmdReturn[LenCmdReturn] = '\0';
-
-      #ifdef DEBUG
-        printf("cWiFiWpaStatus = %s\n", CmdReturn);
-      #endif
-    }
-  }
-  while(strstr(CmdReturn, "bssid") == NULL);
-
-  Ret = OK;
-  return Ret;
-}
-
-RESULT cWiFiDisconnect(void)
-{
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1; // We leave space for a terminating /0x00
-
-  memset(CmdReturn, 0x00, LenCmdReturn); // Reset to be sure!!
-
-  if(ctrl_conn != NULL)
-  {
-    wpa_ctrl_request(ctrl_conn, "DISCONNECT", strlen("DISCONNECT"), CmdReturn,
-                     &LenCmdReturn, NULL);
-
-    sleep(2);
-    CmdReturn[LenCmdReturn] = '\0';
-
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      #ifdef DEBUG
-        printf("Disconnect OK\n");
-      #endif
-
-      Ret = OK;
-    }
-  }
-  return Ret;
-}
-
-
-RESULT cWiFiReconnect(void)
-{
-  RESULT Ret = FAIL;
-  char CmdReturn[10];
-  size_t LenCmdReturn = sizeof(CmdReturn) - 1;  // We leave space for a terminating /0x00
-
-  memset(CmdReturn, 0x00, LenCmdReturn);        // Reset to be sure!!
-
-  #ifdef DEBUG
-    printf("Start of Reconnect...\n");
-  #endif
-
-  if(ctrl_conn != NULL)
-  {
-    wpa_ctrl_request(ctrl_conn, "RECONNECT", strlen("RECONNECT"), CmdReturn,
-                     &LenCmdReturn, NULL);
-    CmdReturn[LenCmdReturn] = '\0';
-
-    if(strstr(CmdReturn, "OK") != NULL)
-    {
-      #ifdef DEBUG
-        printf("Reconnect OK\n");
-      #endif
-
-      Ret = OK;
-    }
-  }
-  return Ret;
-}
-
-RESULT cWiFiGetName(char *ApName, int Index, char Length) // Get the FriendlyName owned by ApTable[Index]
-{
-  RESULT Result = FAIL;
-  if(strlen(ApTable[Index].friendly_name) >= 1)
-  {
-    strncpy(ApName, ApTable[Index].friendly_name, (int)(Length - 1));
-
-    #ifdef DEBUG
-      printf("\ncWiFiGetName called with Index = %d => %s\n", Index, ApTable[Index].friendly_name);
-    #endif
-
-    Result = OK;
-  }
-  return Result;
-}
-
-RESULT cWiFiSetName(char *ApName, int Index)  // Set the FriendlyName @ ApTable[Index]
-{
-  RESULT Result = OK;
-
-  #ifdef DEBUG
-    printf("\nApTable[Index = %d].friendly_name before = %s\n", Index, ApTable[Index].friendly_name);
-    printf("\nSetName name = %s, Index = %d\n", ApName, Index);
-    if(WiFiStatus == BUSY) printf("\nWiFiStatus == BUSY\n");
-  #endif
-
-    strcpy(ApTable[Index].friendly_name, ApName);
-    // If we changes name etc. We must have some thoughts
-    // about an OK state of the WiFi or we want it to be
-    WiFiStatus = OK;
-
-  #ifdef DEBUG
-    printf("\nApTable[Index = %d].friendly_name after = %s\n", Index, ApTable[Index].friendly_name);
-  #endif
-
-  return Result;
-}
-
-
-unsigned char cWiFiGetFlags(int Index)  // Get Flags owned by ApTable[Index]
-{
-    return ApTable[Index].ap_flags;
-}
-
-void cWiFiClearAll()
-{
-  int j;
-
-  if(ApTableSize > 1)
-  {
-    for(j = 0; j < ApTableSize; j++)
-      ApTable[j].ap_flags &= (UBYTE)(~CONNECTED);
-  }
-}
-
-void cWiFiTcpShutDown(int iSocket)
-{
-  UBYTE buffer[128];
-  int res;
-
-  shutdown(iSocket, 2);
-
-  do
-  {
-    res = read(iSocket, buffer, 100);
-    if (res < 0) break;
-  }
-  while(res != 0);
-
-  close(iSocket);
-
-}
-
-void cWiFiCleanUpOldStuff(void)
-{
-  cWiFiTcpClose();
-
-  cWiFiUdpClientClose();
-
-  //Disconnect
-  cWiFiDisconnect();
-  //Kill udhcpc
-  cWiFiKillUdHcPc();
-
-  //Remove current network
-  cWiFiRemoveNetwork();
-  sleep(3); // Give some time for cleaning before polluting again ;-)
-}
-
-RESULT cWiFiMakeConnectionToAp(int Index)
-{
-  RESULT Result = FAIL;
-  RESULT LocalResult = FAIL;
-  int Tries;
-
-    #ifdef DEBUG
-    	printf("cWiFiMakeConnectionToAp() with Index %d, WiFiStatus = %d\n", Index, WiFiStatus);
-    #endif
-
-    Tries = 0;
-    do
-    {
-      if(cWiFiAddNetwork() == OK)
-      {
-        #ifdef DEBUG
-          printf("Try no: %d\n", Tries);
-        #endif
-
-        LocalResult = OK;
-        break;
-      }
-      else
-      {
-        #ifdef DEBUG
-          printf("AddNetwork returns garbage\n");
-        #endif
-
-        sleep(3);               // Force some cycles
-
-        cWiFiRemoveNetwork();
-      }
-      Tries++;
-    }
-    while((Tries < 3) && (LocalResult == FAIL));
-
-    if(LocalResult == FAIL)
-    {
-      #ifdef DEBUG
-    	  printf("\nERROR_001\n");
-      #endif
-
-      return Result;
-    }
-
-    // Set the SSID - already known
-    if(cWiFiSetSsid(ApTable[Index].friendly_name) != OK)
-    {
-      #ifdef DEBUG
-    	  printf("\nERROR_002\n");
-      #endif
-
-      return Result;
-    }
-
-    if(cWiFiSetScanSsidToOne() != OK)
-    {
-      #ifdef DEBUG
-        printf("\nERROR_cWiFiSetScanSsidToOne()\n");
-      #endif
-
-      return Result;
-    }
-
-    // WPA2 capability?
-    if((ApTable[Index].ap_flags & WPA2) == WPA2)
-    {
-      #ifdef DEBUG
-    	  printf("\nWPA2 flag set\n");
-      #endif
-
-    	// Set KEY MANAGEMENT
-    	if(cWiFiSetKeyManagToWpa2() != OK)
-    	{
-        #ifdef DEBUG
-    	    printf("\nERROR_003\n");
-        #endif
-
-    	  return Result;
-    	}
-
-    	// Set PSK (pre-shared key)
-    	if(strlen(ApTable[Index].pre_shared_key) < 1)
-    	{
-    	  #ifdef DEBUG
-          printf("\nERROR_004 pre_shared_key = %s, Index = %d, friendly_name = %s\n", ApTable[Index].pre_shared_key, Index, ApTable[Index].friendly_name);
-        #endif
-
-          return Result;
-    	}
-    	else
-    	{
-    	  if(cWiFiSetPsk(ApTable[Index].pre_shared_key) != OK)
-    	  {
-          #ifdef DEBUG
-            printf("\nERROR_005 pre_shared_key = %s, Index = %d, friendly_name = %s\n", ApTable[Index].pre_shared_key, Index, ApTable[Index].friendly_name);
-          #endif
-
-          return Result;
-    	  }
-    	}
-
-    	// Set PAIR WISE CIPHERS
-    	if(cWiFiSetPairWiseCcmp() != OK)
-    	{
-        #ifdef DEBUG
-          printf("\nERROR_006\n");
-        #endif
-
-        return Result;
-    	}
-
-    	// Set GROUP CIPHERS
-    	if(cWiFiSetGroupCcmp() != OK)
-    	{
-        #ifdef DEBUG
-          printf("\nERROR_007\n");
-        #endif
-
-        return Result;
-    	}
-
-    	// SET PROTOCOL
-    	if(cWiFiSetProtoRsn() != OK)
-    	{
-        #ifdef DEBUG
-          printf("\nERROR_008\n");
-        #endif
-
-        return Result;
-    	}
-    }
-    else
-    {
-      // Without WPA2!!
-      // Set KEY MANAGEMENT to NONE
-      if(cWiFiSetKeyManagToNone() != OK)
-      {
-        #ifdef DEBUG
-          printf("\nERROR_009\n");
-        #endif
-
-        return Result;
-      }
-
-    }
-
-    // ENABLE NETWORK
-    if(cWiFiSetEnableNetwork() != OK)
-    {
-      #ifdef DEBUG
-        printf("\nERROR_010\n");
-      #endif
-
-      return Result;
-    }
-
-    sleep(1);                     // Force some system cycles
-
-    // Reconnect
-    cWiFiReconnect();
-
-    // We need to get an (new) IP-address - network could have changed as well
-
-    strcpy(MyIp4Address, "???");  // Just to be sure - it's the only stuff
-
-    cWiFiKillUdHcPc();            // No leftover
-
-    sleep(1);                     // Force some system cycles
-
-    cWiFiRequestIpAdr(LogicalIfName);
-
-    #ifdef DEBUG
-      printf("Here is the (new) IP address: %s\n", MyIp4Address);
-    #endif
-
-    if(strstr(MyIp4Address, "???") == NULL)
-    {
-      #ifdef DEBUG
-      	printf("MyIp4Address is OK - and NOT set to ??? => %s", MyIp4Address);
-    	#endif
-
-			Result = OK; // Assigned an IP
-    }
-
-    #ifdef DEBUG
-      printf("\nDid we reach the end with an OK? cWiFiMakeConnectionToAp(Index)\n");
-      if(Result == OK)
-        printf("\nResult == OK\n");
-      else
-        printf("\nResult == NOT!!!! OK\n");
-    #endif
-
-    return Result;  // Only OK if an valid association & an IP address has been leased
-                    // Association could give OK even when not fully associated, but a valid
-                    // IP address shows (some) valid connection :-)
-}
-
-void cWiFiClearConnectFlags(void)
-{
-  int j;
-
-    if(ApTableSize > 1)
-    {
-      for(j = 0; j < ApTableSize; j++)
-        ApTable[j].ap_flags &= (UBYTE)(~CONNECTED);
-    }
-}
-
-RESULT cWiFiConnectToAp(int Index)
-{
-  RESULT Result = FAIL;
-
-  // Make ApTable[Index] active - "if we're lucky" ;-)
-
-  WiFiStatus = BUSY;
-
-  #ifdef DEBUG
-    printf("\ncWiFiConnectToAp(int Index = %d)\n", Index);
-  #endif
-
-  // Kill any connection info
-  cWiFiClearConnectFlags();
-
-  if(cWiFiMakeConnectionToAp(Index) == OK)
-  {
-    Result = OK;
-
-    #ifdef DEBUG
-      printf("\ncWiFiMakeConnectionToAp(Index = %d) == OK)\n", Index);
-    #endif
-
-    // Move the active to TOP
-    // Save selected for TOP placing
-    cWiFiPreserveActualApRecord(Index);
-
-    // Move all others down one step until index
-    cWifiMoveAllActualDown(Index);
-
-    // Restore and Save @ TOP
-    cWiFiRestoreActualApRecord(0);
-
-    // Delete if already in KNOWN list
-    cWiFiCheckAndDelete(0);
-
-    // Mark the ACTUAL as KNOWN (i.e. set flag)
-    ApTable[0].ap_flags |= KNOWN;
-
-    // Mark the ACTUAL as CONNECTED (i.e. set flag)
-    ApTable[0].ap_flags |= CONNECTED;
-
-    // This VERY Ap should now be stored as MOST WANTED @ next WiFi session
-    cWiFiAddToKnownApList(0);
-
-    WiFiConnectionState = UDP_NOT_INITIATED;
-    WiFiStatus = OK;
-  }
-  else
-  {
-    WiFiConnectionState = READY_FOR_AP_SEARCH;
-    WiFiStatus = FAIL;
-
-    #ifdef DEBUG
-      printf("\nConnect FAILed.. READY_FOR_AP_SEARCH again\n");
-    #endif
-  }
-
-  return Result;
-}
-
-RESULT cWiFiMakePsk(char *ApSsid, char *PassPhrase, int Index)  // Make the pre-shared key from
-{                                                               // Supplied SSID and PassPhrase
-  RESULT Ret = OK;                                              // And store it in ApTable[Index]
-  char WpaPassPhraseCmd[64];
-
-  WiFiStatus = BUSY;  // NOT async, but if...
-
-  #ifdef DEBUG
-    printf("\ncWiFiMakePsk\n");
-    printf("\nSSID = %s, PassPhrase = %s, Index = %d\n", ApSsid, PassPhrase, Index);
-  #endif
-
-  // Construct CommandLine
-  strcpy(WpaPassPhraseCmd, WPA_APPLIKATION_PATH);
-  strcat(WpaPassPhraseCmd, "./wpa_passphrase \"");
-  strcat(WpaPassPhraseCmd, ApSsid);
-  strcat(WpaPassPhraseCmd, "\" ");
-  strcat(WpaPassPhraseCmd, PassPhrase);
-
-  #ifdef DEBUG
-    printf("WpaPassPhraseCmd = ->%s<-\n", WpaPassPhraseCmd);
-  #endif
-
-  FILE *FilePointer = popen(WpaPassPhraseCmd, "r");
-  int i;
-
-  if (FilePointer)
-  {
-    char *PskLine = NULL;
-    size_t NumberOfBytes;
-
-    for (i = 0; i < 4; i++)
-    {
-      if(!((getline(&PskLine, &NumberOfBytes, FilePointer) > 0) && PskLine))
-      {
-        //Ret = FAIL;
-        //WiFiStatus = FAIL;
-      }
-      else
-      {
-        Ret = OK;
-        //WiFiStatus = OK;
-      }
-    }
-
-    if(Ret == OK)
-    {
-      #ifdef DEBUG
-        printf("\nPre_Shared_Key Made = %s, %d\n", PskLine, NumberOfBytes);
-        printf("\nApTable[Index = %d].pre_shared_key = %s before\n", Index, ApTable[Index].pre_shared_key);
-      #endif
-
-      strcpy(ApTable[Index].pre_shared_key, PskLine + 5);
-      ApTable[Index].pre_shared_key[strlen(ApTable[Index].pre_shared_key)- 1] = '\x0'; // remove linefeed
-
-      #ifdef DEBUG
-        printf("\nApTable[Index = %d].pre_shared_key = %s after store etc.\n", Index, ApTable[Index].pre_shared_key);
-        printf("\nApTable[Index = %d].ap_flags = %d after store etc.\n", Index, ApTable[Index].ap_flags);
-      #endif
-      WiFiStatus = OK;
-    }
-    pclose(FilePointer);
-  }
-  return Ret;
-}
-
-RESULT cWiFiGetIndexFromName(char *Name, UBYTE *Index)
-{
-  int i = 0;
-  int ListEnd = 0;
-  RESULT Result = FAIL;
-
-  ListEnd = cWiFiGetApListSize() + 1;
-
-  #ifdef DEBUG
-    if(WiFiStatus == BUSY)
-      printf("\nWiFiStatus == BUSY\n");
-    else
-      printf("\nWiFiStatus == NOT!!!! BUSY\n");
-
-      printf("\nName2Index = %s\n", Name);
-  #endif
-
-  while(i < ListEnd)
-  {
-    #ifdef DEBUG
-      printf("\nApTable[%d].friendly_name = %s\n", i, ApTable[i].friendly_name);
-    #endif
-
-    if(strcmp(ApTable[i].friendly_name, Name) == 0) // Found
-    {
-      *Index = (UBYTE)i;                            // Index return
-      Result = OK;                                  // Found OK
-
-      #ifdef DEBUG
-        printf("\nOK Index = %d\n", i);
-      #endif
-
-      break;
-    }
-    else
-      i++;
-  }
-
-  #ifdef DEBUG
-    printf("\nName2Index Index = %d\n", i);
-  #endif
-
-  return Result;    // OK if FOUND else FAIL
-}
-
-int cWiFiIsItAFriend(char *mac_address) // Is the actual AP known?
-{
-  int j;
-  int RetVal = UNKNOWN;
-
-  for (j = 0; j < ApStoreTableSize; j++)
-  {
-    if (strcmp(mac_address,ApStoreTable[j].mac_address) == 0)
-    {
-      RetVal = KNOWN;
-      break;
-    }
-  }
-  return RetVal;
-}
-
-void cWiFiSortBySignalLevel()
-{
-  int HighestPower = -120;
-  int SrcIndex = 0;
-  int i;
-  int StartIndex = 0;
-  aps TempAp;
-
-  while(StartIndex < ApTableSize)
-  {
-    for(i = StartIndex; i < ApTableSize; i++)
-    {
-      if(atoi(ApTable[i].signal_level) > HighestPower)
-      {
-        SrcIndex = i;
-        HighestPower = atoi(ApTable[i].signal_level);
-      }
-    }
-
-    // exchange highest found with were are we
-    memcpy(&TempAp, &(ApTable[StartIndex].mac_address), sizeof(aps));
-    memcpy(&(ApTable[StartIndex].mac_address), &(ApTable[SrcIndex].mac_address), sizeof(aps));
-    memcpy(&(ApTable[SrcIndex].mac_address), &TempAp, sizeof(aps));
-
-    StartIndex++;
-    HighestPower = -120;  // reset
-  }
-}
-
-RESULT cWiFiStoreActualApList()           // Store the latest SCAN result(s)
-{                                         // If SSID not broadcasted, the FreindlyName is set to "???"
-                                          // WPA status flag and Known flag also set if...
-  int Status = -1;                        // Not responding
-  char* StrElement;
-  int EndOfTable = 0;
-  int TableEntryPointer = 0;
-  RESULT Result = FAIL;
-
-  char SubElement[129]; // Safety for networks with a lot of security strings
-  char ScanResponse[2048];
-  size_t LenScanResponse = sizeof(ScanResponse) - 1;  // Space for a trailing /0x10
-
-  WiFiStatus = BUSY;  // Should already be BUSY
-
-  if (ctrl_conn != NULL)
-  {
-    Status = wpa_ctrl_request(  ctrl_conn,
-                                  "SCAN_RESULTS",
-                                  strlen("SCAN_RESULTS"),
-                                  ScanResponse,
-                                  &LenScanResponse,
-                                  NULL);
-
-    #ifdef DEBUG
-      printf("\nScanresult:\n %s\n", ScanResponse);
-    #endif
-
-    if((LenScanResponse > 32) && (Status == 0))   // At least some of the header on return
-    {                                             // and OK Status return
-      ScanResponse[LenScanResponse] = '\x0a';     // Last line END
-
-      StrElement = strtok(ScanResponse, "\x0a"); // Dummy read to remove HEADER
-
-      do
-      {
-        StrElement = strtok (NULL, "\x09");
-        if((StrElement != NULL) && (StrElement[2] == ':'))
-        {
-          strcpy(ApTable[TableEntryPointer].mac_address, StrElement);
-
-          StrElement = strtok (NULL, "\x09");
-          strcpy(ApTable[TableEntryPointer].frequency, StrElement);
-
-          StrElement = strtok (NULL, "\x09");
-          strcpy(ApTable[TableEntryPointer].signal_level, StrElement);
-
-          // Read Security and SSID if it is shown
-          StrElement = strtok (NULL, "\x0a");
-
-          if(StrElement[strlen(StrElement) - 1] == '\x09')
-          {
-            // NO SSID SHOWN
-            StrElement[strlen(StrElement) - 1] = '\x00';
-            strcpy(ApTable[TableEntryPointer].security, StrElement);
-            strcpy(ApTable[TableEntryPointer].friendly_name, "??????");
-          }
-          else
-          {
-            // We have to separate SECURITY AND SSID
-            sscanf( StrElement, "%s", ApTable[TableEntryPointer].security);
-
-            // Get rest, which contains the SSID with spaces include - if any :-)
-            strncpy(SubElement, StrElement + strlen(ApTable[TableEntryPointer].security) + 1, (strlen(StrElement) - strlen(ApTable[TableEntryPointer].security)));
-
-            SubElement[strlen(StrElement) + 1] = 0x00; // END
-
-            strcpy(ApTable[TableEntryPointer].friendly_name, SubElement);
-          }
-
-          // Reset AP_FLAGS
-          ApTable[TableEntryPointer].ap_flags = 0x00;
-
-          // Add Visible to Flags (Would not be here, if NOT) but set for the UI to use
-          ApTable[TableEntryPointer].ap_flags |= VISIBLE;
-
-          // Check for security
-          if(strstr(ApTable[TableEntryPointer].security, "WPA2") != NULL)
-          {
-            ApTable[TableEntryPointer].ap_flags |= WPA2;
-          }
-
-          // Is it a known "fellow"?
-          if(cWiFiIsItAFriend(&(ApTable[TableEntryPointer].mac_address[0]))== KNOWN)
-          {
-            ApTable[TableEntryPointer].ap_flags |= KNOWN;
-          }
-
-          TableEntryPointer++;
-          if(TableEntryPointer > MAX_AP_ENTRIES)
-          {
-            EndOfTable = 1;
-            TableEntryPointer = MAX_AP_ENTRIES;
-          }
-        }
-        else EndOfTable = 1;
-      }
-      while(EndOfTable < 1);
-
-      ApTableSize = TableEntryPointer;
-
-      if(TableEntryPointer > 0)
-      {
-        cWiFiSortBySignalLevel(); // If many equal named APs the very strongest should be at top
-      }
-
-      if(TableEntryPointer > 0)
-      {
-        // Merge ACTUAL- and KNOWN LIST into a prioritized list
-        cWiFiMergeActualAndKnownTable();
-        cWiFiClearAll();   // Reset previous CONNECT-flag
-      }
-    }
-  }
-
-  // ******************************** TEST STUFF *******************************************************
-  //
-  // Used as a stable and known "environment" - i.e. the AP's are stable and always there :-)
-  //
-        //#define TEST
-		    #undef TEST
-        #ifdef TEST
-          printf("\nSimulated Scanned List:\n");
-
-          ApTableSize = 6;
-
-         /* strcpy(ApTable[0].mac_address, "00:24:01:43:69:10");
-          strcpy(ApTable[0].security, "[WPA2-PSK-CCMP][WPS][ESS]");
-          strcpy(ApTable[0].friendly_name, "New10");
-          strcpy(ApTable[0].pre_shared_key, "dbc9c6cf6d4d8e9405842d2e4ab726f33f10de62c30254ff19512af0f");
-          ApTable[0].ap_flags = 0x05;
-
-          strcpy(ApTable[1].mac_address, "00:24:01:43:69:11");
-          strcpy(ApTable[1].security, "[WPA2]");
-          strcpy(ApTable[1].friendly_name, "New11");
-          strcpy(ApTable[1].pre_shared_key, "");
-          ApTable[1].ap_flags = 0x05;
-
-          strcpy(ApTable[2].mac_address, "00:24:01:43:69:12");
-          strcpy(ApTable[2].security, "[WPA2-PSK-CCMP]");
-          strcpy(ApTable[2].friendly_name, "New12");
-          strcpy(ApTable[2].pre_shared_key, "");
-          ApTable[2].ap_flags = 0x05;
-
-          strcpy(ApTable[3].mac_address, "00:24:01:43:69:13");
-          strcpy(ApTable[3].security, "[WPA2-PSK-CCMP][ESS]");
-          strcpy(ApTable[3].friendly_name, "New13");
-          strcpy(ApTable[3].pre_shared_key, "");
-          ApTable[3].ap_flags = 0x05;*/
-
-          strcpy(ApTable[0].mac_address, "00:24:01:43:69:14");
-          strcpy(ApTable[0].security, "[WPA2-PSK][ESS]");
-          strcpy(ApTable[0].friendly_name, "XXX");
-          strcpy(ApTable[0].pre_shared_key, "");
-          ApTable[0].ap_flags = 0x05;
-
-          strcpy(ApTable[1].mac_address, "00:24:01:43:69:02");
-          strcpy(ApTable[1].security, "[WPA2-PSK-CCMP]");
-          strcpy(ApTable[1].friendly_name, "AAA");
-          strcpy(ApTable[1].pre_shared_key, "");
-          ApTable[1].ap_flags = 0x0C;
-
-          strcpy(ApTable[2].mac_address, "00:24:01:43:69:6e");
-          strcpy(ApTable[2].security, "[WPA2-PSK-CCMP][WPS][ESS]");
-          strcpy(ApTable[2].friendly_name, "FFF");
-          strcpy(ApTable[2].pre_shared_key, "dbc9c6cf6d4d8e9405842d2e4ab726f33f10de62c30254ff19512af0f");
-          ApStoreTable[2].ap_flags = 0x0C;
-
-          strcpy(ApTable[3].mac_address, "00:24:01:43:69:01");
-          strcpy(ApTable[3].security, "[WPA2]");
-          strcpy(ApTable[3].friendly_name, "OOO");
-          strcpy(ApTable[3].pre_shared_key, "");
-          ApTable[3].ap_flags = 0x0C;
-
-          strcpy(ApTable[4].mac_address, "00:24:01:43:69:98");
-          strcpy(ApTable[4].security, "");
-          strcpy(ApTable[4].friendly_name, "HHH");
-          strcpy(ApTable[4].pre_shared_key, "");
-          ApTable[4].ap_flags = 0x01;
-
-          strcpy(ApTable[5].mac_address, "00:24:01:43:69:99");
-          strcpy(ApTable[5].security, "");
-          strcpy(ApTable[5].friendly_name, "WWW");
-          strcpy(ApTable[5].pre_shared_key, "");
-          ApTable[5].ap_flags = 0x01;
-
-          printf("\rApTable before MERGE:\n");
-          int k;
-          for(k = 0; k < ApTableSize; k++)
-          {
-            printf("\rApTable[%d].mac_address = %s\n", k, ApTable[k].mac_address);
-            printf("\rApTable[%d].security = %s\n", k, ApTable[k].security);
-            printf("\rApTable[%d].friendly_name = %s\n", k, ApTable[k].friendly_name);
-            printf("\rApTable[%d].pre_shared_key = %s\n", k, ApTable[k].pre_shared_key);
-            printf("\rApTable[%d].ap_flags = %d\n", k, ApTable[k].ap_flags);
-          }
-
-        cWiFiMergeActualAndKnownTable();
-
-          printf("\nApTable after MERGE:\n");
-          for(k = 0; k < ApTableSize; k++)
-          {
-            printf("\rApTable[%d].mac_address = %s\n", k, ApTable[k].mac_address);
-            printf("\rApTable[%d].security = %s\n", k, ApTable[k].security);
-            printf("\rApTable[%d].friendly_name = %s\n", k, ApTable[k].friendly_name);
-            printf("\rApTable[%d].pre_shared_key = %s\n", k, ApTable[k].pre_shared_key);
-            printf("\rApTable[%d].ap_flags = %d\n", k, ApTable[k].ap_flags);
-          }
-          #endif
-
-//######################################### END OF TEST STUFF ##################################################
-
-    Result = OK;
-    WiFiStatus = OK;
-    WiFiConnectionState = AP_LIST_UPDATED;
-
-    #ifdef DEBUG
-      printf("\nStored list OK - STATUS = OK\n");
-    #endif
-
-    return Result;
-}
-
-RESULT cWiFiScanForAPs()
-{
-  RESULT Result = FAIL;                               // HARD ERROR
-  char ScanResponse[10];
-  size_t LenScanResponse = sizeof(ScanResponse) - 1;  // Space for a trailing /0
-
-  WiFiConnectionState = SEARCH_APS;
-
-  WiFiStatus = FAIL;      // If an OK search is started, we get BUSY otherwise we always get
-                          // a SOFT ERROR (FAIL)
-  BeaconTx = NO_TX;
-  cWiFiStartTimer();      // Start the Timer
-
-  cWiFiClearAll();        // Reset previous CONNECT-flag
-  cWiFiCleanUpOldStuff(); // Kill OLD portion in the list etc.
-
-  if(cWiFiGetOnStatus() == OK)
-  {
-    if (ctrl_conn != NULL)
-    {
-      wpa_ctrl_request(ctrl_conn, "SCAN", strlen("SCAN"), ScanResponse,
-                       &LenScanResponse, NULL);
-
-      ScanResponse[LenScanResponse] = '\0';
-
-      if(strstr(ScanResponse, "OK") != NULL)
-      {
-        WiFiConnectionState = SEARCH_PENDING;
-
-        #ifdef DEBUG
-          printf("\nSCAN list OK - STATUS = BUSY\n");
-        #endif
-          WiFiStatus = BUSY;
-          Result = OK;
-      }
-      else
-      {
-        WiFiConnectionState = WIFI_INITIATED;  // OK init, but NO SEARCH
-        // The FAIL return is already set above!
-
-        #ifdef DEBUG
-          printf("\nSCAN list FAILED - STATUS = FAIL\n");
-        #endif
-      }
-    }
-  } // End if(cWiFiGetOnStatus == OK)
-
-  return Result;
-}
-
-void cWiFiIncApListSize(void)
-{
-  if(ApTableSize < MAX_AP_ENTRIES)
-  {
-    ApTableSize++;
-  }
-}
-
-int cWiFiGetApListSize(void)
-{
-  return ApTableSize;
-}
-
-int cWiFiWpaPing(void)    // "PING" the WpaControl InterFace
-{
-  int RetVal = -1;        // Not responding
-  int Status = 0;
-  char PingResponse[32];
-  size_t Len_PingResponse = sizeof(PingResponse) - 1; // Space for a trailing /0
-
-  if (ctrl_conn != NULL)
-  {
-    Status = wpa_ctrl_request(  ctrl_conn,
-                                  "PING",
-                                  strlen("PING"),
-                                  PingResponse,
-                                  &Len_PingResponse,
-                                  NULL);
-
-    PingResponse[Len_PingResponse] = '\0';
-    if(strcmp(PingResponse, "PONG") == 0)
-      RetVal = 0;
-    else
-      RetVal = Status;
-  }
-  return RetVal;
-}
-
-RESULT cWiFiGetLogicalName(void)  // Get the Logical Name of the Interface
-{                                 // E.g. wlan2
-
-  RESULT  Result = FAIL;
-  char IwConfigCmd[32];
-  strcpy(IwConfigCmd, "./iwconfig");
-  FILE *FilePointer = popen(IwConfigCmd, "r");
-
-  if (FilePointer)
-  {
-    char *OneLine = NULL;
-    size_t NumberOfBytes;
-    while((getline(&OneLine, &NumberOfBytes, FilePointer) > 0) && OneLine)
-    {
-      //if(strstr(OneLine, "IEEE 802"))
-      //{
-          OneLine[5] = 0x00;
-          strcpy(LogicalIfName, "wlan0"); // Fixed for now....
-          Result = OK;
-      //    break;
-      //}
-    }
-    pclose(FilePointer);
-  }
-  return Result;
-}
-
-RESULT cWiFiGetStatus(void)
-{
-  #ifdef DEBUG
-    printf("WiFiStatus => GetResult = %d\n", WiFiStatus);
-  #endif
-  return WiFiStatus;
-}
-
-RESULT  cWiFiTxingBeacons(void) // Are we active in tx beacons??
-{
-  RESULT  Result = FAIL;
-  if(BeaconTx == TX_BEACON)
-    Result = OK;
-  return Result;
-}
-
-RESULT cWiFiTcpConnected(void)  // TCP connection established?
-{                               // Can we communicate...
-  RESULT  Result = FAIL;
-  if(TcpState == TCP_UP)
-    Result = OK;
-  return Result;
-}
-
-RESULT  cWiFiInitTcpServer()
+static RESULT cWiFiInitTcpServer()
 {
   RESULT Result = OK;
   int Temp, SetOn;
 
   WiFiStatus = FAIL;
   /*  Create a listening socket IPv4, TCP and only single protocol */
-
-  #ifdef DEBUG
-    printf("Start of cWiFiInitTcpServer()...TCPListenServer = %d \n", TCPListenServer);
-  #endif
+  pr_dbg("Start of cWiFiInitTcpServer()...TCPListenServer = %d \n", TCPListenServer);
 
   if ( TCPListenServer == 0)   // close(TCPListenServer);
   {
-    #ifdef DEBUG
-      printf("TCPListenServer == 0 in cWiFiInitTcpServer()...\n");
-    #endif
+    pr_dbg("TCPListenServer == 0 in cWiFiInitTcpServer()...\n");
 
 	  if ( (TCPListenServer  = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
 	  {
-    	#ifdef DEBUG
-		    printf("\nError creating listening socket in cWiFiInitTcpServer()...\n");
-    	#endif
+		  pr_dbg("\nError creating listening socket in cWiFiInitTcpServer()...\n");
 
 	    return Result;  // Bail out with a SOFT error in WiFiStatus
     }
@@ -2483,10 +552,8 @@ RESULT  cWiFiInitTcpServer()
 
 	  if ( bind(TCPListenServer, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0 )
 	  {
-    	#ifdef DEBUG
-		    printf("\nError calling bind()\n");
-		    printf("errno = %d\n", errno);
-    	#endif
+         pr_dbg("\nError calling bind()\n");
+         pr_dbg("errno = %d\n", errno);
 
 		return Result;  // Bail out with a SOFT error in WiFiStatus
 	  }
@@ -2494,24 +561,20 @@ RESULT  cWiFiInitTcpServer()
 
 	  if ( listen(TCPListenServer, 1) < 0 )
 	  {
-    	#ifdef DEBUG
-		    printf("\nError calling listen()\n");
-    	#endif
+		  pr_dbg("\nError calling listen()\n");
 
 		return Result;  // Bail out with a SOFT error in WiFiStatus
 	  }
 
 	  // Else show debug text below.....
-  	  #ifdef DEBUG
-	  	  printf("\nWAITING for a CLIENT.......\n");
-  	  #endif
+	  	pr_dbg("\nWAITING for a CLIENT.......\n");
 
   WiFiStatus = OK;
   return OK;  // Create socket, bind and listen succeeded
               // Or reuse
 }
 
-RESULT cWiFiWaitForTcpConnection(void)
+static RESULT cWiFiWaitForTcpConnection(void)
 {
   uint size = sizeof(servaddr);
   RESULT Result = BUSY;
@@ -2522,9 +585,7 @@ RESULT cWiFiWaitForTcpConnection(void)
 
   if((TcpConnectionSocket = accept(TCPListenServer, (struct sockaddr *)&servaddr, &size) ) < 0)
   {
-      #ifdef DEBUG
-        printf("\nError calling accept() - returns: %d\r", TcpConnectionSocket);
-      #endif
+      pr_dbg("\nError calling accept() - returns: %d\r", TcpConnectionSocket);
   }
   else
   {
@@ -2532,506 +593,357 @@ RESULT cWiFiWaitForTcpConnection(void)
     WiFiStatus = OK;
     TcpReadState = TCP_WAIT_ON_START;
 
-    #ifdef DEBUG
-    //printf("\nConnected.... :-) %s : %d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-      printf("\nConnected.... :-) %s : %d\n", inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port));
-    #endif
-  }
 
-  #ifdef DEBUG
-    printf("\nNow we're waiting for input TCP ...\n");
-  #endif
+    pr_dbg("\nConnected.... :-) %s : %d\n", inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port));
+  }
+  pr_dbg("\nNow we're waiting for input TCP ...\n");
 
   return Result;
 }
 
 UWORD cWiFiWriteTcp(UBYTE* Buffer, UWORD Length)
 {
-  uint DataWritten = 0;                 // Nothing written (BUSY)
-  struct timeval WriteTimeVal;          // Always called from COM, so FAIL == also 0
-  fd_set  WriteFdSet;
+    uint DataWritten = 0;                 // Nothing written (BUSY)
+    struct timeval WriteTimeVal;          // Always called from COM, so FAIL == also 0
+    fd_set  WriteFdSet;
 
-  if(Length > 0)
-  {
-    #ifdef DEBUG
-      printf("\ncWiFiWriteTcp Length: %d\n", Length);
-      // Code below used for "hunting" packets of correct length
-      // but with length bytes set to "0000" and payload all zeroed
+    if (Length > 0) {
+#ifdef DEBUG_WIFI
+        printf("\ncWiFiWriteTcp Length: %d\n", Length);
+        // Code below used for "hunting" packets of correct length
+        // but with length bytes set to "0000" and payload all zeroed
 
-      int i;
-      if((Buffer[0] == 0) && (Buffer[1] == 0))
-      {
-    	  printf("\ncERROR in first 2 entries - WiFiWriteTcp Length: %d\n", Length);
-    	  for (i = 0; i < Length; i++)
-    	  {
-    		  printf("\nFAIL!!! Buffer[%d] = 0x%x\n", i, Buffer[i]);
-    	  }
-      }
-    #endif
+        if ((Buffer[0] == 0) && (Buffer[1] == 0)) {
+            int i;
+            printf("\ncERROR in first 2 entries - WiFiWriteTcp Length: %d\n", Length);
+            for (i = 0; i < Length; i++) {
+                printf("\nFAIL!!! Buffer[%d] = 0x%x\n", i, Buffer[i]);
+            }
+        }
+#endif
 
-    if(WiFiConnectionState == TCP_CONNECTED)
-    {
-      WriteTimeVal.tv_sec = 0;  // NON blocking test use
-      WriteTimeVal.tv_usec = 0; // I.e. NO timeout
-      FD_ZERO(&WriteFdSet);
-      FD_SET(TcpConnectionSocket, &WriteFdSet);
+        if (WiFiConnectionState == TCP_CONNECTED) {
+            WriteTimeVal.tv_sec = 0;  // NON blocking test use
+            WriteTimeVal.tv_usec = 0; // I.e. NO timeout
+            FD_ZERO(&WriteFdSet);
+            FD_SET(TcpConnectionSocket, &WriteFdSet);
 
-      select(TcpConnectionSocket + 1, NULL, &WriteFdSet, NULL, &WriteTimeVal);
-      if (FD_ISSET(TcpConnectionSocket, &WriteFdSet))
-      {
-        // We can Write
-        DataWritten = write(TcpConnectionSocket, Buffer, Length);
-
-        #ifdef DEBUG
-          if (DataWritten != Length)
-            printf("\nDataWritten = %d, Length = %d\n", DataWritten, Length);
-        #endif
-
-        // DataWritten = Data sent, zero = socket busy or -1 = FAIL
-      }
+            select(TcpConnectionSocket + 1, NULL, &WriteFdSet, NULL, &WriteTimeVal);
+            if (FD_ISSET(TcpConnectionSocket, &WriteFdSet)) {
+                // We can Write
+                DataWritten = write(TcpConnectionSocket, Buffer, Length);
+#ifdef DEBUG_WIFI
+                if (DataWritten != Length) {
+                    // DataWritten = Data sent, zero = socket busy or -1 = FAIL
+                    printf("\nDataWritten = %d, Length = %d\n", DataWritten, Length);
+                }
+#endif
+            }
+        }
     }
-  }
-  return DataWritten;
+
+    return DataWritten;
 }
 
-RESULT cWiFiResetTcp(void)
+static RESULT cWiFiResetTcp(void)
 {
-  RESULT Result = FAIL;
+    RESULT Result = FAIL;
+    pr_dbg("\nRESET - client disconnected!\n");
 
-  #ifdef DEBUG
-    printf("\nRESET - client disconnected!\n");
-  #endif
+    Result = cWiFiTcpClose();
 
-  Result = cWiFiTcpClose();
-  return Result;
+    return Result;
 }
 
 UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
 {
-   int DataRead = 0; // Nothing read also sent if NOT initiated
+    int DataRead = 0; // Nothing read also sent if NOT initiated
                       // COM always polls!!
-   struct timeval ReadTimeVal;
-   fd_set  ReadFdSet;
-
-   if(WiFiConnectionState == TCP_CONNECTED)
-   {
-     ReadTimeVal.tv_sec = 0;  // NON blocking test use
-     ReadTimeVal.tv_usec = 0; // I.e. NO timeout
-     FD_ZERO(&ReadFdSet);
-     FD_SET(TcpConnectionSocket, &ReadFdSet);
-
-     select(TcpConnectionSocket + 1, &ReadFdSet, NULL, NULL, &ReadTimeVal);
-     if (FD_ISSET(TcpConnectionSocket, &ReadFdSet))
-     {
-       #ifdef DEBUG
-         printf("\nTcpReadState = %d\n", TcpReadState);
-       #endif
-
-       switch(TcpReadState)
-       {
-         case TCP_IDLE:                 // Do Nothing
-                                        break;
-
-         case TCP_WAIT_ON_START:
-                                        #ifdef DEBUG
-                                         printf("TCP_WAIT_ON_START:\n");
-                                        #endif
-
-                                        DataRead = read(TcpConnectionSocket, Buffer, 100); // Fixed TEXT
-
-                                        #ifdef DEBUG
-                                          printf("\nDataRead = %d, Buffer = \n", DataRead);
-                                          int ii;
-                                          if(DataRead > 0)
-                                          {
-                                        	  for (ii = 0; ii < DataRead; ii++)
-                                        	  {
-                                        		  printf("0x%x, ", Buffer[ii]);
-                                        	  }
-                                          }
-                                          else
-                                            printf("DataRead shows FAIL: %d", DataRead);
-                                            printf("\n");
-                                        #endif
-
-                                        if(DataRead == 0)   // We've a disconnect
-                                        {
-                                          cWiFiResetTcp();
-                                          break;
-                                        }
-
-                                        if(strstr((char*)Buffer, "ET /target?sn=") > 0)
-                                        {
-                                          #ifdef DEBUG
-                                            printf("\nTCP_WAIT_ON_START and  ET /target?sn= found :-) DataRead = %d, Length = %d, Buffer = %s\n", DataRead, Length, Buffer);
-                                          #endif
-
-                                          // A match found => UNLOCK
-                                          // Say OK back
-                                          cWiFiWriteTcp((UBYTE*)"Accept:EV340\r\n\r\n", 16);
-                                          TcpReadState = TCP_WAIT_ON_LENGTH;
-                                        }
-
-                                        DataRead = 0; // No COM-module activity yet
-                                        break;
-
-         case TCP_WAIT_ON_LENGTH:       // We can should read the length of the message
-        	 	 	 	 	 	 	 	                // The packets can be split from the client
-        	 	 	 	 	 	 	 	                // I.e. Length bytes (2) can be send as a subset
-        	 	 	 	 	 	 	 	                // the Sequence can also arrive as a single pair of bytes
-        	 	 	 	 	 	 	 	                // and the finally the payload will be received
-
-        	 	 	 	 	 	 	 	                TcpReadBufPointer = 0;	// Begin on new buffer :-)
-
-                                        #ifdef DEBUG
-                                          printf("TCP_WAIT_ON_LENGTH:\n");
-                                        #endif
-
-                                        DataRead = read(TcpConnectionSocket, Buffer, 2);
-                                        if(DataRead == 0)   // We've a disconnect
-                                        {
-                                          cWiFiResetTcp();
-                                          break;
-                                        }
-
-                                        TcpRestLen = (UWORD)(Buffer[0] + Buffer[1] * 256);
-                                        TcpTotalLength = (UWORD)(TcpRestLen + 2);
-                                        if(TcpTotalLength > Length)
-                                          TcpReadState = TCP_WAIT_ON_FIRST_CHUNK;
-                                        else
-                                          TcpReadState = TCP_WAIT_ON_ONLY_CHUNK;
-
-                                        TcpReadBufPointer += DataRead;	// Position in ReadBuffer adjust
-                                        DataRead = 0;                   // Signal NO data yet
-
-                                        #ifdef DEBUG
-                                          printf("\n*************** NEW TX *************\n");
-                                          printf("TCP_WAIT_ON_LENGTH TcpRestLen = %d, Length = %d\n", TcpRestLen, Length);
-                                        #endif
-
-                                        break;
-
-         case TCP_WAIT_ON_ONLY_CHUNK:
-                                        #ifdef DEBUG
-                                          printf("TCP_WAIT_ON_ONLY_CHUNK: BufferStart = %d\n", TcpReadBufPointer);
-                                        #endif
-
-                                        DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]), TcpRestLen);
-
-                                        #ifdef DEBUG
-                                          printf("DataRead = %d\n",DataRead);
-                                          printf("BufferPointer = %p\n", &(Buffer[TcpReadBufPointer]));
-                                        #endif
-
-                                        if(DataRead == 0)   // We've a disconnect
-                                        {
-                                          cWiFiResetTcp();
-                                          break;
-                                        }
-
-                                        TcpReadBufPointer += DataRead;
-
-                                        if(TcpRestLen == DataRead)
-                                        {
-                                        	DataRead = TcpTotalLength;			// Total count read
-                                        	TcpReadState = TCP_WAIT_ON_LENGTH;
-                                        }
-                                        else
-                                        {
-                                        	TcpRestLen -= DataRead;	// Still some bytes in this only chunk
-                                        	DataRead = 0;			// No COMM job yet
-                                        }
-
-                                        #ifdef DEBUG
-                                        	int i;
-
-                                        	for(i = 0; i < TcpTotalLength; i++)
-                                        	{
-                                        		printf("ReadBuffer[%d] = 0x%x\n", i, Buffer[i]);
-                                        	}
-										                    #endif
-
-                                        #ifdef DEBUG
-                                          printf("TcpRestLen = %d, DataRead incl. 2 = %d, Length = %d\n", TcpRestLen, DataRead, Length);
-                                        #endif
-
-                                        break;
-
-         case TCP_WAIT_ON_FIRST_CHUNK:
-                                        #ifdef DEBUG
-                                          printf("TCP_WAIT_ON_FIRST_CHUNK:\n");
-                                        #endif
-
-                                        DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]), (Length - 2));
-                                        if(DataRead == 0)   // We've a disconnect
-                                        {
-                                          cWiFiResetTcp();
-                                          break;
-                                        }
-
-                                        #ifdef DEBUG
-                                          printf("DataRead = %d\n", DataRead);
-                                        #endif
-
-                                        TcpRestLen -= DataRead;
-                                        TcpReadState = TCP_WAIT_COLLECT_BYTES;
-                                        DataRead += 2;
-
-                                        #ifdef DEBUG
-                                          printf("\nTCP_WAIT_ON_FIRST_CHUNK TcpRestLen = %d, DataRead incl. 2 = %d, Length = %d\n", TcpRestLen, DataRead, Length);
-                                        #endif
-
-                                        break;
-
-
-         case TCP_WAIT_COLLECT_BYTES:
-                                        #ifdef DEBUG
-                                          printf("TCP_WAIT_COLLECT_BYTES:\n");
-                                        #endif
-
-                                        TcpReadBufPointer = 0;
-                                        if(TcpRestLen < Length)
-                                          DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]), TcpRestLen);
-                                        else
-                                          DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]), Length);
-
-                                        #ifdef DEBUG
-                                          printf("DataRead = %d\n", DataRead);
-                                        #endif
-
-                                        if(DataRead == 0)   // We've a disconnect
-                                        {
-                                          cWiFiResetTcp();
-                                          break;
-                                        }
-
-                                        TcpRestLen -= DataRead;
-                                        if(TcpRestLen == 0)
-                                        {
-                                          TcpReadState = TCP_WAIT_ON_LENGTH;
-                                        }
-
-                                        #ifdef DEBUG
-                                          printf("\nTCP_WAIT_COLLECT_BYTES TcpRestLen = %d, DataRead incl. 2 = %d, Length = %d\n", TcpRestLen, DataRead, Length);
-                                        #endif
-
-                                        break;
-
-         default:                        // Should never go here....
-                                         TcpReadState = TCP_IDLE;
-                                         break;
-       }
-     }
-   }
-
-   return DataRead;
-}
-
-RESULT cWiFiBeaconAnswer(void)          // Wait for a "dating" PC
-{
-  // This wait is performed as a NON-BLOCKING wait
-  RESULT Result = FAIL;
-  struct timeval  TimeOutVal;
-  fd_set  ReadFdSet;
-  TimeOutVal.tv_sec = 0;
-  TimeOutVal.tv_usec = 0; // No Timeout val only use for NON-blocking test
-
-  ServerAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-  FD_ZERO(&ReadFdSet);
-  FD_SET(UdpSocketDescriptor, &ReadFdSet);
-
-  select(UdpSocketDescriptor + 1, &ReadFdSet, NULL, NULL, &TimeOutVal);
-
-  if (FD_ISSET(UdpSocketDescriptor, &ReadFdSet))
-  {
-    // Beacon Answer is ready - we hope
-    UdpRxCount = recvfrom(UdpSocketDescriptor, BufPtr, BufLen, 0, (struct sockaddr *)&ServerAddr, &ServerAddrLen);
-    if(UdpRxCount < 0)
-    {
-      #ifdef DEBUG
-        printf("\nUDP Client - recvfrom() ERROR UdpRxCount < 0!!!!\n");
-      #endif
-    }
-    else
-    {
-
-      #ifdef DEBUG
-        printf("\nUDP client received the following: \"%s\" message\\n", BufPtr);
-        printf(" \nfrom port %d, address %s\n", ntohs(ServerAddr.sin_port), inet_ntoa(ServerAddr.sin_addr));
-      #endif
-
-      Result = OK;
-    }
-  }
-  return Result;
-}
-
-RESULT cWiFiTransmitBeacon(void)
-
-{
-  RESULT Result = FAIL;
-
-  ServerAddr.sin_port = htons(BROADCAST_PORT);
-  ServerAddr.sin_addr.s_addr = inet_addr(MyBroadCastAdr);
-
-  #ifdef DEBUG
-    printf("\nUDP BROADCAST to port %d, address %s\n", ntohs(ServerAddr.sin_port), inet_ntoa(ServerAddr.sin_addr));
-  #endif
-
-  cWiFiSetBtSerialNo(); // Be sure to have updated data :-)
-  cWiFiSetBrickName();  // -
-  sprintf(Buffer,"Serial-Number: %s\r\nPort: %d\r\nName: %s\r\nProtocol: EV3\r\n", BtSerialNo, TCP_PORT, BrickName);
-
-  UdpTxCount =  sendto(UdpSocketDescriptor, Buffer, strlen(Buffer), 0, (struct sockaddr *)&ServerAddr, sizeof(ServerAddr));
-  if(UdpTxCount < 0)
-  {
-	  #ifdef DEBUG
-      printf("\nUDP SendTo ERROR : %d\n", UdpTxCount);
-    #endif
-
-    cWiFiUdpClientClose();  // Kill the auto-beacon stuff
-  }
-  else
-  {
-	  #ifdef DEBUG
-      printf("\nUDP Client - SendTo() is OK! UdpTxCount = %d\n", UdpTxCount);
-      printf("\nWaiting on a reply from UDP server...zzzzz zzzz - Send UNICAST only to me :-)\n");
-    #endif
-
-    Result = OK;
-  }
-  return Result;
-}
-
-RESULT cWiFiInitUdpConnection(void)
-{
-  RESULT Result = FAIL;
-  int Temp;
-
-  WiFiConnectionState = INIT_UDP_CONNECTION;
-
-  /* Get a socket descriptor for UDP client (Beacon) */
-  if((UdpSocketDescriptor = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-  {
-    #ifdef DEBUG
-      printf("\nUDP Client - socket() error\n");
-    #endif
-  }
-  else
-  {
-    #ifdef DEBUG
-      printf("\nUDP Client - socket() is OK!\n");
-      printf("\nBroadCast Adr from Ifconfig = %s\n", MyBroadCastAdr);
-    #endif
-    ServerAddr.sin_family = AF_INET;
-    ServerAddr.sin_port = htons(BROADCAST_PORT);
-
-    if((ServerAddr.sin_addr.s_addr = inet_addr(MyBroadCastAdr)) == (unsigned long)INADDR_NONE)
-    {
-      #ifdef DEBUG
-        printf("\nHOST addr == INADDR_NONE :-( \n");
-      #endif
-    }
-    else
-    {
-      if(setsockopt(UdpSocketDescriptor, SOL_SOCKET, SO_BROADCAST, &BroadCast, sizeof(BroadCast)) < 0)
-      {
-        #ifdef DEBUG
-          printf("\nCould not setsockopt SO_BROADCAST\n");
-        #endif
-      }
-      else
-      {
-        Temp = fcntl(UdpSocketDescriptor, F_GETFL, 0);
-        fcntl(UdpSocketDescriptor, F_SETFL, Temp | O_NONBLOCK); // Make the socket NON_BLOCKING
-
-        #ifdef DEBUG
-          printf("\nSet SOCKET NON-BLOCKING :-)...\n");
-        #endif
-
-        Result = OK;
-      }
+    struct timeval ReadTimeVal;
+    fd_set  ReadFdSet;
+
+    if (WiFiConnectionState == TCP_CONNECTED) {
+        ReadTimeVal.tv_sec = 0;  // NON blocking test use
+        ReadTimeVal.tv_usec = 0; // I.e. NO timeout
+        FD_ZERO(&ReadFdSet);
+        FD_SET(TcpConnectionSocket, &ReadFdSet);
+
+        select(TcpConnectionSocket + 1, &ReadFdSet, NULL, NULL, &ReadTimeVal);
+        if (FD_ISSET(TcpConnectionSocket, &ReadFdSet)) {
+            pr_dbg("\nTcpReadState = %d\n", TcpReadState);
+
+            switch (TcpReadState) {
+            case TCP_IDLE:
+                // Do Nothing
+                break;
+
+            case TCP_WAIT_ON_START:
+                pr_dbg("TCP_WAIT_ON_START:\n");
+
+                DataRead = read(TcpConnectionSocket, Buffer, 100); // Fixed TEXT
+
+#ifdef DEBUG_WIFI
+                printf("\nDataRead = %d, Buffer = \n", DataRead);
+                if (DataRead > 0) {
+                    int ii;
+
+                    for (ii = 0; ii < DataRead; ii++) {
+                        printf("0x%x, ", Buffer[ii]);
+                    }
+                } else {
+                    printf("DataRead shows FAIL: %d", DataRead);
+                }
+                printf("\n");
+#endif
+
+                if (DataRead == 0) {
+                    // We've a disconnect
+                    cWiFiResetTcp();
+                    break;
+                }
+
+                if (strstr((char*)Buffer, "ET /target?sn=") > 0) {
+                    pr_dbg("\nTCP_WAIT_ON_START and  ET /target?sn= found :-)"
+                           " DataRead = %d, Length = %d, Buffer = %s\n",
+                           DataRead, Length, Buffer);
+
+                    // A match found => UNLOCK
+                    // Say OK back
+                    cWiFiWriteTcp((UBYTE*)"Accept:EV340\r\n\r\n", 16);
+                    TcpReadState = TCP_WAIT_ON_LENGTH;
+                }
+
+                DataRead = 0; // No COM-module activity yet
+                break;
+
+            case TCP_WAIT_ON_LENGTH:
+                // We can should read the length of the message
+                // The packets can be split from the client
+                // I.e. Length bytes (2) can be send as a subset
+                // the Sequence can also arrive as a single pair of bytes
+                // and the finally the payload will be received
+
+                // Begin on new buffer :-)
+                TcpReadBufPointer = 0;
+                pr_dbg("TCP_WAIT_ON_LENGTH:\n");
+                DataRead = read(TcpConnectionSocket, Buffer, 2);
+                if(DataRead == 0) {
+                    // We've a disconnect
+                    cWiFiResetTcp();
+                    break;
+                }
+
+                TcpRestLen = (UWORD)(Buffer[0] + Buffer[1] * 256);
+                TcpTotalLength = (UWORD)(TcpRestLen + 2);
+                if(TcpTotalLength > Length) {
+                    TcpReadState = TCP_WAIT_ON_FIRST_CHUNK;
+                } else {
+                    TcpReadState = TCP_WAIT_ON_ONLY_CHUNK;
+                }
+
+                TcpReadBufPointer += DataRead;	// Position in ReadBuffer adjust
+                DataRead = 0;                   // Signal NO data yet
+
+                pr_dbg("\n*************** NEW TX *************\n");
+                pr_dbg("TCP_WAIT_ON_LENGTH TcpRestLen = %d, Length = %d\n",
+                       TcpRestLen, Length);
+
+                break;
+
+            case TCP_WAIT_ON_ONLY_CHUNK:
+                pr_dbg("TCP_WAIT_ON_ONLY_CHUNK: BufferStart = %d\n",
+                       TcpReadBufPointer);
+
+                DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]),
+                                TcpRestLen);
+
+                pr_dbg("DataRead = %d\n",DataRead);
+                pr_dbg("BufferPointer = %p\n", &(Buffer[TcpReadBufPointer]));
+
+                if(DataRead == 0) {
+                // We've a disconnect
+                    cWiFiResetTcp();
+                    break;
+                }
+
+                TcpReadBufPointer += DataRead;
+
+                if(TcpRestLen == DataRead) {
+                    DataRead = TcpTotalLength; // Total count read
+                    TcpReadState = TCP_WAIT_ON_LENGTH;
+                } else {
+                    TcpRestLen -= DataRead; // Still some bytes in this only chunk
+                    DataRead = 0;           // No COMM job yet
+                }
+
+#ifdef DEBUG_WIFI
+                int i;
+
+                for (i = 0; i < TcpTotalLength; i++) {
+                    printf("ReadBuffer[%d] = 0x%x\n", i, Buffer[i]);
+                }
+#endif
+                pr_dbg("TcpRestLen = %d, DataRead incl. 2 = %d, Length = %d\n",
+                       TcpRestLen, DataRead, Length);
+
+                break;
+
+            case TCP_WAIT_ON_FIRST_CHUNK:
+                pr_dbg("TCP_WAIT_ON_FIRST_CHUNK:\n");
+
+                DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]),
+                                (Length - 2));
+                if(DataRead == 0) {
+                    // We've a disconnect
+                    cWiFiResetTcp();
+                    break;
+                }
+                pr_dbg("DataRead = %d\n", DataRead);
+
+                TcpRestLen -= DataRead;
+                TcpReadState = TCP_WAIT_COLLECT_BYTES;
+                DataRead += 2;
+                pr_dbg("\nTCP_WAIT_ON_FIRST_CHUNK TcpRestLen = %d, DataRead incl."
+                       " 2 = %d, Length = %d\n", TcpRestLen, DataRead, Length);
+
+                break;
+
+            case TCP_WAIT_COLLECT_BYTES:
+                pr_dbg("TCP_WAIT_COLLECT_BYTES:\n");
+
+                TcpReadBufPointer = 0;
+                if(TcpRestLen < Length) {
+                    DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]),
+                                    TcpRestLen);
+                } else {
+                    DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]),
+                                    Length);
+                }
+                pr_dbg("DataRead = %d\n", DataRead);
+
+                if(DataRead == 0) {
+                    // We've a disconnect
+                    cWiFiResetTcp();
+                    break;
+                }
+
+                TcpRestLen -= DataRead;
+                if(TcpRestLen == 0) {
+                    TcpReadState = TCP_WAIT_ON_LENGTH;
+                }
+                pr_dbg("\nTCP_WAIT_COLLECT_BYTES TcpRestLen = %d, DataRead incl."
+                       " 2 = %d, Length = %d\n", TcpRestLen, DataRead, Length);
+
+                break;
+
+            default:
+                // Should never go here....
+                TcpReadState = TCP_IDLE;
+                break;
+            }
+        }
     }
 
-    #ifdef DEBUG
-      printf("\nINIT UDP ServerAddr.sin_port = %d, ServerAddr.sin_addr.s_addr = %s\n", ntohs(ServerAddr.sin_port), inet_ntoa(ServerAddr.sin_addr));
-    #endif
-
-  }
-  return Result;
+    return DataRead;
 }
 
-void cWiFiSetBtSerialNo(void)
+static void cWiFiSetBtSerialNo(void)
 {
-  FILE *File;
+    FILE *File;
 
     // Get the file-based BT SerialNo
-    File  =  fopen("./settings/BTser","r");
-    if(File != NULL) // if something to read
-    {
-      fgets(BtSerialNo, BLUETOOTH_SER_LENGTH, File);
-      fclose(File);
+    File = fopen("./settings/BTser", "r");
+    if (File) {
+        fgets(BtSerialNo, BLUETOOTH_SER_LENGTH, File);
+        fclose(File);
     }
 }
 
-void cWiFiSetBrickName(void)
+static void cWiFiSetBrickName(void)
 {
-  FILE *File;
+    FILE *File;
 
-  // Get the file-based BrickName
-  File  =  fopen("./settings/BrickName","r");
-  if(File != NULL) // if something to read
-  {
-    fgets(BrickName, BRICK_HOSTNAME_LENGTH, File);
-    fclose(File);
-  }
-}
-
-int cWiFiCheckForLoadedModule(char *NameToCheck)
-{
-  FILE *pProcModules;
-  char ReadBuffer[64];
-  const char WhiteSpaces[] = " ,-;:."; // "- " should be the ones, but...
-  char *DriverName;
-  int RetResult = FALSE;
-
-  pProcModules = fopen("/proc/modules", "r");
-
-  while (fgets(ReadBuffer, sizeof (ReadBuffer), pProcModules) != NULL)
-  {
-    DriverName = strtok(ReadBuffer, WhiteSpaces);
-    if(strcmp(DriverName, NameToCheck) == 0)
-    {
-      #ifdef DEBUG
-        printf("NameToCheck found: %s\n", NameToCheck);
-      #endif
-      RetResult = TRUE;
-      break;
+    // Get the file-based BrickName
+    File = fopen("./settings/BrickName", "r");
+    if (File) {
+        fgets(BrickName, BRICK_HOSTNAME_LENGTH, File);
+        fclose(File);
     }
-    else
-    {
-      #ifdef DEBUG
-        printf("NameToCheck NOT found: %s\n", NameToCheck);
-      #endif
+}
+
+static RESULT cWiFiTransmitBeacon(void)
+{
+    RESULT Result = FAIL;
+
+    ServerAddr.sin_port = htons(BROADCAST_PORT);
+    ServerAddr.sin_addr.s_addr = inet_addr(MyBroadCastAdr);
+    pr_dbg("\nUDP BROADCAST to port %d, address %s\n", ntohs(ServerAddr.sin_port),
+           inet_ntoa(ServerAddr.sin_addr));
+
+    cWiFiSetBtSerialNo(); // Be sure to have updated data :-)
+    cWiFiSetBrickName();  // -
+    sprintf(Buffer,"Serial-Number: %s\r\nPort: %d\r\nName: %s\r\nProtocol: EV3\r\n",
+            BtSerialNo, TCP_PORT, BrickName);
+
+    UdpTxCount =  sendto(UdpSocketDescriptor, Buffer, strlen(Buffer), 0,
+                         (struct sockaddr *)&ServerAddr, sizeof(ServerAddr));
+    if(UdpTxCount < 0) {
+        pr_dbg("\nUDP SendTo ERROR : %d\n", UdpTxCount);
+
+        cWiFiUdpClientClose();  // Kill the auto-beacon stuff
+    } else {
+        pr_dbg("\nUDP Client - SendTo() is OK! UdpTxCount = %d\n", UdpTxCount);
+        pr_dbg("\nWaiting on a reply from UDP server...zzz - Send UNICAST only to me :-)\n");
+
+        Result = OK;
     }
-  }
-  fclose(pProcModules);
-  return RetResult;
+
+    return Result;
 }
 
-void cWiFiLoadAthHwModules(void)
+static RESULT cWiFiInitUdpConnection(void)
 {
-}
+    RESULT Result = FAIL;
+    int Temp;
 
-void cWiFiUnLoadAthHwModules(void)
-{
+    WiFiConnectionState = INIT_UDP_CONNECTION;
+
+    /* Get a socket descriptor for UDP client (Beacon) */
+    if ((UdpSocketDescriptor = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        pr_dbg("\nUDP Client - socket() error\n");
+    } else {
+        pr_dbg("\nUDP Client - socket() is OK!\n");
+        pr_dbg("\nBroadCast Adr from Ifconfig = %s\n", MyBroadCastAdr);
+        ServerAddr.sin_family = AF_INET;
+        ServerAddr.sin_port = htons(BROADCAST_PORT);
+        ServerAddr.sin_addr.s_addr = inet_addr(MyBroadCastAdr);
+        if (ServerAddr.sin_addr.s_addr == (unsigned long)INADDR_NONE) {
+            pr_dbg("\nHOST addr == INADDR_NONE :-( \n");
+        } else {
+            if (setsockopt(UdpSocketDescriptor, SOL_SOCKET, SO_BROADCAST,
+                           &BroadCast, sizeof(BroadCast)) < 0)
+            {
+                pr_dbg("\nCould not setsockopt SO_BROADCAST\n");
+            } else {
+                Temp = fcntl(UdpSocketDescriptor, F_GETFL, 0);
+                // Make the socket NON_BLOCKING
+                fcntl(UdpSocketDescriptor, F_SETFL, Temp | O_NONBLOCK);
+                pr_dbg("\nSet SOCKET NON-BLOCKING :-)...\n");
+
+                Result = OK;
+            }
+        }
+        pr_dbg("\nINIT UDP ServerAddr.sin_port = %d, ServerAddr.sin_addr.s_addr = %s\n",
+               ntohs(ServerAddr.sin_port), inet_ntoa(ServerAddr.sin_addr));
+    }
+
+    return Result;
 }
 
 void cWiFiControl(void)
 {
-    struct stat st;
-    char Command[128];
+    // struct stat st;
+    // char Command[128];
 
     // Do we have to TX the beacons?
     if (BeaconTx == TX_BEACON) {
@@ -3041,9 +953,7 @@ void cWiFiControl(void)
             if (cWiFiTransmitBeacon() != OK) {
                 // Error handling - TODO: Should be user friendly
             } else {
-#ifdef DEBUG
-                printf("\nOK beacon TX\n");
-#endif
+                pr_dbg("\nOK beacon TX\n");
                 // Reset for another timing (Beacon)
                 cWiFiStartTimer();
             }
@@ -3062,18 +972,9 @@ void cWiFiControl(void)
         case NOT_INIT:
             // Start the Wpa_Supplicant in BackGround using
             // a very "thin" .conf file
-#ifdef DEBUG
-            printf("\nWIFI_INIT, NOT_INIT foer FindMacAddr... %d\n", WiFiStatus);
-#endif
-            cWiFiFindMacAddr(); // Get the H/W MAC-address
-#ifdef DEBUG
-            printf("\nWIFI_INIT, NOT_INIT efter FindMacAddr... %d\n", WiFiStatus);
-#endif
             cWiFiStartTimer();
-#ifdef DEBUG
-            printf("\nWIFI_INIT, NOT_INIT foer system... %d\n", WiFiStatus);
-#endif
-            cWiFiStartWpaSupplicant("/etc/wpa_supplicant.conf", LogicalIfName);
+            pr_dbg("\nWIFI_INIT, NOT_INIT before system... %d\n", WiFiStatus);
+            // cWiFiStartWpaSupplicant("/etc/wpa_supplicant.conf", LogicalIfName);
             //system("./wpa_supplicant -Dwext -iwlan<X> -c/etc/wpa_supplicant.conf -B");
             InitState = LOAD_SUPPLICANT;
             break;
@@ -3081,32 +982,28 @@ void cWiFiControl(void)
         case LOAD_SUPPLICANT:
             TimeOut = cWiFiCheckTimer();
             if (TimeOut < WIFI_INIT_TIMEOUT) {
-                strcpy(Command, "/var/run/wpa_supplicant/");
-                strcat(Command, LogicalIfName);
-                if (stat(Command, &st) == 0) {
-#ifdef DEBUG
-                    printf("\nWIFI_INIT, LOAD_SUPPLICANT => STAT OK %d\n", WiFiStatus);
-#endif
-                    // Ensure (help) Interface to become ready
-                    strcpy(Command, "ifconfig ");
-                    strcat(Command, LogicalIfName);
-                    strcat(Command, " down > /dev/null");
+                // strcpy(Command, "/var/run/wpa_supplicant/");
+                // strcat(Command, LogicalIfName);
+                // if (stat(Command, &st) == 0) {
+                    // pr_dbg("\nWIFI_INIT, LOAD_SUPPLICANT => STAT OK %d\n", WiFiStatus);
+                    // // Ensure (help) Interface to become ready
+                    // strcpy(Command, "ifconfig ");
+                    // strcat(Command, LogicalIfName);
+                    // strcat(Command, " down > /dev/null");
 
-                    system(Command);
+                    // system(Command);
 
-                    strcpy(Command, "ifconfig ");
-                    strcat(Command, LogicalIfName);
-                    strcat(Command, " up > /dev/null");
+                    // strcpy(Command, "ifconfig ");
+                    // strcat(Command, LogicalIfName);
+                    // strcat(Command, " up > /dev/null");
 
-                    system(Command);
+                    // system(Command);
 
-                    InitState = WAIT_ON_INTERFACE;
-                }
+                //     InitState = WAIT_ON_INTERFACE;
+                // }
                 //else keep waiting
             } else {
-#ifdef DEBUG
-                printf("\nWIFI_INIT, LOAD_SUPPLICANT => Timed out\n");
-#endif
+                pr_dbg("\nWIFI_INIT, LOAD_SUPPLICANT => Timed out\n");
                 WiFiStatus = FAIL;
                 // We're sleeping until user select ON
                 WiFiConnectionState = WIFI_NOT_INITIATED;
@@ -3118,26 +1015,22 @@ void cWiFiControl(void)
             // Wait for the Control stuff to be ready
 
             // Get "handle" to Control Interface
-            strcpy(Command, "/var/run/wpa_supplicant/");
-            strcat(Command, LogicalIfName);
+            // strcpy(Command, "/var/run/wpa_supplicant/");
+            // strcat(Command, LogicalIfName);
 
-            if ((ctrl_conn = wpa_ctrl_open(Command)) > 0) {
-                if (cWiFiWpaPing() == 0) {
-#ifdef DEBUG
-                    printf("\nWIFI_INIT, WAIT_ON_INTERFACE => Ping OK %d\n", WiFiStatus);
-#endif
-                    cWiFiPopulateKnownApList();
-                    WiFiStatus = OK;
-                    WiFiConnectionState = WIFI_INITIATED;
-                    InitState = DONE;
-                } else {
-#ifdef DEBUG
-                    printf("\nWIFI_INIT, WAIT_ON_INTERFACE => PING U/S\n");
-#endif
-                    WiFiStatus = FAIL;
-                    cWiFiExit();
-                }
-            }
+            // if ((ctrl_conn = wpa_ctrl_open(Command)) > 0) {
+            //     if (cWiFiWpaPing() == 0) {
+            //         pr_dbg("\nWIFI_INIT, WAIT_ON_INTERFACE => Ping OK %d\n", WiFiStatus);
+            //         cWiFiPopulateKnownApList();
+            //         WiFiStatus = OK;
+            //         WiFiConnectionState = WIFI_INITIATED;
+            //         InitState = DONE;
+            //     } else {
+            //         pr_dbg("\nWIFI_INIT, WAIT_ON_INTERFACE => PING U/S\n");
+            //         WiFiStatus = FAIL;
+            //         cWiFiExit();
+            //     }
+            // }
             break;
         case DONE:
             break;
@@ -3146,15 +1039,9 @@ void cWiFiControl(void)
 
     case WIFI_INITIATED:
         // Temporary state - WiFi lower Stuff turned ON
-        WiFiOnStatus = OK;
-        cWiFiStartDongleCheckTimer();
-#ifdef DEBUG
-        printf("\nWIFI_INITIATED %d\n", WiFiStatus);
-#endif
+        pr_dbg("\nWIFI_INITIATED %d\n", WiFiStatus);
         WiFiConnectionState = READY_FOR_AP_SEARCH;
-#ifdef DEBUG
-        printf("\nREADY for search -> %d\n", WiFiStatus);
-#endif
+        pr_dbg("\nREADY for search -> %d\n", WiFiStatus);
         break;
 
     case READY_FOR_AP_SEARCH:
@@ -3164,41 +1051,23 @@ void cWiFiControl(void)
 
     case SEARCH_APS:
         // Polite wait
-#ifdef DEBUG
-        printf("\nSEARCH_APS:\n");
-        printf("\ncIndex = %d => %s\n", 0, ApTable[0].friendly_name);
-        printf("\ncIndex = %d => %s\n", 1, ApTable[1].friendly_name);
-        printf("\ncIndex = %d => %s\n", 2, ApTable[2].friendly_name);
-#endif
+        pr_dbg("\nSEARCH_APS:\n");
         break;
 
     case SEARCH_PENDING:
         // Wait some time for things to show up...
-#ifdef DEBUG
-        printf("cWiFiCheckTimer() = %d\r", cWiFiCheckTimer());
-#endif
+        pr_dbg("cWiFiCheckTimer() = %d\r", cWiFiCheckTimer());
         // Give some time for the stuff to show up
         // Get Elapsed time in seconds
         if (20 <= cWiFiCheckTimer()) {
             // Getting the list and update the visible list
-            cWiFiStoreActualApList();
+            // cWiFiStoreActualApList();
         }
-#ifdef DEBUG
-        printf("\nSEARCH_PENDING:\n");
-        printf("\ncIndex = %d => %s\n", 0, ApTable[0].friendly_name);
-        printf("\ncIndex = %d => %s\n", 1, ApTable[1].friendly_name);
-        printf("\ncIndex = %d => %s\n", 2, ApTable[2].friendly_name);
-#endif
+        pr_dbg("\nSEARCH_PENDING:\n");
         break;
 
     case AP_LIST_UPDATED:
         // Relaxed state until connection wanted
-#ifdef DEBUG
-        printf("\nAP_LIST_UPDATED ApTableSize = %d:\n", ApTableSize);
-        printf("\ncIndex = %d => %s\n", 0, ApTable[0].friendly_name);
-        printf("\ncIndex = %d => %s\n", 1, ApTable[1].friendly_name);
-        printf("\ncIndex = %d => %s\n", 2, ApTable[2].friendly_name);
-#endif
       break;
 
     case AP_CONNECTING:
@@ -3214,23 +1083,18 @@ void cWiFiControl(void)
         // We have an valid IP address
         // Initiated, connected and ready for UDP
         // I.e. ready for starting Beacons
-#ifdef DEBUG
-        printf("\nHer er UDP_NOT_INITIATED\n");
-#endif
+        pr_dbg("\nHer er UDP_NOT_INITIATED\n");
+
         WiFiConnectionState = INIT_UDP_CONNECTION;
         break;
 
     case INIT_UDP_CONNECTION:
         WiFiStatus = BUSY;                    // We're still waiting
         memset(Buffer, 0x00, sizeof(Buffer)); // Reset TX buffer
-#ifdef DEBUG
-        printf("\nLige foer cWiFiInitUdpConnection()\n");
-#endif
+        pr_dbg("\nLige foer cWiFiInitUdpConnection()\n");
 
         if (cWiFiInitUdpConnection() == OK) {
-#ifdef DEBUG
-            printf("\nUDP connection READY @ INIT_UDP_CONNECTION\n");
-#endif
+            pr_dbg("\nUDP connection READY @ INIT_UDP_CONNECTION\n");
             // Did we manage to TX one?
             if (cWiFiTransmitBeacon() == OK) {
                 WiFiConnectionState = UDP_FIRST_TX;
@@ -3241,9 +1105,7 @@ void cWiFiControl(void)
                 // TODO: Some ERROR handling where to go - should be user friendly
             }
         } else {
-#ifdef DEBUG
-            printf("\nUDP connection FAILed @ INIT_UDP_CONNECTION\n");
-#endif
+            pr_dbg("\nUDP connection FAILed @ INIT_UDP_CONNECTION\n");
             WiFiStatus = FAIL;
             WiFiConnectionState = WIFI_NOT_INITIATED;
         }
@@ -3272,9 +1134,7 @@ void cWiFiControl(void)
         // and the "real" TCP communication
 
         if (cWiFiInitTcpServer() == OK) {
-#ifdef DEBUG
-            printf("\nTCP init OK @ UDP_CONNECTED\n");
-#endif
+            pr_dbg("\nTCP init OK @ UDP_CONNECTED\n");
             WiFiConnectionState = TCP_NOT_CONNECTED;
         }
         break;
@@ -3283,9 +1143,7 @@ void cWiFiControl(void)
         // Waiting for the PC to connect via TCP
         // Non-blocking test
         if (cWiFiWaitForTcpConnection() == OK) {
-#ifdef DEBUG
-            printf("\nTCP_CONNECTED @ TCP_NOT_CONNECTED\n");
-#endif
+            pr_dbg("\nTCP_CONNECTED @ TCP_NOT_CONNECTED\n");
             TcpState = TCP_UP;
             WiFiConnectionState = TCP_CONNECTED;
             // We are connected so we can tell the world....
@@ -3296,153 +1154,509 @@ void cWiFiControl(void)
 
     case TCP_CONNECTED:
         // We have a TCP connection established
-#ifdef DEBUG
-        printf("\nTCP_CONNECTED @ TCP_CONNECTED.... And then.....\n");
-#endif
+        pr_dbg("\nTCP_CONNECTED @ TCP_CONNECTED.... And then.....\n");
         break;
 
     case CLOSED:
         // UDP/TCP closed
         break;
     }
-    // Íf some logic fired up
-    if (WiFiOnStatus == OK) {
-        // Check for the "volatile" USB dongle connection
-        // Don't misuse the CPU cycles
-        if (cWiFiTimeFromLastDongleCheck() >= TIME_FOR_WIFI_DONGLE_CHECK) {
-#ifdef DEBUG
-            printf("Check for Dongle....");
-#endif
-            if (cWiFiKnownDongleAttached() != OK) {
-#ifdef DEBUG
-                printf("FAIL!!\n");
-#endif
-                cWiFiTurnOff();  // No H/W
-            } else {
-                cWiFiStartDongleCheckTimer();
-#ifdef DEBUG
-                printf("OK!!\n");
-#endif
-            }
-        }
-    }
 }
 
-
+/**
+ * @brief Gets WiFi power status
+ *
+ * @return OK if WiFi is present and powered on, otherwise FAIL
+ */
 RESULT cWiFiGetOnStatus(void)
 {
-    return WiFiOnStatus;
+    RESULT Result = FAIL;
+
+    if (wifi_technology && connman_technology_get_powered(wifi_technology)) {
+        Result = OK;
+    }
+
+    return Result;
 }
 
+/**
+ * @brief Turn WiFi on or off
+ *
+ * @param powered TRUE to turn on or FALSE to turn off
+ * @return OK on success or FAIL if WiFi is not present or changing the power
+ *         state failed
+ */
+static RESULT wifi_technology_set_powered(gboolean powered)
+{
+    RESULT Result = FAIL;
+
+    if (wifi_technology) {
+        GError *error = NULL;
+
+        WiFiStatus = BUSY;
+
+        if (connman_technology_call_set_property_sync(wifi_technology,
+            "Powered", g_variant_new_variant(g_variant_new_boolean(powered)),
+            NULL, &error))
+        {
+            Result = OK;
+        } else {
+            g_printerr("Failed to power %s wifi: %s\n", powered ? "on" : "off",
+                       error->message);
+            g_error_free(error);
+        }
+
+        WiFiStatus = OK;
+    }
+
+    return Result;
+}
+
+/**
+ * @brief           Turn off WiFi
+ *
+ * @return          OK on success or FAIL if wifi is not present or wifi is
+ *                  already turned on or turning on failed
+ */
 RESULT cWiFiTurnOn(void)
 {
-    RESULT  Result = FAIL;
-    char Command[64];
+    pr_dbg("cWiFiTurnOn\n");
 
-    // We will use some (a lot of) time before we're ready
-    WiFiStatus = BUSY;
-
-    // Only try to initiated un- stuff ;-)
-    if (WiFiConnectionState == WIFI_NOT_INITIATED) {
-        cWiFiInit();
-        cWiFiLoadAthHwModules();  // Load the foundation for the rest
-        cWiFiGetLogicalName();
-
-#ifdef DEBUG
-        printf("\ncWiFiTurnOn and LOGIC NAME FOUND: %s\n", LogicalIfName);
-#endif
-
-        // Remove the Control Interface - if exist...
-        strcpy(Command, "rm /var/run/wpa_supplicant/");
-        strcat(Command, LogicalIfName);
-
-        strcat(Command, " &> /dev/null");
-        system(Command);
-
-        Result  =  OK;
-        WiFiConnectionState = WIFI_INIT;
-        WiFiOnStatus = OK;
-    } else {
-        // Just debugging stuff
-#ifdef DEBUG
-        printf("\ncWiFiTurnOn refused ALREADY ON or should be....\n");
-#endif
-    }
-
-    WiFiStatus = OK;
-
-    return Result;
+    return wifi_technology_set_powered(TRUE);
 }
 
+/**
+ * @brief           Turn off WiFi
+ *
+ * @return          OK on success or FAIL if wifi is not present or wifi is
+ *                  already turned off or turning off failed
+ */
 RESULT cWiFiTurnOff(void)
 {
-    RESULT  Result = FAIL;
-    int PC = 0;
+    pr_dbg("cWiFiTurnOff\n");
 
-#ifdef DEBUG
-    printf("cWiFiTurnOff called...\n");
-#endif
+    return wifi_technology_set_powered(FALSE);
+}
 
-    WiFiOnStatus = FAIL;
+/**
+ * @brief           Handle a change in the wifi technology power property
+ */
+static void on_wifi_powered_changed(void)
+{
+    gboolean powered = connman_technology_get_powered(wifi_technology);
 
-    if (ctrl_conn) {
-        cWiFiKillUdHcPc();
+    pr_dbg("on_wifi_powered_changed: %d\n", powered);
+
+    if (powered) {
+        // cWiFiGetLogicalName();
+
+        WiFiConnectionState = WIFI_INIT;
+
+        WiFiStatus = OK;
+    } else {
         BeaconTx = NO_TX;
-
-        // Store persistent data - i.e. all the old and new connections and -data
-
-        PC = cWiFiStoreKnownApList();
-        if (PC >= 0) {
-            Result = OK;
-        }
-
-#ifdef DEBUG
-        printf("cWiFiStoreKnownApList() returned %d\n", PC);
-#endif
-
         cWiFiTcpClose();
-        cWiFiUdpClientClose();
-        cWiFiTerminate();
-
-#ifdef DEBUG
-        if (WiFiStatus == OK) {
-            printf("At TurnOff cWiFiTerminate()-> WiFiStatus == OK\n");
-        } else {
-            printf("At TurnOff cWiFiTerminate()-> WiFiStatus == NOT ok\n");
-        }
-#endif
-
         WiFiConnectionState = WIFI_NOT_INITIATED;
         InitState = NOT_INIT;
-        wpa_ctrl_close(ctrl_conn);
-        ctrl_conn = NULL;
-        // Unload the foundation for the rest
-        cWiFiUnLoadAthHwModules();
-        KnownWiFiDongle = HW_NOT_KNOWN;
     }
+}
 
-#ifdef DEBUG
-    if (WiFiStatus == OK) {
-        printf("At TurnOff -> WiFiStatus == OK\n");
+/**
+ * @brief           Handle property changes on ConnMan DBus objects.
+ *
+ * The different types of ConnMan object all use the same property API, so this
+ * function can be used by all types of ConnMan objects.
+ *
+ * @param proxy     The DBus proxy object.
+ * @param name      The property name
+ * @param value     The property value
+ */
+static void on_connman_property_changed(GObject *proxy, const gchar *name,
+                                        GVariant *value)
+{
+    GVariant *real_value, *entry, *properties;
+    gchar *invalidated = NULL;
+
+    // pr_dbg("PropertyChanged: %s - %s\n", name, g_variant_print(value, TRUE));
+
+    // values are boxed
+    real_value = g_variant_get_variant(value);
+    g_dbus_proxy_set_cached_property(G_DBUS_PROXY(proxy), name, real_value);
+
+    // trigger notify signal
+    entry = g_variant_new_dict_entry(g_variant_new_string(name), value);
+    properties = g_variant_new_array(NULL, &entry, 1);
+    g_signal_emit_by_name(proxy, "g-properties-changed", properties, &invalidated);
+
+    g_variant_unref(real_value);
+}
+
+/**
+ * @brief       Get a DBus proxy object for a ConnMan technology.
+ *
+ * Creates the proxy object and connects signals to handle changes.
+ *
+ * @param path  The path of the DBus object.
+ * @return      The proxy object.
+ */
+static ConnmanTechnology *cWiFiGetTechnologyProxy(const gchar *path)
+{
+    ConnmanTechnology *proxy;
+    GError *error = NULL;
+
+    proxy = connman_technology_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
+        G_DBUS_PROXY_FLAGS_NONE, "net.connman", path, NULL, &error);
+    if (proxy) {
+        GVariant *properties;
+
+        // ConnMan does not support org.freedestop.DBus.Properties so we have
+        // to take care of this ourselves
+
+        g_signal_connect(proxy, "property-changed",
+                         G_CALLBACK(on_connman_property_changed), NULL);
+        // There is a race condition where the properties could change before
+        // we connect the "property-changed" signal. So, we have to get the
+        // properties again to be sure we have the correct values.
+        if (connman_technology_call_get_properties_sync(proxy, &properties, NULL, &error)) {
+            GVariantIter iter;
+            GVariant *item;
+
+            g_variant_iter_init(&iter, properties);
+            while ((item = g_variant_iter_next_value(&iter))) {
+                GVariant *key = g_variant_get_child_value(item, 0);
+                GVariant *value = g_variant_get_child_value(item, 1);
+
+                connman_technology_emit_property_changed(proxy,
+                    g_variant_get_string(key, NULL), value);
+
+                g_variant_unref(key);
+                g_variant_unref(value);
+                g_variant_unref(item);
+            }
+            g_variant_unref(properties);
+        } else {
+            g_printerr("Error getting properties for technology: %s\n",
+                       error->message);
+            g_error_free(error);
+        }
     } else {
-        printf("At TurnOff -> WiFiStatus == NOT ok\n");
+        g_printerr("Error creating connman technology proxy: %s\n", error->message);
+        g_error_free(error);
     }
-#endif
-    // NO FAIL BREAKing
-    WiFiStatus = OK;
-    Result  =  OK;
-    // We should hopefully be disconnected as well
-    // I.e. Turned OFF!
-    ApTable[0].ap_flags &= ~(CONNECTED);
 
-    return Result;
+    return proxy;
+}
+
+/**
+ * @brief       Handle the removal of the wifi technology.
+ *
+ * Frees the global instance.
+ */
+static void on_wifi_technology_removed(void)
+{
+    g_object_unref(wifi_technology);
+    wifi_technology = NULL;
+}
+
+/**
+ * @brief       Handle the removal of the ethernet technology.
+ *
+ * Frees the global instance.
+ */
+static void on_ethernet_technology_removed(void)
+{
+    g_object_unref(ethernet_technology);
+    ethernet_technology = NULL;
+}
+
+/**
+ * @brief               Handle the addition of a technology.
+ *
+ * @param object        The ConnMan manager object that received the signal.
+ * @param path          The path that was added.
+ * @param properties    The technology's properties (ignored)
+ */
+static void on_technology_added(ConnmanManager *object, gchar *path,
+                                GVariant *properties)
+{
+    GVariant *type;
+    const gchar *type_string;
+
+    type = g_variant_lookup_value(properties, "Type", NULL);
+    type_string = g_variant_get_string(type, NULL);
+    pr_dbg("on_technology_added: %s\n", type_string);
+
+    if (g_strcmp0(type_string, "wifi") == 0) {
+        // WiFiStatus = OK;
+        wifi_technology = cWiFiGetTechnologyProxy(path);
+        g_signal_connect(wifi_technology, "notify::powered",
+                         G_CALLBACK(on_wifi_powered_changed), NULL);
+        g_object_notify(G_OBJECT(wifi_technology), "powered");
+    } else if (g_strcmp0(type_string, "ethernet") == 0) {
+        ethernet_technology = cWiFiGetTechnologyProxy(path);
+    }
+    // TODO: we also need to grab bluetooth to power it on/off.
+    // Connman takes control of bluetooth power, so it can't be done
+    // from bluez.
+
+    g_variant_unref(type);
+}
+
+/**
+ * @brief           Handle the removal of a technology.
+ *
+ * @param object    The ConnMan manager object that received the signal.
+ * @param path      The path that was removed.
+ */
+static void on_technology_removed(ConnmanManager *object, gchar *path)
+{
+    pr_dbg("on_technology_removed: %s\n", path);
+
+    if (wifi_technology && g_strcmp0(path,
+        g_dbus_proxy_get_object_path(G_DBUS_PROXY(wifi_technology))) == 0)
+    {
+        on_wifi_technology_removed();
+    }
+    else if (ethernet_technology && g_strcmp0(path,
+        g_dbus_proxy_get_object_path(G_DBUS_PROXY(ethernet_technology))) == 0)
+    {
+        on_ethernet_technology_removed();
+    }
+}
+
+/**
+ * @brief   Get a dbus proxy object for net.connman.Services
+ *
+ * @return  The proxy object
+ */
+static ConnmanService *cWiFiGetConnmanServiceProxy(const gchar *path)
+{
+    ConnmanService *proxy;
+    GError *error = NULL;
+
+    proxy = connman_service_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
+        G_DBUS_PROXY_FLAGS_NONE, "net.connman", path, NULL, &error);
+    if (proxy) {
+        GVariant *properties;
+
+        // ConnMan does not support org.freedestop.DBus.Properties so we have
+        // to take care of this ourselves
+
+        g_signal_connect(proxy, "property-changed",
+                         G_CALLBACK(on_connman_property_changed), NULL);
+        // There is a race condition where the properties could change before
+        // we connect the "property-changed" signal. So, we have to get the
+        // properties again to be sure we have the correct values.
+        if (connman_service_call_get_properties_sync(proxy, &properties, NULL, &error)) {
+            GVariantIter iter;
+            GVariant *item;
+
+            g_variant_iter_init(&iter, properties);
+            while ((item = g_variant_iter_next_value(&iter))) {
+                GVariant *key = g_variant_get_child_value(item, 0);
+                GVariant *value = g_variant_get_child_value(item, 1);
+
+                connman_service_emit_property_changed(proxy,
+                    g_variant_get_string(key, NULL), value);
+
+                g_variant_unref(key);
+                g_variant_unref(value);
+                g_variant_unref(item);
+            }
+            g_variant_unref(properties);
+        } else {
+            g_printerr("Error getting properties for service: %s\n",
+                       error->message);
+            g_error_free(error);
+        }
+    } else {
+        g_printerr("Error creating connman service proxy: %s\n", error->message);
+        g_error_free(error);
+    }
+
+    return proxy;
+}
+
+static void on_service_state_changed(ConnmanService *proxy)
+{
+    const char *state = connman_service_get_state(proxy);
+
+    pr_dbg("%s: state changed: %s\n", connman_service_get_name(proxy), state);
+}
+
+/**
+ * @brief           Compares the object path of a proxy to an object path
+ *
+ * @param proxy     The proxy instance.
+ * @param path      The object path to compare to.
+ * @return          0 if path matches the proxy's path.
+ */
+static gint compare_proxy_path(GDBusProxy *proxy, const gchar *path)
+{
+    const gchar *proxy_path = g_dbus_proxy_get_object_path(proxy);
+
+    return g_strcmp0(proxy_path, path);
+}
+
+/**
+ * @brief           Handles service change events
+ *
+ * Updates the global service_list and sorts it to match the order received
+ * from ConnMan.
+ *
+ * @param object    The ConnMan manager instance.
+ * @param changed   A list of services that have changed.
+ * @param removed   A list of object paths that have been removed.
+ */
+static void on_services_changed(ConnmanManager *object, GVariant *changed,
+                                GStrv removed)
+{
+    GVariantIter iter;
+    gchar *path;
+    GVariant **properties;
+    GList *new_list = NULL;
+
+    pr_dbg("on_services_changed\n");
+
+    // handle removed items first to make later search more efficient
+    for (; *removed; removed++) {
+        GList *match;
+
+        path = *removed;
+        match = g_list_find_custom(service_list, path,
+                                   (GCompareFunc)compare_proxy_path);
+        if (match) {
+            service_list = g_list_remove_link(service_list, match);
+            g_object_unref(G_OBJECT(match->data));
+            g_list_free1(match);
+            pr_dbg("removed: %s\n", path);
+        } else {
+            g_critical("Failed to remove %s", path);
+        }
+    }
+
+    g_variant_iter_init(&iter, changed);
+    while (g_variant_iter_loop(&iter, "(oa{sv})", &path, &properties)) {
+        GList *match;
+
+        match = g_list_find_custom(service_list, path,
+                                   (GCompareFunc)compare_proxy_path);
+        if (match) {
+            service_list = g_list_remove_link(service_list, match);
+            new_list = g_list_concat(match, new_list);
+            pr_dbg("changed: %s\n", path);
+        } else {
+            ConnmanService *proxy = cWiFiGetConnmanServiceProxy(path);
+            new_list = g_list_prepend(new_list, proxy);
+            g_signal_connect(proxy, "notify::state",
+                             G_CALLBACK(on_service_state_changed), NULL);
+            on_service_state_changed(proxy);
+            pr_dbg("added: %s\n", path);
+        }
+        // path and properties are freed by g_variant_iter_loop
+    }
+
+    if (new_list) {
+        g_warn_if_fail(service_list == NULL);
+        service_list = g_list_reverse(new_list);
+    }
+
+    if (service_list_state == DATA16_MAX) {
+        service_list_state = 1;
+    } else {
+        service_list_state++;
+    }
+}
+
+/**
+ * @brief   Get a dbus proxy object for net.connman.Manager
+ *
+ * This also connects signals to the proxy for monitoring technologies and
+ * services.
+ *
+ * @return  The proxy object
+ */
+static ConnmanManager *cWiFiGetConnmanManagerProxy(void)
+{
+    ConnmanManager *proxy;
+    GError *error = NULL;
+
+    // TODO: Watch dbus for connman
+    // It would be better to watch the bus so that we can handle restart of
+    // connman without having to restart lms2012.
+    proxy = connman_manager_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
+        G_DBUS_PROXY_FLAGS_NONE, "net.connman", "/", NULL, &error);
+    if (proxy) {
+        GVariant *technologies;
+        GVariant *services;
+
+        // We are interested in monitoring technologies
+
+        g_signal_connect(proxy, "technology-added",
+                         G_CALLBACK(on_technology_added), NULL);
+        g_signal_connect(proxy, "technology-removed",
+                         G_CALLBACK(on_technology_removed), NULL);
+        if (connman_manager_call_get_technologies_sync(proxy, &technologies, NULL, &error)) {
+            GVariantIter iter;
+            GVariant *item;
+
+            g_variant_iter_init(&iter, technologies);
+            while ((item = g_variant_iter_next_value(&iter))) {
+                GVariant *path = g_variant_get_child_value(item, 0);
+                GVariant *properties = g_variant_get_child_value(item, 1);
+
+                connman_manager_emit_technology_added(proxy,
+                    g_variant_get_string(path, NULL), properties);
+
+                g_variant_unref(path);
+                g_variant_unref(properties);
+                g_variant_unref(item);
+            }
+            g_variant_unref(technologies);
+        } else {
+            g_printerr("Error getting technologies: %s\n", error->message);
+            g_error_free(error);
+        }
+
+        // We also want to monitor services
+
+        g_signal_connect(proxy, "services-changed",
+                         G_CALLBACK(on_services_changed), NULL);
+        if (connman_manager_call_get_services_sync(proxy, &services, NULL, &error)) {
+            const gchar *removed = NULL;
+
+            connman_manager_emit_services_changed(proxy, services, &removed);
+            g_variant_unref(services);
+        } else {
+            g_printerr("Error getting technologies: %s\n", error->message);
+            g_error_free(error);
+        }
+    } else {
+        g_printerr("Error creating connman manager proxy: %s\n", error->message);
+        g_error_free(error);
+    }
+
+    return proxy;
 }
 
 RESULT cWiFiExit(void)
 {
     RESULT Result;
 
-    Result = cWiFiTurnOff();
+    // TODO: Do we want to always turn off WiFi on exit? This is what LEGO does.
+    Result = OK; //cWiFiTurnOff();
+    if (connman_manager) {
+        if (wifi_technology) {
+            on_wifi_technology_removed();
+        }
+        if (ethernet_technology) {
+            on_ethernet_technology_removed();
+        }
+        g_list_free_full(service_list, (GDestroyNotify)g_object_unref);
+        service_list = NULL;
+        g_object_unref(connman_manager);
+        connman_manager = NULL;
+    }
 
     return Result;
 }
@@ -3451,28 +1665,21 @@ RESULT cWiFiInit(void)
 {
     RESULT Result = FAIL;
 
-#ifdef DEBUG
-    printf("\ncWiFiInit START %d\n", WiFiStatus);
-#endif
+    pr_dbg("\ncWiFiInit START %d\n", WiFiStatus);
 
-    WiFiOnStatus = FAIL;
     BeaconTx = NO_TX;
     // We're sleeping until user select ON
     WiFiConnectionState = WIFI_NOT_INITIATED;
     InitState = NOT_INIT;
     TcpReadState = TCP_IDLE;
-    // Set IP address to UNKNOWN
-    strcpy(MyIp4Address, "???");
-    // Set MAC address of Interface to UNKNOWN (NOT read yet)
-    strcpy(MyHwMacAddress, "??:??:??:??:??:??");
     cWiFiSetBtSerialNo();
     cWiFiSetBrickName();
-    WiFiStatus = OK;
-    Result = OK;
+    connman_manager = cWiFiGetConnmanManagerProxy();
+    if (connman_manager) {
+        Result = OK;
+    }
 
-#ifdef DEBUG
-    printf("\nWiFiStatus = %d\n", WiFiStatus);
-#endif
+    pr_dbg("\nWiFiStatus = %d\n", WiFiStatus);
 
     return Result;
 }

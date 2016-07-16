@@ -35,7 +35,7 @@ target_include_directories (lms2012 PUBLIC
 target_link_libraries (lms2012 ${LMS2012_DEPS_LIBRARIES} dl m)
 if (CMAKE_CROSSCOMPILING)
     # These are not picked up automatically when cross compiling for some reason
-    target_link_libraries (lms2012 "-pthread")
+    target_link_libraries (lms2012 "-pthread" "-lresolv")
 endif (CMAKE_CROSSCOMPILING)
 
 install (TARGETS lms2012 RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR})

@@ -27,8 +27,12 @@
 
 #include "c_com.h"
 
+#ifndef   FALSE
 #define   FALSE                         0
+#endif
+#ifndef   TRUE
 #define   TRUE                          1
+#endif
 
 /*
   Daisy Chain Command Bytes:

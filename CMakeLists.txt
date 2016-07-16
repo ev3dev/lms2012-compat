@@ -37,6 +37,7 @@ option (LMS2012_DEBUG_TEMP_SHUTDOWN "Enable temperature shutdown debug messages 
 option (LMS2012_DEBUG_BACK_BLOCKED "Enable back button debug messages in c_ui")
 option (LMS2012_DEBUG_MEMORY_USAGE "Enable memory usage debug messages in c_memory")
 option (LMS2012_DEBUG_RECHARGABLE "Enable rechargable battery debug messages in c_ui")
+option (LMS2012_DEBUG_WIFI "Enable wifi debug messages in c_wifi")
 option (LMS2012_ENABLE_DEBUG_PULSE "Enable opUI_WRITE(ALLOW_PULSE) bytecode" Yes)
 
 option (LMS2012_ENABLE_AD_WORD_PROTECT "Enable A/D word result protection" Yes)
@@ -104,6 +105,7 @@ set (LMS2012_DEBUG_OPTIONS
     BACK_BLOCKED
     MEMORY_USAGE
     RECHARGABLE
+    WIFI
 )
 foreach (DEBUG_OPTION ${LMS2012_DEBUG_OPTIONS})
     if (LMS2012_DEBUG_${DEBUG_OPTION})
