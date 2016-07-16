@@ -162,7 +162,7 @@ void cWiFiMoveDownInList(int Index)
     g_return_if_fail(service != NULL);
     g_return_if_fail(next != NULL);
 
-    if (!connman_service_call_move_before_sync(service,
+    if (!connman_service_call_move_after_sync(service,
         g_dbus_proxy_get_object_path(next), NULL, &error))
     {
         g_printerr("Failed to move down: %s\n", error->message);
