@@ -1322,19 +1322,13 @@ static ConnmanTechnology *cWiFiGetTechnologyProxy(const gchar *path)
         // properties again to be sure we have the correct values.
         if (connman_technology_call_get_properties_sync(proxy, &properties, NULL, &error)) {
             GVariantIter iter;
-            GVariant *item;
+            gchar *name;
+            GVariant *value;
 
             g_variant_iter_init(&iter, properties);
-            while ((item = g_variant_iter_next_value(&iter))) {
-                GVariant *key = g_variant_get_child_value(item, 0);
-                GVariant *value = g_variant_get_child_value(item, 1);
-
-                connman_technology_emit_property_changed(proxy,
-                    g_variant_get_string(key, NULL), value);
-
-                g_variant_unref(key);
-                g_variant_unref(value);
-                g_variant_unref(item);
+            while (g_variant_iter_loop(&iter, "{sv}", &name, &value)) {
+                connman_technology_emit_property_changed(proxy, name,
+                                                g_variant_new_variant(value));
             }
             g_variant_unref(properties);
         } else {
@@ -1452,19 +1446,13 @@ static ConnmanService *cWiFiGetConnmanServiceProxy(const gchar *path)
         // properties again to be sure we have the correct values.
         if (connman_service_call_get_properties_sync(proxy, &properties, NULL, &error)) {
             GVariantIter iter;
-            GVariant *item;
+            gchar *name;
+            GVariant *value;
 
             g_variant_iter_init(&iter, properties);
-            while ((item = g_variant_iter_next_value(&iter))) {
-                GVariant *key = g_variant_get_child_value(item, 0);
-                GVariant *value = g_variant_get_child_value(item, 1);
-
-                connman_service_emit_property_changed(proxy,
-                    g_variant_get_string(key, NULL), value);
-
-                g_variant_unref(key);
-                g_variant_unref(value);
-                g_variant_unref(item);
+            while (g_variant_iter_loop(&iter, "{sv}", &name, &value)) {
+                connman_service_emit_property_changed(proxy, name,
+                                                      g_variant_new_variant(value));
             }
             g_variant_unref(properties);
         } else {
