@@ -4403,6 +4403,27 @@ void      cComGet(void)
     }
     break;
 
+    case LIST_STATE:
+    {
+      DATA16 state = 0;
+
+      Hardware = *(DATA8*)PrimParPointer();
+
+      switch(Hardware) {
+      case HW_USB:
+        break;
+      case HW_BT:
+        break;
+      case HW_WIFI:
+        state = cWifiGetListState();
+        DspStat = NOBREAK;
+        break;
+      }
+
+      *(DATA16*)PrimParPointer() = state;
+    }
+    break;
+
     case SEARCH_ITEMS :
     {
       Hardware    =  *(DATA8*)PrimParPointer();

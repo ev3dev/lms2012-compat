@@ -663,6 +663,7 @@ typedef   enum
   GET_VISIBLE   = 2,                    //!< Set, Get
   GET_RESULT    = 4,                    //!<      Get
   GET_PIN       = 5,                    //!< Set, Get
+  LIST_STATE    = 7,
   SEARCH_ITEMS  = 8,                    //!<      Get
   SEARCH_ITEM   = 9,                    //!<      Get
   FAVOUR_ITEMS  = 10,                   //!<      Get

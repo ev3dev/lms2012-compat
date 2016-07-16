@@ -674,6 +674,7 @@ static  SUBCODE SubCodes[SUBPS][MAX_SUBCODES] =
   SC(   COM_GET_SUBP,           GET_VISIBLE,            PAR8,PAR8,                                      0,0,0,0,0,0           ),
   SC(   COM_GET_SUBP,           GET_RESULT,             PAR8,PAR8,PAR8,                                 0,0,0,0,0             ),
   SC(   COM_GET_SUBP,           GET_PIN,                PAR8,PAR8,PAR8,PAR8,                            0,0,0,0               ),
+  SC(   COM_GET_SUBP,           LIST_STATE,             PAR8,PAR16,                                     0,0,0,0,0,0           ),
   SC(   COM_GET_SUBP,           SEARCH_ITEMS,           PAR8,PAR8,                                      0,0,0,0,0,0           ),
   SC(   COM_GET_SUBP,           SEARCH_ITEM,            PAR8,PAR8,PAR8,PAR8,PAR8,PAR8,PAR8,PAR8                               ),
   SC(   COM_GET_SUBP,           FAVOUR_ITEMS,           PAR8,PAR8,                                      0,0,0,0,0,0           ),
