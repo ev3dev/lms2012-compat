@@ -369,6 +369,7 @@ RESULT cWiFiConnectToAp(int Index)
         WiFiConnectionState = READY_FOR_AP_SEARCH;
         WiFiStatus = FAIL;
         g_printerr("Connect failed: %s\n", error->message);
+        g_error_free(error);
     }
 
     return Result;
