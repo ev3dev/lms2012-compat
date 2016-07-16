@@ -240,13 +240,15 @@ RESULT cWiFiGetIpAddr(char* IpAddress)
  */
 RESULT cWiFiGetMyMacAddr(char* MacAddress)
 {
+    ConnmanService *service;
     RESULT Result = FAIL;
 
-    if (service_list) {
+    service = g_list_nth_data(service_list, 0);
+    if (service) {
         GVariant *enet;
         GVariant *address;
 
-        enet = connman_service_get_ethernet(CONNMAN_SERVICE(service_list->data));
+        enet = connman_service_get_ethernet(service);
         address = g_variant_lookup_value(enet, "Address", NULL);
 
         sprintf(MacAddress, "%s", g_variant_get_string(address, NULL));
