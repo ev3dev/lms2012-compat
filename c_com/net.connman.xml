@@ -1,6 +1,27 @@
 <!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
 "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
 <node>
+    <interface name="net.connman.Agent">
+        <method name="Release"/>
+        <method name="ReportError">
+            <arg name="service" type="o" direction="in"/>
+            <arg name="error" type="s" direction="in"/>
+        </method>
+        <method name="ReportPeerError">
+            <arg name="peer" type="o" direction="in"/>
+            <arg name="error" type="s" direction="in"/>
+        </method>
+        <method name="RequestBrowser">
+            <arg name="servce" type="o" direction="in"/>
+            <arg name="url" type="s" direction="in"/>
+        </method>
+        <method name="RequestInput">
+            <arg name="service" type="o" direction="in"/>
+            <arg name="fields" type="a{sv}" direction="in"/>
+            <arg name="response" type="a{sv}" direction="out"/>
+        </method>
+        <method name="Cancel"/>
+    </interface>
     <interface name="net.connman.Manager">
         <method name="GetProperties">
             <arg name="properties" type="a{sv}" direction="out"/>
