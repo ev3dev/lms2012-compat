@@ -271,7 +271,7 @@ RESULT    cUiInit(void)
 
   dLcdInit((*UiInstance.pLcd).Lcd);
 
-  snprintf(UiInstance.HwVers,HWVERS_SIZE,"compat");
+  snprintf(UiInstance.HwVers,HWVERS_SIZE,"ev3dev");
   UiInstance.Hw = 0;
 
   if (SPECIALVERS < '0')

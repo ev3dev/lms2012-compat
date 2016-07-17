@@ -293,7 +293,7 @@ typedef   struct
 TXTBOX;
 
 
-#define   HWVERS_SIZE       6
+#define   HWVERS_SIZE       7
 #define   FWVERS_SIZE       7
 #define   FWBUILD_SIZE      11
 #define   OSVERS_SIZE       17

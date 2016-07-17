@@ -134,7 +134,7 @@ DontShowVersion:                                                      //    }
   UI_DRAW(SELECT_FONT,SMALL_FONT)                                     //    UI_DRAW(SELECT_FONT,SMALL_FONT)       
   UI_WRITE(TEXTBOX_APPEND,Textbox,SIZE,DEL_CRLF,'Brick HW:')          //    UI_WRITE(TEXTBOX_APPEND,Textbox,SIZE,DEL_CRLF,'Brick HW:')
   UI_DRAW(SELECT_FONT,NORMAL_FONT)                                    //    UI_DRAW(SELECT_FONT,NORMAL_FONT)
-  UI_READ(GET_HW_VERS,6,Text)                                         //    UI_READ(GET_HW_VERS,6,Text)
+  UI_READ(GET_HW_VERS,7,Text)                                         //    UI_READ(GET_HW_VERS,7,Text)
   UI_WRITE(TEXTBOX_APPEND,Textbox,SIZE,DEL_CRLF,Text)                 //    UI_WRITE(TEXTBOX_APPEND,Textbox,SIZE,DEL_CRLF,Text)
                                                                       //
   UI_DRAW(SELECT_FONT,SMALL_FONT)                                     //    UI_DRAW(SELECT_FONT,SMALL_FONT)       
