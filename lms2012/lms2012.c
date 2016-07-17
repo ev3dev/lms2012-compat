@@ -85,7 +85,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-#include <syslog.h>
 #include <math.h>
 
 #include <dirent.h>
@@ -2282,9 +2281,6 @@ RESULT    mSchedInit(int argc,char *argv[])
   pImgHead                =  (IMGHEAD*)UiImage;
   (*pImgHead).ImageSize   =  sizeof(UiImage);
 
-  openlog(PROJECT,LOG_NDELAY,LOG_USER);
-  syslog(LOG_INFO,"VM Started");
-
   if (argc >= 2)
   {
     snprintf((char*)VMInstance.FirstProgram,MAX_FILENAME_SIZE,"%s",argv[1]);
@@ -2547,8 +2543,6 @@ RESULT    mSchedExit(void)
   Result    |=  cUiExit();
   Result    |=  cInputExit();
   Result    |=  cOutputExit();
-
-  closelog();
 
   udev_unref(VMInstance.udev);
 
