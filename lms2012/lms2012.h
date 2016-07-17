@@ -125,16 +125,7 @@ char      *HwId = "03";
  *  \verbatim
  */
 
-#define   PROJECT                       "LMS2012"
-#define   VERS                          1.99
-
-//#define   RETAILVERS                                  //!< Retail version
-#define   EDUCATIONVERS                               //!< Education version
-//#define   DEVELOPERVERS                               //!< Developer version (telnet with password)
-//#define   TESTVERS                      '1'           //!< Minor version (not shown if less than ASCII zero)
-
-
-#ifdef RETAILVERS
+#ifdef RETAILVERS //!< LEGO Retail version
 
 #define   SPECIALVERS                   'H'
 #define   LEGO_BUNDLE_SEED_ID           "9RNK8ZF528"
@@ -142,7 +133,23 @@ char      *HwId = "03";
 
 #endif
 
-#ifdef EDUCATIONVERS
+#ifdef EDUCATIONVERS //!< LEGO Education version
+
+#define   SPECIALVERS                   'E'
+#define   LEGO_BUNDLE_SEED_ID           "9YZJD9MXPZ"
+#define   LEGO_BUNDLE_ID                "com.lego.education.ev3"
+
+#endif
+
+#ifdef DEVELOPERVERS //!< LEGO Developer version (telnet with password)
+
+#define   SPECIALVERS                   'D'
+#define   LEGO_BUNDLE_SEED_ID           "9RNK8ZF528"
+#define   LEGO_BUNDLE_ID                "com.lego.lms"
+
+#endif
+
+#ifdef XTENDEDVERS //!< Robomatter/NI version
 
 #define   SPECIALVERS                   'X'
 #define   LEGO_BUNDLE_SEED_ID           "9YZJD9MXPZ"
@@ -150,11 +157,11 @@ char      *HwId = "03";
 
 #endif
 
-#ifdef DEVELOPERVERS
+#ifdef COMPATVERS //!< ev3dev version
 
-#define   SPECIALVERS                   'D'
-#define   LEGO_BUNDLE_SEED_ID           "9RNK8ZF528"
-#define   LEGO_BUNDLE_ID                "com.lego.lms"
+#define   SPECIALVERS                   'C'
+#define   LEGO_BUNDLE_SEED_ID           "9YZJD9MXPZ"
+#define   LEGO_BUNDLE_ID                "com.lego.education.ev3"
 
 #endif
 

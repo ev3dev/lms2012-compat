@@ -1,10 +1,13 @@
-cmake_minimum_required (VERSION 2.8)
-project (lms2012-compat C)
+cmake_minimum_required (VERSION 3.0)
+project (lms2012-compat VERSION 1.99 LANGUAGES C)
 
 set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include (GNUInstallDirs)
 
 # compiler configuration options
+
+set (LMS2012_SPECIALVERS "COMPAT" CACHE string
+    "The 'flavor': 'RETAIL', 'EDUCATION', 'DEVELOPER', 'XTENDED' or 'COMPAT'")
 
 option (LMS2012_ENABLE_TERMINAL "Enable debug terminal")
 set (LMS2012_DEBUG_UART_PORT 0
@@ -70,6 +73,7 @@ option (LMS2012_ENABLE_VIRTUAL_BATT_TEMP "Enable guessing of battery temperature
 
 # translate options into defines
 
+add_definitions("-D${LMS2012_SPECIALVERS}VERS")
 if (LMS2012_ENABLE_TERMINAL)
     add_definitions ("-DTERMINAL_ENABLED=1")
 else ()
@@ -161,6 +165,7 @@ endforeach ()
 
 # global compiler options
 
+add_definitions("-DPROJECT=\"${PROJECT_NAME}\"" "-DVERS=${PROJECT_VERSION}")
 add_compile_options (-Wall -Werror)
 
 
