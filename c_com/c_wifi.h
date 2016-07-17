@@ -58,7 +58,7 @@
 #define WIFI_INIT_DELAY       10
 
 #define BROADCAST_IP_LOW  "255"   // "192.168.0.255"
-#define BROADCAST_PORT  	3015	  // UDP
+#define BROADCAST_PORT    3015    // UDP
 #define TCP_PORT 5555
 #define BEACON_TIME 5             // 5 sec's between BEACONs
 
@@ -66,67 +66,6 @@
 
 #define BLUETOOTH_SER_LENGTH  13  // No "white" space separators
 #define BRICK_HOSTNAME_LENGTH     (NAME_LENGTH + 1)
-
-// WiFiStates
-typedef enum {
-    WIFI_NOT_INITIATED,   // NOTHING INIT'ed
-    WIFI_INIT,            // Do the time consumption stuff
-    WIFI_INITIATED,       // Initiated and ready for AP:
-                          // We have the H/W stack up and running
-    READY_FOR_AP_SEARCH,  // Stack ready for further AP search
-    SEARCH_APS,           // As it says
-    SEARCH_PENDING,       // Time consumption search
-    AP_LIST_UPDATED,      // User have forced a new search
-    AP_CONNECTING,
-    WIFI_CONNECTED_TO_AP, // User has connected to an AP
-    UDP_NOT_INITIATED,    // Ready for starting Beacons
-    INIT_UDP_CONNECTION,  // Do the init via UDP
-    UDP_FIRST_TX,         // Temporary state after start Beacon TX
-    UDP_VISIBLE,          // We TX'es a lot of Beacon
-    UDP_CONNECTED,        // We have an active negotiation connection
-    TCP_NOT_CONNECTED,    // Waiting for the PC to connect via TCP
-    TCP_CONNECTED,        // We have a TCP connection established
-    CLOSED                // UDP/TCP closed
-} WIFI_STATE;
-
-// States the STACK goes through
-typedef enum {
-    NOT_INIT          = 0x00,
-    LOAD_SUPPLICANT   = 0x01,
-    WAIT_ON_INTERFACE = 0x02,
-    DONE              = 0x80
-} WIFI_INIT_STATE;
-
-enum                    // States the TCP connection can be in (READ)
-{
-  TCP_IDLE                = 0x00,
-  TCP_WAIT_ON_START       = 0x01,
-  TCP_WAIT_ON_LENGTH      = 0x02,
-  TCP_WAIT_ON_FIRST_CHUNK = 0x04,
-  TCP_WAIT_ON_ONLY_CHUNK  = 0x08,
-  TCP_WAIT_COLLECT_BYTES  = 0x10
-};
-
-typedef enum
-{
-    NO_TX,
-    TX_BEACON
-}
-BEACON_MODE;
-
-typedef enum
-{
-	HW_NOT_KNOWN,
-	HW_KNOWN
-}
-KNOWN_HW;
-
-typedef enum
-{
-  TCP_DOWN,
-  TCP_UP
-}
-TCP_STATES;
 
 // WiFi AP flags "capabilities" and state
 typedef enum {
@@ -169,11 +108,9 @@ RESULT cWiFiGetOnStatus(void);
 // Common Control
 // --------------
 RESULT    cWiFiGetStatus(void);
-void      cWiFiControl(void);
 RESULT    cWiFiTurnOn(void);        // TURN ON
 RESULT    cWiFiTurnOff(void);       // TURN OFF
 RESULT    cWiFiExit(void);
 RESULT    cWiFiInit(void);
 
 #endif /* C_WIFI_H_ */
-

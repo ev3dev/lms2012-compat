@@ -49,48 +49,35 @@
 #endif
 
 typedef struct {
-    char mac_address[MAC_ADDRESS_LENGTH];     // as it tells
-    char frequency[FREQUENCY_LENGTH];         // additional info - not used
-    char signal_level[SIGNAL_LEVEL_LENGTH];   // -
-    char security[SECURITY_LENGTH];           // Only WPA2 or NONE
-    char friendly_name[FRIENDLY_NAME_LENGTH]; // The name, the user will see aka SSID
-    char key_management[KEY_MGMT_LENGTH];
-    char pre_shared_key[PSK_LENGTH];          // Preshared Key (Encryption)
-    char pairwise_ciphers[PAIRWISE_LENGTH];
-    char group_ciphers[GROUP_LENGTH];
-    char proto[PROTO_LENGTH];
-    WIFI_STATE_FLAGS ap_flags;                // Holds the capabilities etc. of the AP
-} aps;
+    ConnmanService *proxy;
+    GSocket *broadcast;
+    GSocketAddress *broadcast_address;
+    guint broadcast_source_id;
+    GSocketService *service;
+    GSocketConnection *connection;
+} ConnectionData;
+
+// States the TCP connection can be in (READ)
+typedef enum {
+    TCP_IDLE                = 0x00,
+    TCP_WAIT_ON_START       = 0x01,
+    TCP_WAIT_ON_LENGTH      = 0x02,
+    TCP_WAIT_ON_FIRST_CHUNK = 0x04,
+    TCP_WAIT_ON_ONLY_CHUNK  = 0x08,
+    TCP_WAIT_COLLECT_BYTES  = 0x10
+} TCP_READ_STATE;
 
 static char BtSerialNo[13];              // Storage for the BlueTooth Serial Number
 static char BrickName[NAME_LENGTH + 1];  // BrickName for discovery and/or friendly info
-static char MyBroadCastAdr[16];          // Broadcast address (the MASK included)
 
-static struct timeval TimerStartVal, TimerCurrentVal;
-
-static unsigned int TimeOut = 0;
-
-static char Buffer[1024];
-
-static uint TcpReadBufPointer = 0;
-
-static WIFI_STATE WiFiConnectionState = WIFI_NOT_INITIATED;
-static WIFI_INIT_STATE InitState = NOT_INIT;
-// UDP
-static int UdpSocketDescriptor = 0;
-static int UdpTxCount;
-static struct sockaddr_in ServerAddr;
-static int BroadCast = 1;
-static BEACON_MODE BeaconTx = NO_TX;
-static TCP_STATES TcpState = TCP_DOWN;
 static RESULT WiFiStatus = OK;
-static int TcpConnectionSocket = 0;
-static struct sockaddr_in servaddr;
-static int TCPListenServer = 0;
+
 static UWORD TcpTotalLength = 0;
 static UWORD TcpRestLen = 0;
-static UBYTE TcpReadState = TCP_IDLE;
+static TCP_READ_STATE TcpReadState = TCP_IDLE;
+static uint TcpReadBufPointer = 0;
 
+static ConnectionData *connection_data = NULL;
 static ConnmanManager *connman_manager = NULL;
 static ConnmanTechnology *ethernet_technology = NULL;
 static ConnmanTechnology *wifi_technology = NULL;
@@ -98,21 +85,6 @@ static GList *service_list = NULL;
 static DATA16 service_list_state = 1;
 
 // ******************************************************************************
-
-// Start the Timer
-static void cWiFiStartTimer(void)
-{
-    gettimeofday(&TimerStartVal, NULL);
-}
-
-// Get Elapsed time in seconds
-static int cWiFiCheckTimer(void)
-{
-    // Get actual time and calculate elapsed time
-    gettimeofday(&TimerCurrentVal, NULL);
-
-    return (int)(TimerCurrentVal.tv_sec - TimerStartVal.tv_sec);
-}
 
 /**
  * @brief           Attempt to move a service up in the service list.
@@ -365,10 +337,8 @@ RESULT cWiFiConnectToAp(int Index)
     if (connman_service_call_connect_sync(proxy, NULL, &error)) {
         Result = OK;
         pr_dbg("cWiFiMakeConnectionToAp(Index = %d) == OK)\n", Index);
-        WiFiConnectionState = UDP_NOT_INITIATED;
         WiFiStatus = OK;
     } else {
-        WiFiConnectionState = READY_FOR_AP_SEARCH;
         WiFiStatus = FAIL;
         g_printerr("Connect failed: %s\n", error->message);
         g_error_free(error);
@@ -469,149 +439,112 @@ RESULT cWiFiGetStatus(void)
     return WiFiStatus;
 }
 
-static void cWiFiUdpClientClose(void)
+/**
+ * @brief               Read the serial number from file
+ */
+static void cWiFiSetBtSerialNo(void)
 {
-    WiFiStatus = FAIL;                          // Async announcement of FAIL
-    WiFiConnectionState = WIFI_INITIATED;
-    BeaconTx = NO_TX;                           // Disable Beacon
-    if (close(UdpSocketDescriptor) == 0) {
-        WiFiStatus = OK;                          // Socket kill
+    FILE *File;
+
+    // Get the file-based BT SerialNo
+    File = fopen("./settings/BTser", "r");
+    if (File) {
+        fgets(BtSerialNo, BLUETOOTH_SER_LENGTH, File);
+        fclose(File);
     }
 }
 
-static RESULT cWiFiTcpClose(void)
+/**
+ * @brief               Read the brick name from file
+ */
+static void cWiFiSetBrickName(void)
 {
-    int res;
-    UBYTE buffer[128];
-    RESULT Result = OK;
-    struct linger so_linger;
+    FILE *File;
 
-    WiFiStatus = BUSY;
+    // Get the file-based BrickName
+    File = fopen("./settings/BrickName", "r");
+    if (File) {
+        fgets(BrickName, BRICK_HOSTNAME_LENGTH, File);
+        fclose(File);
+    }
+}
 
-    so_linger.l_onoff = TRUE;
-    so_linger.l_linger = 0;
-    setsockopt(TcpConnectionSocket, SOL_SOCKET, SO_LINGER, &so_linger,
-               sizeof so_linger);
+/**
+ * @brief               Broadcast advertisement that we are here.
+ *
+ * This sends a UDP broadcast message to let other programs know that this is
+ * an "EV3" and we are listening for connections.
+ *
+ * @param user_data     A ConnectionData struct.
+ * @return              G_SOURCE_CONTINUE if the broadcast was successful,
+ *                      otherwise G_SOURCE_REMOVE.
+ */
+static gboolean broadcast_udp(gpointer user_data)
+{
+    ConnectionData *data = user_data;
+    GError *error = NULL;
+    gchar message[128];
 
-    if (shutdown(TcpConnectionSocket, 2) < 0) {
-        do {
-            pr_dbg("In the do_while\n");
-            res = read(TcpConnectionSocket, buffer, 100);
-            if (res < 0 ) {
-                break;
-            }
-        } while (res != 0);
+    cWiFiSetBtSerialNo(); // Be sure to have updated data :-)
+    cWiFiSetBrickName();  // -
+    g_snprintf(message, 128,
+               "Serial-Number: %s\r\nPort: %d\r\nName: %s\r\nProtocol: EV3\r\n",
+               BtSerialNo, TCP_PORT, BrickName);
 
-        pr_dbg("\nError calling Tcp shutdown()\n");
+    if (g_socket_send_to(data->broadcast, G_SOCKET_ADDRESS(data->broadcast_address),
+                         message, strlen(message), NULL, &error) < 0)
+    {
+        g_printerr("Failed to send UDP broadcast: %s\n", error->message);
+        g_error_free(error);
+
+        return G_SOURCE_REMOVE;
     }
 
-    TcpConnectionSocket = 0;
-    WiFiStatus = OK;  // We are at a known state :-)
-    WiFiConnectionState = UDP_VISIBLE;
-
-    return Result;
+    return G_SOURCE_CONTINUE;
 }
 
-static RESULT cWiFiInitTcpServer()
+/**
+ * @brief               Start broadcasting the UDP beacon.
+ *
+ * @param data          The connection data.
+ */
+static void cWiFiStartBroadcast(ConnectionData *data)
 {
-  RESULT Result = OK;
-  int Temp, SetOn;
-
-  WiFiStatus = FAIL;
-  /*  Create a listening socket IPv4, TCP and only single protocol */
-  pr_dbg("Start of cWiFiInitTcpServer()...TCPListenServer = %d \n", TCPListenServer);
-
-  if ( TCPListenServer == 0)   // close(TCPListenServer);
-  {
-    pr_dbg("TCPListenServer == 0 in cWiFiInitTcpServer()...\n");
-
-	  if ( (TCPListenServer  = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
-	  {
-		  pr_dbg("\nError creating listening socket in cWiFiInitTcpServer()...\n");
-
-	    return Result;  // Bail out with a SOFT error in WiFiStatus
+    if (data->broadcast_source_id == 0) {
+        data->broadcast_source_id = g_timeout_add_seconds(BEACON_TIME,
+                                                          broadcast_udp, data);
     }
-
-	  /*  Reset the socket address structure    *
-	   * and fill in the relevant data members  */
-
-	  memset(&servaddr, 0, sizeof(servaddr));
-	  servaddr.sin_family      = AF_INET;           // IPv4
-	  servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // Any address
-	  servaddr.sin_port        = htons(TCP_PORT);   // The TCP port no. E.g. 5555
-
-	  Temp = fcntl(TCPListenServer, F_GETFL, 0);
-
-	  fcntl(TCPListenServer, F_SETFL, Temp | O_NONBLOCK); // Make the socket NON_BLOCKING
-
-	  /*  Allow reuse of the socket ADDRESS            *
-	   *   and PORT. Client disconnecting/reconnecting */
-
-	  SetOn = 1;  // Set On to ON ;-)
-	  Temp = setsockopt( TCPListenServer, SOL_SOCKET, SO_REUSEADDR, &SetOn, sizeof(SetOn));
-
-	  /*  Bind the socket address to the      *
-	   *   listening socket, and call listen() */
-
-	  if ( bind(TCPListenServer, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0 )
-	  {
-         pr_dbg("\nError calling bind()\n");
-         pr_dbg("errno = %d\n", errno);
-
-		return Result;  // Bail out with a SOFT error in WiFiStatus
-	  }
-  } // End of the "DO A SINGLE TIME"
-
-	  if ( listen(TCPListenServer, 1) < 0 )
-	  {
-		  pr_dbg("\nError calling listen()\n");
-
-		return Result;  // Bail out with a SOFT error in WiFiStatus
-	  }
-
-	  // Else show debug text below.....
-	  	pr_dbg("\nWAITING for a CLIENT.......\n");
-
-  WiFiStatus = OK;
-  return OK;  // Create socket, bind and listen succeeded
-              // Or reuse
 }
 
-static RESULT cWiFiWaitForTcpConnection(void)
+/**
+ * @brief               Stop broadcasting the UDP beacon.
+ *
+ * @param data          The connection data.
+ */
+static void cWiFiStopBroadcast(ConnectionData *data)
 {
-  uint size = sizeof(servaddr);
-  RESULT Result = BUSY;
-
-  WiFiStatus = OK;  // We're waiting in a "positive" way ;-)
-
-  usleep(1000);	    // Just to be sure some cycles ... :-)
-
-  if((TcpConnectionSocket = accept(TCPListenServer, (struct sockaddr *)&servaddr, &size) ) < 0)
-  {
-      pr_dbg("\nError calling accept() - returns: %d\r", TcpConnectionSocket);
-  }
-  else
-  {
-    Result = OK;
-    WiFiStatus = OK;
-    TcpReadState = TCP_WAIT_ON_START;
-
-
-    pr_dbg("\nConnected.... :-) %s : %d\n", inet_ntoa(servaddr.sin_addr), ntohs(servaddr.sin_port));
-  }
-  pr_dbg("\nNow we're waiting for input TCP ...\n");
-
-  return Result;
+    if (data->broadcast_source_id != 0) {
+        g_source_remove(data->broadcast_source_id);
+        data->broadcast_source_id = 0;
+    }
 }
 
+/**
+ * @brief               Write data to a TCP socket.
+ *
+ * This is a non-blocking operation, so bytes may not be written if the socket
+ * is busy. Also returns 0 if there is no active connection.
+ *
+ * @param Buffer        The data to write.
+ * @param Length        The number of bytes to write.
+ * @return              The number of bytes actually written.
+ */
 UWORD cWiFiWriteTcp(UBYTE* Buffer, UWORD Length)
 {
-    uint DataWritten = 0;                 // Nothing written (BUSY)
-    struct timeval WriteTimeVal;          // Always called from COM, so FAIL == also 0
-    fd_set  WriteFdSet;
+    gssize DataWritten = 0;                 // Nothing written (BUSY)
 
     if (Length > 0) {
-#ifdef DEBUG_WIFI
+#if 0 // this makes lots of noise
         printf("\ncWiFiWriteTcp Length: %d\n", Length);
         // Code below used for "hunting" packets of correct length
         // but with length bytes set to "0000" and payload all zeroed
@@ -625,22 +558,18 @@ UWORD cWiFiWriteTcp(UBYTE* Buffer, UWORD Length)
         }
 #endif
 
-        if (WiFiConnectionState == TCP_CONNECTED) {
-            WriteTimeVal.tv_sec = 0;  // NON blocking test use
-            WriteTimeVal.tv_usec = 0; // I.e. NO timeout
-            FD_ZERO(&WriteFdSet);
-            FD_SET(TcpConnectionSocket, &WriteFdSet);
+        if (connection_data && connection_data->connection) {
+            GIOStream *connection = G_IO_STREAM(connection_data->connection);
+            GOutputStream *out = g_io_stream_get_output_stream(connection);
+            GError *error = NULL;
 
-            select(TcpConnectionSocket + 1, NULL, &WriteFdSet, NULL, &WriteTimeVal);
-            if (FD_ISSET(TcpConnectionSocket, &WriteFdSet)) {
-                // We can Write
-                DataWritten = write(TcpConnectionSocket, Buffer, Length);
-#ifdef DEBUG_WIFI
-                if (DataWritten != Length) {
-                    // DataWritten = Data sent, zero = socket busy or -1 = FAIL
-                    printf("\nDataWritten = %d, Length = %d\n", DataWritten, Length);
+            DataWritten = g_output_stream_write(out, Buffer, Length, NULL, &error);
+            if (DataWritten == -1) {
+                if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK)) {
+                    g_printerr("Failed to write data: %s\n", error->message);
                 }
-#endif
+                g_error_free(error);
+                DataWritten = 0;
             }
         }
     }
@@ -648,43 +577,126 @@ UWORD cWiFiWriteTcp(UBYTE* Buffer, UWORD Length)
     return DataWritten;
 }
 
-static RESULT cWiFiResetTcp(void)
+/**
+ * @brief           Close the active TCP connection
+ *
+ * @param data      The connection data.
+ * @return          OK if closing succeeded, otherwise FAIL.
+ */
+static RESULT cWiFiTcpClose(ConnectionData *data)
 {
+    GIOStream *connection = G_IO_STREAM(data->connection);
+    GError *error = NULL;
     RESULT Result = FAIL;
-    pr_dbg("\nRESET - client disconnected!\n");
 
-    Result = cWiFiTcpClose();
+    data->connection = NULL;
+    if (g_io_stream_close(connection, NULL, &error)) {
+        Result = OK;
+    } else {
+        g_printerr("Failed to close connection: %s\n", error->message);
+        g_error_free(error);
+    }
+    g_object_unref(connection);
 
     return Result;
 }
 
+/**
+ * @brief           Reset the TCP connection state.
+ *
+ * @param data      The connection data.
+ * @return          OK on success, otherwise FAIL.
+ */
+static RESULT cWiFiResetTcp(void)
+{
+    RESULT Result;
+
+    pr_dbg("\nRESET - client disconnected!\n");
+
+    TcpReadState = TCP_IDLE;
+    Result = cWiFiTcpClose(connection_data);
+    cWiFiStartBroadcast(connection_data);
+
+    return Result;
+}
+
+/**
+ * @brief           Reads data from the active TCP connection.
+ *
+ * This is a non-blocking operation, so it will return 0 if there is no data
+ * to read. It also returns 0 if there is not an active connection.
+ *
+ * @param Buffer    A pre-allocated buffer to store the read data.
+ * @param Length    The length of the buffer (number of bytes to read).
+ * @return          The number of bytes actually read.
+ */
 UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
 {
-    int DataRead = 0; // Nothing read also sent if NOT initiated
-                      // COM always polls!!
-    struct timeval ReadTimeVal;
-    fd_set  ReadFdSet;
+    gssize DataRead = 0;
 
-    if (WiFiConnectionState == TCP_CONNECTED) {
-        ReadTimeVal.tv_sec = 0;  // NON blocking test use
-        ReadTimeVal.tv_usec = 0; // I.e. NO timeout
-        FD_ZERO(&ReadFdSet);
-        FD_SET(TcpConnectionSocket, &ReadFdSet);
+    if (connection_data && connection_data->connection) {
+        GIOStream *connection = G_IO_STREAM(connection_data->connection);
+        GInputStream *in = g_io_stream_get_input_stream(connection);
+        GError *error = NULL;
+        gsize read_length;
 
-        select(TcpConnectionSocket + 1, &ReadFdSet, NULL, NULL, &ReadTimeVal);
-        if (FD_ISSET(TcpConnectionSocket, &ReadFdSet)) {
-            pr_dbg("\nTcpReadState = %d\n", TcpReadState);
+        // setup for read
+
+        switch (TcpReadState) {
+        case TCP_IDLE:
+            // Do Nothing
+            return 0;
+        case TCP_WAIT_ON_START:
+            TcpReadBufPointer = 0;
+            read_length = 100; // Fixed TEXT
+            break;
+        case TCP_WAIT_ON_LENGTH:
+            // We can should read the length of the message
+            // The packets can be split from the client
+            // I.e. Length bytes (2) can be send as a subset
+            // the Sequence can also arrive as a single pair of bytes
+            // and the finally the payload will be received
+
+            // Begin on new buffer :-)
+            TcpReadBufPointer = 0;
+            read_length = 2;
+            break;
+        case TCP_WAIT_ON_ONLY_CHUNK:
+            read_length = TcpRestLen;
+            break;
+        case TCP_WAIT_ON_FIRST_CHUNK:
+            read_length = Length - 2;
+            break;
+        case TCP_WAIT_COLLECT_BYTES:
+            TcpReadBufPointer = 0;
+            if (TcpRestLen < Length) {
+                read_length = TcpRestLen;
+            }
+            break;
+        default:
+            // Should never go here...
+            TcpReadState = TCP_IDLE;
+            return 0;
+        }
+
+        // do the actual read
+
+        DataRead = g_input_stream_read(in, Buffer + TcpReadBufPointer,
+                                       read_length, NULL, &error);
+        if (DataRead == -1) {
+            if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK)) {
+                g_printerr("Failed to read data: %s\n", error->message);
+            }
+            g_error_free(error);
+            DataRead = 0;
+        } else {
+            // handle the read data
 
             switch (TcpReadState) {
             case TCP_IDLE:
-                // Do Nothing
                 break;
-
             case TCP_WAIT_ON_START:
                 pr_dbg("TCP_WAIT_ON_START:\n");
-
-                DataRead = read(TcpConnectionSocket, Buffer, 100); // Fixed TEXT
-
 #ifdef DEBUG_WIFI
                 printf("\nDataRead = %d, Buffer = \n", DataRead);
                 if (DataRead > 0) {
@@ -720,17 +732,8 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                 break;
 
             case TCP_WAIT_ON_LENGTH:
-                // We can should read the length of the message
-                // The packets can be split from the client
-                // I.e. Length bytes (2) can be send as a subset
-                // the Sequence can also arrive as a single pair of bytes
-                // and the finally the payload will be received
-
-                // Begin on new buffer :-)
-                TcpReadBufPointer = 0;
                 pr_dbg("TCP_WAIT_ON_LENGTH:\n");
-                DataRead = read(TcpConnectionSocket, Buffer, 2);
-                if(DataRead == 0) {
+                if (DataRead == 0) {
                     // We've a disconnect
                     cWiFiResetTcp();
                     break;
@@ -738,7 +741,7 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
 
                 TcpRestLen = (UWORD)(Buffer[0] + Buffer[1] * 256);
                 TcpTotalLength = (UWORD)(TcpRestLen + 2);
-                if(TcpTotalLength > Length) {
+                if (TcpTotalLength > Length) {
                     TcpReadState = TCP_WAIT_ON_FIRST_CHUNK;
                 } else {
                     TcpReadState = TCP_WAIT_ON_ONLY_CHUNK;
@@ -756,10 +759,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
             case TCP_WAIT_ON_ONLY_CHUNK:
                 pr_dbg("TCP_WAIT_ON_ONLY_CHUNK: BufferStart = %d\n",
                        TcpReadBufPointer);
-
-                DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]),
-                                TcpRestLen);
-
                 pr_dbg("DataRead = %d\n",DataRead);
                 pr_dbg("BufferPointer = %p\n", &(Buffer[TcpReadBufPointer]));
 
@@ -778,8 +777,7 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                     TcpRestLen -= DataRead; // Still some bytes in this only chunk
                     DataRead = 0;           // No COMM job yet
                 }
-
-#ifdef DEBUG_WIFI
+#if 0 // this makes lots of noise
                 int i;
 
                 for (i = 0; i < TcpTotalLength; i++) {
@@ -794,8 +792,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
             case TCP_WAIT_ON_FIRST_CHUNK:
                 pr_dbg("TCP_WAIT_ON_FIRST_CHUNK:\n");
 
-                DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]),
-                                (Length - 2));
                 if(DataRead == 0) {
                     // We've a disconnect
                     cWiFiResetTcp();
@@ -813,15 +809,6 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
 
             case TCP_WAIT_COLLECT_BYTES:
                 pr_dbg("TCP_WAIT_COLLECT_BYTES:\n");
-
-                TcpReadBufPointer = 0;
-                if(TcpRestLen < Length) {
-                    DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]),
-                                    TcpRestLen);
-                } else {
-                    DataRead = read(TcpConnectionSocket, &(Buffer[TcpReadBufPointer]),
-                                    Length);
-                }
                 pr_dbg("DataRead = %d\n", DataRead);
 
                 if(DataRead == 0) {
@@ -838,332 +825,11 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
                        " 2 = %d, Length = %d\n", TcpRestLen, DataRead, Length);
 
                 break;
-
-            default:
-                // Should never go here....
-                TcpReadState = TCP_IDLE;
-                break;
             }
         }
     }
 
     return DataRead;
-}
-
-static void cWiFiSetBtSerialNo(void)
-{
-    FILE *File;
-
-    // Get the file-based BT SerialNo
-    File = fopen("./settings/BTser", "r");
-    if (File) {
-        fgets(BtSerialNo, BLUETOOTH_SER_LENGTH, File);
-        fclose(File);
-    }
-}
-
-static void cWiFiSetBrickName(void)
-{
-    FILE *File;
-
-    // Get the file-based BrickName
-    File = fopen("./settings/BrickName", "r");
-    if (File) {
-        fgets(BrickName, BRICK_HOSTNAME_LENGTH, File);
-        fclose(File);
-    }
-}
-
-static RESULT cWiFiTransmitBeacon(void)
-{
-    RESULT Result = FAIL;
-
-    ServerAddr.sin_port = htons(BROADCAST_PORT);
-    ServerAddr.sin_addr.s_addr = inet_addr(MyBroadCastAdr);
-    pr_dbg("\nUDP BROADCAST to port %d, address %s\n", ntohs(ServerAddr.sin_port),
-           inet_ntoa(ServerAddr.sin_addr));
-
-    cWiFiSetBtSerialNo(); // Be sure to have updated data :-)
-    cWiFiSetBrickName();  // -
-    sprintf(Buffer,"Serial-Number: %s\r\nPort: %d\r\nName: %s\r\nProtocol: EV3\r\n",
-            BtSerialNo, TCP_PORT, BrickName);
-
-    UdpTxCount =  sendto(UdpSocketDescriptor, Buffer, strlen(Buffer), 0,
-                         (struct sockaddr *)&ServerAddr, sizeof(ServerAddr));
-    if(UdpTxCount < 0) {
-        pr_dbg("\nUDP SendTo ERROR : %d\n", UdpTxCount);
-
-        cWiFiUdpClientClose();  // Kill the auto-beacon stuff
-    } else {
-        pr_dbg("\nUDP Client - SendTo() is OK! UdpTxCount = %d\n", UdpTxCount);
-        pr_dbg("\nWaiting on a reply from UDP server...zzz - Send UNICAST only to me :-)\n");
-
-        Result = OK;
-    }
-
-    return Result;
-}
-
-static RESULT cWiFiInitUdpConnection(void)
-{
-    RESULT Result = FAIL;
-    int Temp;
-
-    WiFiConnectionState = INIT_UDP_CONNECTION;
-
-    /* Get a socket descriptor for UDP client (Beacon) */
-    if ((UdpSocketDescriptor = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        pr_dbg("\nUDP Client - socket() error\n");
-    } else {
-        pr_dbg("\nUDP Client - socket() is OK!\n");
-        pr_dbg("\nBroadCast Adr from Ifconfig = %s\n", MyBroadCastAdr);
-        ServerAddr.sin_family = AF_INET;
-        ServerAddr.sin_port = htons(BROADCAST_PORT);
-        ServerAddr.sin_addr.s_addr = inet_addr(MyBroadCastAdr);
-        if (ServerAddr.sin_addr.s_addr == (unsigned long)INADDR_NONE) {
-            pr_dbg("\nHOST addr == INADDR_NONE :-( \n");
-        } else {
-            if (setsockopt(UdpSocketDescriptor, SOL_SOCKET, SO_BROADCAST,
-                           &BroadCast, sizeof(BroadCast)) < 0)
-            {
-                pr_dbg("\nCould not setsockopt SO_BROADCAST\n");
-            } else {
-                Temp = fcntl(UdpSocketDescriptor, F_GETFL, 0);
-                // Make the socket NON_BLOCKING
-                fcntl(UdpSocketDescriptor, F_SETFL, Temp | O_NONBLOCK);
-                pr_dbg("\nSet SOCKET NON-BLOCKING :-)...\n");
-
-                Result = OK;
-            }
-        }
-        pr_dbg("\nINIT UDP ServerAddr.sin_port = %d, ServerAddr.sin_addr.s_addr = %s\n",
-               ntohs(ServerAddr.sin_port), inet_ntoa(ServerAddr.sin_addr));
-    }
-
-    return Result;
-}
-
-void cWiFiControl(void)
-{
-    // struct stat st;
-    // char Command[128];
-
-    // Do we have to TX the beacons?
-    if (BeaconTx == TX_BEACON) {
-        // If is it time for it?
-        if (cWiFiCheckTimer() >= BEACON_TIME) {
-            // Did we manage to TX one?
-            if (cWiFiTransmitBeacon() != OK) {
-                // Error handling - TODO: Should be user friendly
-            } else {
-                pr_dbg("\nOK beacon TX\n");
-                // Reset for another timing (Beacon)
-                cWiFiStartTimer();
-            }
-        }
-    }
-
-    switch (WiFiConnectionState) {
-    case WIFI_NOT_INITIATED:
-        // NOTHING INIT'ed
-        // Idle
-        break;
-
-    case WIFI_INIT:
-        // Do the time consumption stuff
-        switch (InitState) {
-        case NOT_INIT:
-            // Start the Wpa_Supplicant in BackGround using
-            // a very "thin" .conf file
-            cWiFiStartTimer();
-            pr_dbg("\nWIFI_INIT, NOT_INIT before system... %d\n", WiFiStatus);
-            // cWiFiStartWpaSupplicant("/etc/wpa_supplicant.conf", LogicalIfName);
-            //system("./wpa_supplicant -Dwext -iwlan<X> -c/etc/wpa_supplicant.conf -B");
-            InitState = LOAD_SUPPLICANT;
-            break;
-
-        case LOAD_SUPPLICANT:
-            TimeOut = cWiFiCheckTimer();
-            if (TimeOut < WIFI_INIT_TIMEOUT) {
-                // strcpy(Command, "/var/run/wpa_supplicant/");
-                // strcat(Command, LogicalIfName);
-                // if (stat(Command, &st) == 0) {
-                    // pr_dbg("\nWIFI_INIT, LOAD_SUPPLICANT => STAT OK %d\n", WiFiStatus);
-                    // // Ensure (help) Interface to become ready
-                    // strcpy(Command, "ifconfig ");
-                    // strcat(Command, LogicalIfName);
-                    // strcat(Command, " down > /dev/null");
-
-                    // system(Command);
-
-                    // strcpy(Command, "ifconfig ");
-                    // strcat(Command, LogicalIfName);
-                    // strcat(Command, " up > /dev/null");
-
-                    // system(Command);
-
-                //     InitState = WAIT_ON_INTERFACE;
-                // }
-                //else keep waiting
-            } else {
-                pr_dbg("\nWIFI_INIT, LOAD_SUPPLICANT => Timed out\n");
-                WiFiStatus = FAIL;
-                // We're sleeping until user select ON
-                WiFiConnectionState = WIFI_NOT_INITIATED;
-                InitState = NOT_INIT;
-            }
-            break;
-
-        case WAIT_ON_INTERFACE:
-            // Wait for the Control stuff to be ready
-
-            // Get "handle" to Control Interface
-            // strcpy(Command, "/var/run/wpa_supplicant/");
-            // strcat(Command, LogicalIfName);
-
-            // if ((ctrl_conn = wpa_ctrl_open(Command)) > 0) {
-            //     if (cWiFiWpaPing() == 0) {
-            //         pr_dbg("\nWIFI_INIT, WAIT_ON_INTERFACE => Ping OK %d\n", WiFiStatus);
-            //         cWiFiPopulateKnownApList();
-            //         WiFiStatus = OK;
-            //         WiFiConnectionState = WIFI_INITIATED;
-            //         InitState = DONE;
-            //     } else {
-            //         pr_dbg("\nWIFI_INIT, WAIT_ON_INTERFACE => PING U/S\n");
-            //         WiFiStatus = FAIL;
-            //         cWiFiExit();
-            //     }
-            // }
-            break;
-        case DONE:
-            break;
-        }
-        break;
-
-    case WIFI_INITIATED:
-        // Temporary state - WiFi lower Stuff turned ON
-        pr_dbg("\nWIFI_INITIATED %d\n", WiFiStatus);
-        WiFiConnectionState = READY_FOR_AP_SEARCH;
-        pr_dbg("\nREADY for search -> %d\n", WiFiStatus);
-        break;
-
-    case READY_FOR_AP_SEARCH:
-        // We can select SEARCH i.e. Press Connections on the U.I.
-        // We have the H/W stack up and running
-        break;
-
-    case SEARCH_APS:
-        // Polite wait
-        pr_dbg("\nSEARCH_APS:\n");
-        break;
-
-    case SEARCH_PENDING:
-        // Wait some time for things to show up...
-        pr_dbg("cWiFiCheckTimer() = %d\r", cWiFiCheckTimer());
-        // Give some time for the stuff to show up
-        // Get Elapsed time in seconds
-        if (20 <= cWiFiCheckTimer()) {
-            // Getting the list and update the visible list
-            // cWiFiStoreActualApList();
-        }
-        pr_dbg("\nSEARCH_PENDING:\n");
-        break;
-
-    case AP_LIST_UPDATED:
-        // Relaxed state until connection wanted
-      break;
-
-    case AP_CONNECTING:
-        // First connecting to the selected AP
-        break;
-
-    case WIFI_CONNECTED_TO_AP:
-        // We have an active AP connection
-        // Then get a valid IP address via DHCP
-        break;
-
-    case UDP_NOT_INITIATED:
-        // We have an valid IP address
-        // Initiated, connected and ready for UDP
-        // I.e. ready for starting Beacons
-        pr_dbg("\nHer er UDP_NOT_INITIATED\n");
-
-        WiFiConnectionState = INIT_UDP_CONNECTION;
-        break;
-
-    case INIT_UDP_CONNECTION:
-        WiFiStatus = BUSY;                    // We're still waiting
-        memset(Buffer, 0x00, sizeof(Buffer)); // Reset TX buffer
-        pr_dbg("\nLige foer cWiFiInitUdpConnection()\n");
-
-        if (cWiFiInitUdpConnection() == OK) {
-            pr_dbg("\nUDP connection READY @ INIT_UDP_CONNECTION\n");
-            // Did we manage to TX one?
-            if (cWiFiTransmitBeacon() == OK) {
-                WiFiConnectionState = UDP_FIRST_TX;
-                BeaconTx = TX_BEACON;             // Enable Beacon
-                cWiFiStartTimer();                // Start timing (Beacon)
-                WiFiStatus = OK;
-            } else {
-                // TODO: Some ERROR handling where to go - should be user friendly
-            }
-        } else {
-            pr_dbg("\nUDP connection FAILed @ INIT_UDP_CONNECTION\n");
-            WiFiStatus = FAIL;
-            WiFiConnectionState = WIFI_NOT_INITIATED;
-        }
-        break;
-
-    case UDP_FIRST_TX:
-        // Allow some time before..
-        if (cWiFiCheckTimer() >= 2) {
-            WiFiConnectionState = UDP_VISIBLE;
-        }
-        break;
-
-    case UDP_VISIBLE:
-        // TX'ing beacon via UDP
-        // We're tx'ing beacons, but waiting for connection
-        // Are there any "dating" PC's?
-        // Non-blocking test
-
-        WiFiConnectionState = UDP_CONNECTED;
-
-        break;
-
-    case UDP_CONNECTED:
-        // We have an active negotiation connection
-        // Temp state between OK UDP negotiation
-        // and the "real" TCP communication
-
-        if (cWiFiInitTcpServer() == OK) {
-            pr_dbg("\nTCP init OK @ UDP_CONNECTED\n");
-            WiFiConnectionState = TCP_NOT_CONNECTED;
-        }
-        break;
-
-    case TCP_NOT_CONNECTED:
-        // Waiting for the PC to connect via TCP
-        // Non-blocking test
-        if (cWiFiWaitForTcpConnection() == OK) {
-            pr_dbg("\nTCP_CONNECTED @ TCP_NOT_CONNECTED\n");
-            TcpState = TCP_UP;
-            WiFiConnectionState = TCP_CONNECTED;
-            // We are connected so we can tell the world....
-            // And we're ready to TX/RX :-)
-            WiFiStatus = OK; // Not busy any longer
-        }
-        break;
-
-    case TCP_CONNECTED:
-        // We have a TCP connection established
-        pr_dbg("\nTCP_CONNECTED @ TCP_CONNECTED.... And then.....\n");
-        break;
-
-    case CLOSED:
-        // UDP/TCP closed
-        break;
-    }
 }
 
 /**
@@ -1252,15 +918,9 @@ static void on_wifi_powered_changed(void)
 
     if (powered) {
         // cWiFiGetLogicalName();
-
-        WiFiConnectionState = WIFI_INIT;
-
         WiFiStatus = OK;
     } else {
-        BeaconTx = NO_TX;
-        cWiFiTcpClose();
-        WiFiConnectionState = WIFI_NOT_INITIATED;
-        InitState = NOT_INIT;
+        // cWiFiTcpClose();
     }
 }
 
@@ -1468,11 +1128,179 @@ static ConnmanService *cWiFiGetConnmanServiceProxy(const gchar *path)
     return proxy;
 }
 
+/**
+ * brief                Handle incoming TCP connection.
+ *
+ * @param service       The service object.
+ * @param connection    The connection object.
+ * @param source_object User-defined object or NULL
+ * @param user_data     User-defined data.
+ * @return              TRUE to stop other handlers, otherwise FALSE.
+ */
+static gboolean on_tcp_incoming(GSocketService *service,
+                                GSocketConnection *connection,
+                                GObject *source_object,
+                                gpointer user_data)
+{
+    ConnectionData *data = user_data;
+
+    pr_dbg("on_tcp_incoming\n");
+
+    if (data->connection) {
+        // we already have a connection, so ignore additional connections
+        return FALSE;
+    }
+
+    cWiFiStopBroadcast(data);
+    data->connection = g_object_ref(connection);
+    g_socket_set_blocking(g_socket_connection_get_socket(connection), FALSE);
+    TcpReadState = TCP_WAIT_ON_START;
+
+    return TRUE;
+}
+
+/**
+ * @brief               Start the connection service.
+ *
+ * This starts broadcasting UDP messages and listening for TCP connections.
+ * Communications are restricted to the proxy's subnet.
+ *
+ * @param proxy         The service to use for the connections.
+ */
+static void cWifiStartConnection(ConnmanService *proxy)
+{
+    ConnectionData *data;
+    GVariant *ipv4, *value;
+    GInetAddress *address;
+    GSocketAddress *socket_address;
+    GError *error = NULL;
+    guint8 bytes[4];
+
+    pr_dbg("cWifiStartConnection\n");
+
+    data = g_malloc0(sizeof(ConnectionData));
+    data->proxy = proxy;
+
+    // init the UDP broadcast socket
+
+    data->broadcast = g_socket_new(G_SOCKET_FAMILY_IPV4, G_SOCKET_TYPE_DATAGRAM,
+                                   G_SOCKET_PROTOCOL_UDP, &error);
+    if (!data->broadcast) {
+        g_printerr("Failed to create UDP socket:%s\n", error->message);
+        g_error_free(error);
+        goto err1;
+    }
+
+    // compute the UDP broadcast address
+
+    ipv4 = connman_service_get_ipv4(proxy);
+
+    value = g_variant_lookup_value(ipv4, "Address", NULL);
+    address = g_inet_address_new_from_string(g_variant_get_string(value, NULL));
+    g_variant_unref(value);
+    *(guint32*)bytes = *(guint32*)g_inet_address_to_bytes(address);
+    socket_address = g_inet_socket_address_new(address, TCP_PORT);
+    g_object_unref(address);
+
+    value = g_variant_lookup_value(ipv4, "Netmask", NULL);
+    address = g_inet_address_new_from_string(g_variant_get_string(value, NULL));
+    g_variant_unref(value);
+    *(guint32*)bytes |= ~(*(guint32*)g_inet_address_to_bytes(address));
+    g_object_unref(address);
+
+    // init the UDP broadcast address
+
+    address = g_inet_address_new_from_bytes(bytes, G_SOCKET_FAMILY_IPV4);
+    g_socket_set_broadcast(data->broadcast, TRUE);
+    data->broadcast_address = g_inet_socket_address_new(address, BROADCAST_PORT);
+    g_object_unref(address);
+
+    // init the TCP service
+
+    data->service = g_socket_service_new();
+    if (!g_socket_listener_add_address(G_SOCKET_LISTENER(data->service),
+                                       socket_address, G_SOCKET_TYPE_STREAM,
+                                       G_SOCKET_PROTOCOL_TCP, NULL,
+                                       NULL, &error))
+    {
+        g_object_unref(socket_address);
+        g_printerr("Failed to create TCP listener:%s\n", error->message);
+        g_error_free(error);
+        goto err2;
+    }
+    g_object_unref(socket_address);
+    g_signal_connect(data->service, "incoming", G_CALLBACK(on_tcp_incoming), data);
+
+    // start the service and the broadcast
+
+    connection_data = data;
+    g_socket_service_start(data->service);
+    cWiFiStartBroadcast(data);
+
+    return;
+
+err2:
+    g_object_unref(data->service);
+    g_object_unref(data->broadcast);
+err1:
+    g_free(data);
+}
+
+/**
+ * @brief               Stop the active connection.
+ *
+ * @param proxy         The service that owns the connection (currently ignored)
+ */
+static void cWiFiStopConnection(ConnmanService *proxy)
+{
+    ConnectionData *data = connection_data;
+
+    pr_dbg("cWifiStartConnection\n");
+
+    connection_data = NULL;
+
+    cWiFiStopBroadcast(data);
+    g_socket_service_stop(data->service);
+    if (data->connection) {
+        cWiFiTcpClose(data);
+    }
+    g_socket_listener_close(G_SOCKET_LISTENER(data->service));
+    g_object_unref(data->service);
+    g_object_unref(data->broadcast_address);
+    g_object_unref(data->broadcast);
+    g_free(data);
+}
+
+/**
+ * @brief               Handle changes in service state
+ *
+ * If a service is connected and there is not already an active TCP connection,
+ * this starts a new connection. If the service belonging to the active TCP
+ * connection is disconnected, the TCP connection is stopped.
+ *
+ * @param proxy         The service that changed state
+ */
 static void on_service_state_changed(ConnmanService *proxy)
 {
     const char *state = connman_service_get_state(proxy);
 
-    pr_dbg("%s: state changed: %s\n", connman_service_get_name(proxy), state);
+    pr_dbg("on_service_state_changed: %s: %s\n", connman_service_get_name(proxy),
+           state);
+
+    // These two states mean that we have a valid network connection
+    if (g_strcmp0(state, "ready") == 0 || g_strcmp0(state, "online") == 0) {
+        // It is possible for connman to have multiple active connections.
+        // Only the first connection to become ready/online gets used for
+        // communications.
+        if (!connection_data) {
+            cWifiStartConnection(proxy);
+            return;
+        }
+    } else if (connection_data && connection_data->proxy == proxy) {
+        // If this service was disconnected and it was being used for
+        // communication, then we need to stop it.
+        cWiFiStopConnection(proxy);
+    }
 }
 
 /**
@@ -1658,10 +1486,7 @@ RESULT cWiFiInit(void)
 
     pr_dbg("\ncWiFiInit START %d\n", WiFiStatus);
 
-    BeaconTx = NO_TX;
     // We're sleeping until user select ON
-    WiFiConnectionState = WIFI_NOT_INITIATED;
-    InitState = NOT_INIT;
     TcpReadState = TCP_IDLE;
     cWiFiSetBtSerialNo();
     cWiFiSetBrickName();

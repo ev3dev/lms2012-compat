@@ -2818,7 +2818,6 @@ void      cComUpdate(void)
 
   // TODO: Get Bluetooth working
   // BtUpdate();
-  cWiFiControl();
 }
 
 DATA8 cComGetUsbStatus(void)
