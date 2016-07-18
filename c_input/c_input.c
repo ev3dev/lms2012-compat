@@ -122,6 +122,7 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
+#define TESTDEVICE 3
 
 #ifdef  DEBUG_C_INPUT
 #define DEBUG

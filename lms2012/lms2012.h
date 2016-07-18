@@ -26,49 +26,10 @@
  *
  */
 
-//#define DEBUG_DYNLOAD
-
-
 #ifndef   LMS2012_H_
 #define   LMS2012_H_
 
 #include <libudev.h>
-
-//  HARDWARE PLATFORM
-
-#define   EP2                   4       //!< Schematics revision D
-#define   FINALB                3       //!< Schematics revision B and C
-#define   FINAL                 2       //!< Final prototype
-#define   SIMULATION            0       //!< LEGO digital simulation
-
-#define   PLATFORM_START        FINAL   //!< Oldest supported hardware (older versions will use this)
-#define   PLATFORM_END          EP2     //!< Newest supported hardware (newer versions will use this)
-
-#define   HARDWARE              FINAL   //!< Actual hardware platform (must be one of above)
-
-//  Support for module parameter "HwId"
-//
-//  Readout   File    int       PCB
-//
-//  V1.00     10      10        MP      (h = home, e = education)
-//  V0.50     05      5         EP3
-//  V0.40     04      4         EP2
-//  V0.30     03      3         EP1     (FINALB)  (DEFAULT if file "HwId" not found)
-//  V0.20     02      2         FINAL
-
-#ifdef HW_ID_SUPPORT
-
-char      *HwId = "03";
-
-#define   HWID          (((HwId[0] - '0') * 10) + (HwId[1] - '0'))
-
-#endif
-
-#define   TESTDEVICE    3
-
-#ifndef PCASM
-#include  <asm/types.h>
-#endif
 
 #include  "lmstypes.h"
 #include  "bytecodes.h"
