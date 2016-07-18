@@ -559,11 +559,10 @@ UWORD cWiFiWriteTcp(UBYTE* Buffer, UWORD Length)
 #endif
 
         if (connection_data && connection_data->connection) {
-            GIOStream *connection = G_IO_STREAM(connection_data->connection);
-            GOutputStream *out = g_io_stream_get_output_stream(connection);
+            GSocket *socket = g_socket_connection_get_socket(connection_data->connection);
             GError *error = NULL;
 
-            DataWritten = g_output_stream_write(out, Buffer, Length, NULL, &error);
+            DataWritten = g_socket_send(socket, (gchar *)Buffer, Length, NULL, &error);
             if (DataWritten == -1) {
                 if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK)) {
                     g_printerr("Failed to write data: %s\n", error->message);
@@ -635,8 +634,7 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
     gssize DataRead = 0;
 
     if (connection_data && connection_data->connection) {
-        GIOStream *connection = G_IO_STREAM(connection_data->connection);
-        GInputStream *in = g_io_stream_get_input_stream(connection);
+        GSocket *socket = g_socket_connection_get_socket(connection_data->connection);
         GError *error = NULL;
         gsize read_length;
 
@@ -681,8 +679,8 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
 
         // do the actual read
 
-        DataRead = g_input_stream_read(in, Buffer + TcpReadBufPointer,
-                                       read_length, NULL, &error);
+        DataRead = g_socket_receive(socket, (gchar *)Buffer + TcpReadBufPointer,
+                                    read_length, NULL, &error);
         if (DataRead == -1) {
             if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK)) {
                 g_printerr("Failed to read data: %s\n", error->message);
