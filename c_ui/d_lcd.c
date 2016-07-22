@@ -45,16 +45,11 @@
 static const unsigned char color0 = (RED_LEGO & 0xF8) | ((GREEN_LEGO & 0xE0) >> 5);
 static const unsigned char color1 = ((GREEN_LEGO & 0x1C) << 3) | ((BLUE_LEGO & 0xF8) >> 3);
 
-
 int dll = 60;
 int fll = 22 + 1;
 unsigned char vmem[7680];
 unsigned char *dbuf = vmem;
 unsigned char *fbp = NULL;
-
-
-
-
 
 UBYTE     PixelTab[] =
 {
@@ -99,12 +94,7 @@ void update_to_fb(void)
 			}
 		}
 	}
-
-
-	
 }
-
-
 
 void      dLcdExec(LCD *pDisp)
 {
@@ -113,7 +103,6 @@ void      dLcdExec(LCD *pDisp)
   ULONG   Pixels;
   UWORD   X;
   UWORD   Y;
-
 
   if (dbuf)
   {
@@ -183,7 +172,6 @@ void      dLcdExec(LCD *pDisp)
   }
 }
 
-
 #ifdef MAX_FRAMES_PER_SEC
 void      dLcdAutoUpdate(void)
 {
@@ -200,7 +188,6 @@ void      dLcdAutoUpdate(void)
 }
 #endif
 
-
 void      dLcdUpdate(LCD *pDisp)
 {
 #ifdef MAX_FRAMES_PER_SEC
@@ -211,7 +198,6 @@ void      dLcdUpdate(LCD *pDisp)
     dLcdExec(pDisp);
 #endif
 }
-
 
 void      dLcdInit(UBYTE *pImage)
 {
@@ -231,7 +217,6 @@ void      dLcdInit(UBYTE *pImage)
 
   fbp = (unsigned char *)mmap(0, 220 * 176 * 2, PROT_WRITE | PROT_READ, MAP_SHARED, UiInstance.DispFile, 0);
 //  if (fbp == MAP_FAILED) LogErrorNumber(LCD_DEVICE_FILE_NOT_FOUND);
-
 
 	for(y = 0; y <= 127 + 1; y++)
 	{
@@ -258,18 +243,12 @@ void      dLcdInit(UBYTE *pImage)
 		*(fbp + location++) = color0;
 		*(fbp + location) = color1;
 	}
-
-
-
-
 }
-
 
 UBYTE     dLcdRead(void)
 {
   return (0);
 }
-
 
 void      dLcdExit(void)
 {
@@ -279,49 +258,12 @@ void      dLcdExit(void)
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void      dLcdScroll(UBYTE *pImage,DATA16 Y0)
 {
 
   memmove(pImage,&pImage[((LCD_WIDTH + 7) / 8) * Y0],(LCD_HEIGHT - Y0) * ((LCD_WIDTH + 7) / 8));
   memset(&pImage[(LCD_HEIGHT - Y0) * ((LCD_WIDTH + 7) / 8)],0,((LCD_WIDTH + 7) / 8) * Y0);
 }
-
 
 void      dLcdDrawPixel(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0)
 {
@@ -338,7 +280,6 @@ void      dLcdDrawPixel(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0)
   }
 }
 
-
 void      dLcdInversePixel(UBYTE *pImage,DATA16 X0,DATA16 Y0)
 {
   if ((X0 >= 0) && (X0 < LCD_WIDTH) && (Y0 >= 0) && (Y0 < LCD_HEIGHT))
@@ -346,7 +287,6 @@ void      dLcdInversePixel(UBYTE *pImage,DATA16 X0,DATA16 Y0)
     pImage[(X0 >> 3) + Y0 * ((LCD_WIDTH + 7) >> 3)]  ^=  (1 << (X0 % 8));
   }
 }
-
 
 DATA8     dLcdReadPixel(UBYTE *pImage,DATA16 X0,DATA16 Y0)
 {
@@ -362,7 +302,6 @@ DATA8     dLcdReadPixel(UBYTE *pImage,DATA16 X0,DATA16 Y0)
 
   return (Result);
 }
-
 
 void      dLcdDrawLine(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1)
 {
@@ -414,7 +353,6 @@ void      dLcdDrawLine(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,D
     dLcdDrawPixel(pImage,Color,X0,Y0);
   }
 }
-
 
 void      dLcdDrawDotLine(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1,DATA16 On,DATA16 Off)
 {
@@ -507,7 +445,6 @@ void      dLcdDrawDotLine(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X
   }
 }
 
-
 void      dLcdPlotPoints(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1)
 {
   dLcdDrawPixel(pImage,Color,X0 + X1,Y0 + Y1);
@@ -519,7 +456,6 @@ void      dLcdPlotPoints(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1
   dLcdDrawPixel(pImage,Color,X0 + Y1,Y0 - X1);
   dLcdDrawPixel(pImage,Color,X0 - Y1,Y0 - X1);
 }
-
 
 void      dLcdDrawCircle(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 R)
 {
@@ -544,7 +480,6 @@ void      dLcdDrawCircle(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 R)
   dLcdPlotPoints(pImage,Color,X0,Y0,X,Y);
 }
 
-
 typedef   struct
 {
   const   char    *pFontBits;           // Pointer to start of font bitmap
@@ -556,12 +491,10 @@ typedef   struct
 }
 FONTINFO;
 
-
 #include  "normal_font.xbm"
 #include  "small_font.xbm"
 #include  "large_font.xbm"
 #include  "tiny_font.xbm"
-
 
 FONTINFO  FontInfo[] =
 {
@@ -600,18 +533,15 @@ FONTINFO  FontInfo[] =
 
 };
 
-
 DATA16    dLcdGetFontWidth(DATA8 Font)
 {
   return (FontInfo[Font].FontWidth);
 }
 
-
 DATA16    dLcdGetFontHeight(DATA8 Font)
 {
   return (FontInfo[Font].FontHeight);
 }
-
 
 void      dLcdDrawChar(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA8 Font,DATA8 Char)
 {
@@ -746,7 +676,6 @@ void      dLcdDrawChar(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA8 Font,
   }
 }
 
-
 void      dLcdDrawText(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA8 Font,DATA8 *pText)
 {
   while (*pText)
@@ -759,7 +688,6 @@ void      dLcdDrawText(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA8 Font,
     pText++;
   }
 }
-
 
 typedef   struct
 {
@@ -775,7 +703,6 @@ ICONINFO;
 #include  "large_icons.xbm"
 #include  "menu_icons.xbm"
 #include  "arrow_icons.xbm"
-
 
 ICONINFO  IconInfo[] =
 {
@@ -811,7 +738,6 @@ ICONINFO  IconInfo[] =
                   },
 };
 
-
 UBYTE    *dLcdGetIconBits(DATA8 Type)
 {
   UBYTE  *pResult;
@@ -821,24 +747,20 @@ UBYTE    *dLcdGetIconBits(DATA8 Type)
   return (pResult);
 }
 
-
 DATA16    dLcdGetIconWidth(DATA8 Type)
 {
   return (IconInfo[Type].IconWidth);
 }
-
 
 DATA16    dLcdGetIconHeight(DATA8 Type)
 {
   return (IconInfo[Type].IconHeight);
 }
 
-
 DATA16    dLcdGetNoOfIcons(DATA8 Type)
 {
   return (IconInfo[Type].IconSize / IconInfo[Type].IconHeight);
 }
-
 
 void      dLcdDrawPicture(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 IconWidth,DATA16 IconHeight,UBYTE *pIconBits)
 {
@@ -882,7 +804,6 @@ void      dLcdDrawPicture(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 I
   }
 }
 
-
 void      dLcdDrawIcon(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA8 Type,DATA8 No)
 {
   DATA16  IconByteIndex;
@@ -901,7 +822,6 @@ void      dLcdDrawIcon(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA8 Type,
   }
 }
 
-
 void      dLcdGetBitmapSize(IP pBitmap,DATA16 *pWidth,DATA16 *pHeight)
 {
   *pWidth     =  0;
@@ -914,7 +834,6 @@ void      dLcdGetBitmapSize(IP pBitmap,DATA16 *pWidth,DATA16 *pHeight)
     *pHeight    =  (DATA16)pBitmap[1];
   }
 }
-
 
 void      dLcdDrawBitmap(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,IP pBitmap)
 {
@@ -1053,7 +972,6 @@ void      dLcdDrawBitmap(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,IP pBitma
   }
 }
 
-
 void      dLcdRect(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1)
 {
   X1--;
@@ -1063,7 +981,6 @@ void      dLcdRect(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,DATA1
   dLcdDrawLine(pImage,Color,X0 + X1,Y0 + Y1,X0,Y0 + Y1);
   dLcdDrawLine(pImage,Color,X0,Y0 + Y1,X0,Y0);
 }
-
 
 void      dLcdFillRect(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1)
 {
@@ -1084,7 +1001,6 @@ void      dLcdFillRect(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,D
   }
 }
 
-
 void      dLcdInverseRect(UBYTE *pImage,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1)
 {
   DATA16  StartX;
@@ -1104,7 +1020,6 @@ void      dLcdInverseRect(UBYTE *pImage,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1)
   }
 }
 
-
 void      dLcdPlotLines(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1)
 {
   dLcdDrawLine(pImage,Color,X0 - X1,Y0 + Y1,X0 + X1,Y0 + Y1);
@@ -1112,7 +1027,6 @@ void      dLcdPlotLines(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,
   dLcdDrawLine(pImage,Color,X0 - Y1,Y0 + X1,X0 + Y1,Y0 + X1);
   dLcdDrawLine(pImage,Color,X0 - Y1,Y0 - X1,X0 + Y1,Y0 - X1);
 }
-
 
 void      dLcdDrawFilledCircle(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 R)
 {
@@ -1137,7 +1051,6 @@ void      dLcdDrawFilledCircle(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DAT
   dLcdPlotLines(pImage,Color,X0,Y0,X,Y);
 }
 
-
 DATA8     dLcdCheckPixel(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0)
 {
   DATA8   Result = 0;
@@ -1152,7 +1065,6 @@ DATA8     dLcdCheckPixel(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0)
 
   return (Result);
 }
-
 
 void      dLcdFlodfill(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0)
 {
@@ -1220,5 +1132,4 @@ void      dLcdFlodfill(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0)
     X  =  X0;
     Y++;
   }
-
 }
