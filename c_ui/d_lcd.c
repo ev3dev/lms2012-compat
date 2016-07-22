@@ -40,12 +40,10 @@
 #include <endian.h>
 #include <linux/fb.h>
 
-int dll = 60;
-int fll = 22 + 1;
-unsigned char vmem[7680];
-unsigned char *dbuf = vmem;
+static unsigned char vmem[7680];
+static unsigned char *dbuf = vmem;
 
-UBYTE     PixelTab[] =
+static const UBYTE const PixelTab[] =
 {
     0x00, // 000 00000000
     0xE0, // 001 11100000
@@ -57,7 +55,7 @@ UBYTE     PixelTab[] =
     0xFF  // 111 11111111
 };
 
-void update_to_fb(void)
+static void update_to_fb(void)
 {
 	unsigned long x, y, offset, mask;
 
@@ -82,7 +80,7 @@ void update_to_fb(void)
 	}
 }
 
-void      dLcdExec(LCD *pDisp)
+static void dLcdExec(LCD *pDisp)
 {
   UBYTE   *pSrc;
   UBYTE   *pDst;
@@ -239,7 +237,7 @@ void      dLcdInversePixel(UBYTE *pImage,DATA16 X0,DATA16 Y0)
   }
 }
 
-DATA8     dLcdReadPixel(UBYTE *pImage,DATA16 X0,DATA16 Y0)
+static DATA8 dLcdReadPixel(UBYTE *pImage, DATA16 X0, DATA16 Y0)
 {
   DATA8   Result = 0;
 
@@ -396,7 +394,8 @@ void      dLcdDrawDotLine(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X
   }
 }
 
-void      dLcdPlotPoints(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1)
+static void dLcdPlotPoints(UBYTE *pImage, DATA8 Color, DATA16 X0, DATA16 Y0,
+                           DATA16 X1, DATA16 Y1)
 {
   dLcdDrawPixel(pImage,Color,X0 + X1,Y0 + Y1);
   dLcdDrawPixel(pImage,Color,X0 - X1,Y0 + Y1);
@@ -447,8 +446,7 @@ FONTINFO;
 #include  "large_font.xbm"
 #include  "tiny_font.xbm"
 
-FONTINFO  FontInfo[] =
-{
+static const FONTINFO const FontInfo[] = {
   [NORMAL_FONT] = {
                     .pFontBits    = (const char*)normal_font_bits,
                     .FontHeight   = 9,
@@ -655,8 +653,7 @@ ICONINFO;
 #include  "menu_icons.xbm"
 #include  "arrow_icons.xbm"
 
-ICONINFO  IconInfo[] =
-{
+static const ICONINFO const IconInfo[] = {
   [NORMAL_ICON] = {
                     .pIconBits    = normal_icons_bits,
                     .IconSize     = normal_icons_height,
@@ -689,7 +686,7 @@ ICONINFO  IconInfo[] =
                   },
 };
 
-UBYTE    *dLcdGetIconBits(DATA8 Type)
+static UBYTE *dLcdGetIconBits(DATA8 Type)
 {
   UBYTE  *pResult;
 
@@ -708,7 +705,7 @@ DATA16    dLcdGetIconHeight(DATA8 Type)
   return (IconInfo[Type].IconHeight);
 }
 
-DATA16    dLcdGetNoOfIcons(DATA8 Type)
+static DATA16 dLcdGetNoOfIcons(DATA8 Type)
 {
   return (IconInfo[Type].IconSize / IconInfo[Type].IconHeight);
 }
@@ -971,7 +968,8 @@ void      dLcdInverseRect(UBYTE *pImage,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1)
   }
 }
 
-void      dLcdPlotLines(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DATA16 X1,DATA16 Y1)
+static void dLcdPlotLines(UBYTE *pImage, DATA8 Color, DATA16 X0, DATA16 Y0,
+                          DATA16 X1, DATA16 Y1)
 {
   dLcdDrawLine(pImage,Color,X0 - X1,Y0 + Y1,X0 + X1,Y0 + Y1);
   dLcdDrawLine(pImage,Color,X0 - X1,Y0 - Y1,X0 + X1,Y0 - Y1);
@@ -1002,7 +1000,7 @@ void      dLcdDrawFilledCircle(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0,DAT
   dLcdPlotLines(pImage,Color,X0,Y0,X,Y);
 }
 
-DATA8     dLcdCheckPixel(UBYTE *pImage,DATA8 Color,DATA16 X0,DATA16 Y0)
+static DATA8 dLcdCheckPixel(UBYTE *pImage, DATA8 Color, DATA16 X0, DATA16 Y0)
 {
   DATA8   Result = 0;
 
