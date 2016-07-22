@@ -179,6 +179,7 @@ pkg_check_modules (LMS2012_DEPS REQUIRED
     gio-2.0
     gio-unix-2.0
     glib-2.0
+    grx-3.0
     libudev
     libusb-1.0
 )

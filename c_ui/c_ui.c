@@ -269,7 +269,7 @@ RESULT    cUiInit(void)
   UiInstance.LedLeftGreenTriggerFile  = cUiLedOpenTriggerFile("ev3:left",  "green");
   cUiPowerOpenBatteryFiles();
 
-  dLcdInit((*UiInstance.pLcd).Lcd);
+  dLcdInit();
 
   snprintf(UiInstance.HwVers,HWVERS_SIZE,"ev3dev");
   UiInstance.Hw = 0;
@@ -487,7 +487,6 @@ RESULT    cUiUpdateInput(void)
       }
     }
   }
-  dLcdRead();
 
   return (OK);
 }

@@ -18,6 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <glib.h>
+#include <grx-3.0.h>
 
 #include  "lms2012.h"
 #include  "c_ui.h"
@@ -38,18 +40,10 @@
 #include <endian.h>
 #include <linux/fb.h>
 
-#define RED_LEGO	0	
-#define GREEN_LEGO	255	
-#define BLUE_LEGO	0	
-
-static const unsigned char color0 = (RED_LEGO & 0xF8) | ((GREEN_LEGO & 0xE0) >> 5);
-static const unsigned char color1 = ((GREEN_LEGO & 0x1C) << 3) | ((BLUE_LEGO & 0xF8) >> 3);
-
 int dll = 60;
 int fll = 22 + 1;
 unsigned char vmem[7680];
 unsigned char *dbuf = vmem;
-unsigned char *fbp = NULL;
 
 UBYTE     PixelTab[] =
 {
@@ -65,13 +59,12 @@ UBYTE     PixelTab[] =
 
 void update_to_fb(void)
 {
-	unsigned long x, y, location, offset, mask;
+	unsigned long x, y, offset, mask;
 
 	for(y = 0; y < 128; y++)
 	{
 		for(x = 0; x < 178; x++)
 		{
-			location = (x + y * 220) * 2;
 			offset = x % 3;
 			if(offset)
 			{
@@ -82,15 +75,10 @@ void update_to_fb(void)
 				mask = 0x80;
 			}
 
-			if(vmem[x / 3 + y * 60] & mask)
-			{
-				*(fbp + location++) = color0;
-				*(fbp + location) = color1;
-			}
-			else
-			{
-				*(fbp + location++) = 0x0;
-				*(fbp + location) = 0x0;
+			if (vmem[x / 3 + y * 60] & mask) {
+				grx_fast_draw_pixel(x, y, grx_color_info_get_white());
+			} else {
+				grx_fast_draw_pixel(x, y, grx_color_info_get_black());
 			}
 		}
 	}
@@ -199,63 +187,29 @@ void      dLcdUpdate(LCD *pDisp)
 #endif
 }
 
-void      dLcdInit(UBYTE *pImage)
+void dLcdInit(void)
 {
-	int x, y, location;
-  UiInstance.DispFile = open(LCD_DEVICE_NAME, O_RDWR);
-//  if (UiInstance.DispFile < 0) LogErrorNumber(LCD_DEVICE_FILE_NOT_FOUND);
+    GError *error = NULL;
 
-  //ioctl(UiInstance.DispFile, _IOW('S',0, int), NULL);
+    if (!grx_set_driver(NULL, &error)) {
+        g_warning("Could not start graphics: %s", error->message);
+        g_warning("Falling back to memory driver");
+        g_error_free(error);
+        error = NULL;
 
-  //FBCTL(FBIOGET_VSCREENINFO, &var);
-  //FBCTL(FBIOGET_FSCREENINFO, &fix);
-
-  /* Display line length in bytes */
-  //dll = fix.line_length;
-  /* Image file line length in bytes */
-  //fll = (var.xres >> 3) + 1;
-
-  fbp = (unsigned char *)mmap(0, 220 * 176 * 2, PROT_WRITE | PROT_READ, MAP_SHARED, UiInstance.DispFile, 0);
-//  if (fbp == MAP_FAILED) LogErrorNumber(LCD_DEVICE_FILE_NOT_FOUND);
-
-	for(y = 0; y <= 127 + 1; y++)
-	{
-		for(x = 0; x <= 177 + 1; x++)
-		{
-			location = (x + y * 220) * 2;
-			*(fbp + location++) = 0x0;
-			*(fbp + location) = 0x0;
-		}
-	}
-
-	y = 128;
-	for(x = 0; x < 178 + 1; x++)
-	{
-		location = (x + y * 220) *2;
-		*(fbp + location++) = color0;
-		*(fbp + location) = color1;
-	}
-	
-	x = 178;
-	for(y = 0; y < 128 + 1; y++)
-	{
-		location = (x + y * 220) *2;
-		*(fbp + location++) = color0;
-		*(fbp + location) = color1;
-	}
+        if (!grx_set_driver("memory gw 178 gh 128", &error)) {
+            // this aborts the program
+            g_error("Could not load memory driver");
+        }
+    }
+    if (!grx_set_mode_default_graphics(TRUE, &error)) {
+      // this aborts the program
+      g_error("Could not start graphics");
+    }
 }
 
-UBYTE     dLcdRead(void)
+void dLcdExit(void)
 {
-  return (0);
-}
-
-void      dLcdExit(void)
-{
-  if (UiInstance.DispFile >= MIN_HANDLE)
-  {
-    close(UiInstance.DispFile);
-  }
 }
 
 void      dLcdScroll(UBYTE *pImage,DATA16 Y0)

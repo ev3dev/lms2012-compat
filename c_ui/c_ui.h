@@ -346,7 +346,6 @@ typedef   struct
   int       LedLeftGreenTriggerFile;
   int       BatteryVoltageNowFile;
   int       BatteryCurrentNowFile;
-  int       DispFile;
 
   ULONG     SleepTimer;
 

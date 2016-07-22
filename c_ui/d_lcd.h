@@ -26,9 +26,7 @@ void      dLcdUpdate(LCD *pLcd);
 
 void      dLcdAutoUpdate(void);
 
-void      dLcdInit(UBYTE *pImage);
-
-UBYTE     dLcdRead(void);
+void      dLcdInit(void);
 
 void      dLcdExit(void);
 

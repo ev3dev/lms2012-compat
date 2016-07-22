@@ -221,10 +221,6 @@
 #define   DCM_DEVICE            "lms_dcm"             //!< DCM device name
 #define   DCM_DEVICE_NAME       "/dev/lms_dcm"        //!< DCM device file name
 
-#define   LCD_DEVICE            "lms_display"         //!< DISPLAY device name
-//#define   LCD_DEVICE_NAME       "/dev/lms_display"    //!< DISPLAY device file name
-#define   LCD_DEVICE_NAME       "/dev/fb0"            //!< DISPLAY device file name
-
 #define   UART_DEVICE           "lms_uart"            //!< UART device name
 #define   UART_DEVICE_NAME      "/dev/lms_uart"       //!< UART device file name
 
@@ -646,7 +642,6 @@ typedef   enum
   IIC_DEVICE_FILE_NOT_FOUND,
   IIC_SHARED_MEMORY,
   DISPLAY_SHARED_MEMORY,
-  LCD_DEVICE_FILE_NOT_FOUND,
   OUTPUT_SHARED_MEMORY,
   COM_COULD_NOT_OPEN_FILE,
   COM_NAME_TOO_SHORT,
