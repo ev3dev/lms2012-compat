@@ -61,10 +61,8 @@ void update_to_fb(void)
 {
 	unsigned long x, y, offset, mask;
 
-	for(y = 0; y < 128; y++)
-	{
-		for(x = 0; x < 178; x++)
-		{
+	for (y = 0; y < LCD_HEIGHT; y++) {
+		for (x = 0; x < LCD_WIDTH; x++) {
 			offset = x % 3;
 			if(offset)
 			{
@@ -99,10 +97,8 @@ void      dLcdExec(LCD *pDisp)
       pSrc  =  (*pDisp).Lcd;
       pDst  =  dbuf;
 
-      for (Y = 0;Y < 128;Y++)
-      {
-        for (X = 0;X < 7;X++)
-        {
+      for (Y = 0; Y < LCD_HEIGHT; Y++) {
+        for (X = 0; X < 7; X++) {
           Pixels  =  (ULONG)*pSrc;
           pSrc++;
           Pixels |=  (ULONG)*pSrc << 8;
@@ -197,7 +193,8 @@ void dLcdInit(void)
         g_error_free(error);
         error = NULL;
 
-        if (!grx_set_driver("memory gw 178 gh 128", &error)) {
+        if (!grx_set_driver("memory gw " G_STRINGIFY(LCD_WIDTH) " gh "
+                            G_STRINGIFY(LCD_HEIGHT), &error)) {
             // this aborts the program
             g_error("Could not load memory driver");
         }
