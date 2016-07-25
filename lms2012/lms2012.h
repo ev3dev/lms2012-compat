@@ -215,9 +215,6 @@
 #define   ANALOG_DEVICE         "lms_analog"          //!< ANALOG device name
 #define   ANALOG_DEVICE_NAME    "/dev/lms_analog"     //!< ANALOG device file name
 
-#define   POWER_DEVICE          "lms_power"           //!< POWER device name
-#define   POWER_DEVICE_NAME     "/dev/lms_power"      //!< POWER device file name
-
 #define   DCM_DEVICE            "lms_dcm"             //!< DCM device name
 #define   DCM_DEVICE_NAME       "/dev/lms_dcm"        //!< DCM device file name
 
