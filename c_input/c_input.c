@@ -2015,7 +2015,7 @@ RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 L
 #ifndef DISABLE_FAST_DATALOG_BUFFER
   static  UWORD Cnt;
   static  UWORD Old;
-  UWORD   New;
+  UWORD   New = 0;
   DATA16  TmpTime;
 #endif
 #endif

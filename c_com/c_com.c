@@ -2485,7 +2485,8 @@ void      cComUpdate(void)
   ChNo    =  0;
 
 #ifndef DISABLE_DAISYCHAIN
-  cDaisyControl();  // Keep the HOST part going
+  // TODO: get daisy chaining working
+  // cDaisyControl();  // Keep the HOST part going
 #endif
 
   for(ChNo = 0; ChNo < NO_OF_CHS; ChNo++)
