@@ -1550,7 +1550,7 @@ typedef struct
   UBYTE     ReplyStatus;
 
   char      BrickName[vmBRICKNAMESIZE];
-  char     *musb_syspath;
+  char     *udc_syspath;
 } COM_GLOBALS;
 
 extern COM_GLOBALS ComInstance;

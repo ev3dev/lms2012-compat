@@ -88,7 +88,12 @@ enum
   FS_IDLE,
 };
 
-static char *cComGetMusbDevice(void)
+/**
+ * Gets the file path for the udc device.
+ *
+ * @return    The path. Must be freed with free()
+ */
+static char *cComGetUdcDevice(void)
 {
     struct udev_enumerate *enumerate;
     struct udev_list_entry *list;
@@ -104,16 +109,9 @@ static char *cComGetMusbDevice(void)
         // just taking the first match in the list
         const char *path = udev_list_entry_get_name(list);
         struct udev_device *udc_device;
-        struct udev_device *musb_device;
 
         udc_device = udev_device_new_from_syspath(VMInstance.udev, path);
-        musb_device = udev_device_get_parent(udc_device);
-        if (musb_device == NULL) {
-            fprintf(stderr, "Failed to get musb device\n");
-        } else {
-            path = udev_device_get_syspath(musb_device);
-            syspath = strdup(path);
-        }
+        syspath = strdup(udev_device_get_syspath(udc_device));
         udev_device_unref(udc_device);
     }
     udev_enumerate_unref(enumerate);
@@ -128,7 +126,7 @@ RESULT    cComInit(void)
   UBYTE   Cnt;
   FILE    *File;
 
-  ComInstance.musb_syspath = cComGetMusbDevice();
+  ComInstance.udc_syspath = cComGetUdcDevice();
 
   ComInstance.CommandReady      =  0;
   ComInstance.Cmdfd             =  open("/dev/hidg0", O_RDWR);
@@ -290,11 +288,11 @@ RESULT    cComGetDeviceData(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pType,DAT
 
 UBYTE cComCheckUsbCable(void)
 {
-    struct udev_device *musb_device;
-    const char *mode;
+    struct udev_device *udc_device;
+    const char *speed;
     UBYTE Result = FALSE;
 
-    if (!ComInstance.musb_syspath) {
+    if (!ComInstance.udc_syspath) {
         return Result;
     }
 
@@ -303,18 +301,19 @@ UBYTE cComCheckUsbCable(void)
     // of things like stripping off the trailing newline, which is helpful.
     // And this function is not called frequently, so performance is not an
     // issue.
-    musb_device = udev_device_new_from_syspath(VMInstance.udev,
-                                               ComInstance.musb_syspath);
-    if (!musb_device) {
+    udc_device = udev_device_new_from_syspath(VMInstance.udev,
+                                              ComInstance.udc_syspath);
+    if (!udc_device) {
         return Result;
     }
 
-    mode = udev_device_get_sysattr_value(musb_device, "mode");
-    if (mode && strcmp(mode, "b_peripheral") == 0) {
+    // when disconnected, current_speed is UNKNOWN
+    speed = udev_device_get_sysattr_value(udc_device, "current_speed");
+    if (speed && strcmp(speed, "UNKNOWN") != 0) {
         Result = TRUE;
     }
 
-    udev_device_unref(musb_device);
+    udev_device_unref(udc_device);
 
     return Result;
 }
