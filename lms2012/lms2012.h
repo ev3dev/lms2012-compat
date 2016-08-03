@@ -1064,16 +1064,10 @@ LCD;
  *  \verbatim
  */
 
-enum  {
-        FULL_SPEED,
-        HIGH_SPEED
-      };
-
-typedef   struct
-{
-  DATA8   Speed;
-}
-USB_SPEED;
+typedef enum {
+    FULL_SPEED,
+    HIGH_SPEED
+} USB_SPEED;
 
 /*\endverbatim
  *

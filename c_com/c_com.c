@@ -308,9 +308,17 @@ UBYTE cComCheckUsbCable(void)
     }
 
     // when disconnected, current_speed is UNKNOWN
+    // TODO: other possible values are "low-speed", "super-speed", "wireless"
     speed = udev_device_get_sysattr_value(udc_device, "current_speed");
-    if (speed && strcmp(speed, "UNKNOWN") != 0) {
-        Result = TRUE;
+    if (speed) {
+        if (strcmp(speed, "high-speed") == 0) {
+            Result = TRUE;
+            ComInstance.udc_speed = HIGH_SPEED;
+        }
+        else if (strcmp(speed, "full-speed") == 0) {
+            Result = TRUE;
+            ComInstance.udc_speed = FULL_SPEED;
+        }
     }
 
     udev_device_unref(udc_device);
@@ -400,13 +408,11 @@ UWORD cComWriteBuffer(UBYTE *pBuffer, UWORD Size)
 {
     UWORD Length;
 
-    // TODO: implement low speed if needed
-
-    // if(FULL_SPEED == cDaisyGetUsbUpStreamSpeed()) {
-    //     Length = write(ComInstance.Cmdfd, pBuffer, 64);
-    // } else {
-    Length = write(ComInstance.Cmdfd, pBuffer, 1024);
-    // }
+    if (FULL_SPEED == cDaisyGetUsbUpStreamSpeed()) {
+        Length = write(ComInstance.Cmdfd, pBuffer, 64);
+    } else {
+        Length = write(ComInstance.Cmdfd, pBuffer, 1024);
+    }
 #ifdef DEBUG
     printf("cComWriteBuffer %d\n", Length);
 #endif

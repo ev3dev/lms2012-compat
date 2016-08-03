@@ -1551,6 +1551,7 @@ typedef struct
 
   char      BrickName[vmBRICKNAMESIZE];
   char     *udc_syspath;
+  USB_SPEED udc_speed;
 } COM_GLOBALS;
 
 extern COM_GLOBALS ComInstance;

@@ -96,9 +96,6 @@ DATA8 DaisyTempTypeLayer;	  // Normalised number used for direct indexing in arr
 DATA8 DaisyTempTypeSensor;	// -
 DATA8 DaisyTempDownLayer;
 
-USB_SPEED  *pUsbSpeed;
-USB_SPEED  UpStreamConnection;
-
 int Unlocked = FALSE;
 int SlaveUnlocked = FALSE;
 
@@ -910,8 +907,7 @@ DATA8 cDaisyGetUsbUpStreamSpeed(void)
   DATA8 SpeedResult = FULL_SPEED;
 
   // Check for UPSTREAM connection
-  if((*pUsbSpeed).Speed == FULL_SPEED)
-  {
+  if (ComInstance.udc_speed == FULL_SPEED) {
 
     #ifdef DEBUG
       printf("Connected to FULL_SPEED on Gadget side - DAISY chained\n");
@@ -955,17 +951,6 @@ void cDaisySetTimeout(int TimeOut)
 int cDaisyGetInterruptPacketSize(void)
 {
   return MaxInterruptPacketSize;  // Returns the packet size (is the smallest of the IN/OUT endpoint)
-}
-
-RESULT cDaisyCreateSpeedInfo(void)
-{
-    RESULT Result = FAIL;
-
-    // TODO: Need to use dbus to systemd to bring up low speed usb hid gadget
-    // if needed. Alternately, we could code the configfs here instead of using
-    // an external script and systemd.
-
-    return Result;
 }
 
 RESULT cDaisyWriteTypeDownstream(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mode)
@@ -1129,29 +1114,6 @@ RESULT cDaisyInit(void)
 
   DaisyZeroTheBuffers();      // Start @ a known stage of data
 
-  // Make a handle to the kernel USB speed
-  Result = cDaisyCreateSpeedInfo();
-
-  if(Result == OK)
-  {
-    // Check for UPSTREAM connection
-    if((*pUsbSpeed).Speed == HIGH_SPEED)
-    {
-      UpStreamConnection.Speed = HIGH_SPEED;
-
-      #ifdef DEBUG
-        printf("Connected to HIGH_SPEED on Gadget side\n");
-      #endif
-    }
-    else
-    {
-      UpStreamConnection.Speed = FULL_SPEED;
-
-      #ifdef DEBUG
-        printf("Connected to FULL_SPEED on Gadget side\n");
-      #endif
-    }
-
     // Start initializing the UsbLib stuff
     Temp = libusb_init(NULL);
 
@@ -1202,7 +1164,6 @@ RESULT cDaisyInit(void)
           Result = FAIL;              // Could not claim the interface to the HID device
       }
     }
-  }
     #ifdef DEBUG
       printf("\nDaisy Init ended (HOST)\n");
     #endif
