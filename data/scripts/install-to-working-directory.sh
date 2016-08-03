@@ -36,6 +36,7 @@ for d in \
     'apps/IR Control'               \
     'apps/Motor Control'            \
     'apps/Port View'                \
+    'prjs/BrkProg_SAVE/Demo.rpf'    \
     'sys/settings/typedata.rcf'     \
     'sys/settings/typedata50.rcf'   \
     'sys/ui'                        \
