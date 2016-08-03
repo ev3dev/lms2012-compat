@@ -9,6 +9,7 @@ add_custom_command (OUTPUT lms2012-compat.8.gz
         ${CMAKE_CURRENT_SOURCE_DIR}/lms2012-compat.md
         --output ${CMAKE_CURRENT_BINARY_DIR}/lms2012-compat.8
     COMMAND ${GZIP}
+        --force
         -9
         ${CMAKE_CURRENT_BINARY_DIR}/lms2012-compat.8
     DEPENDS
