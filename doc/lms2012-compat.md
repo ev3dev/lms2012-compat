@@ -22,33 +22,33 @@ directory, so use absolute paths!
 
 # FILES
 
-`/var/lib/lms2012/apps`
+`/var/lib/lms2012/apps/`
 : Contains application directories that are listed on the apps tab of the
 user interface.
 
-`/var/lib/lms2012/prjs`
+`/var/lib/lms2012/prjs/`
 : Contains project directories that are listed on the projects tab of the
 user interface.
 
-`/var/lib/lms2012/BrkDL_Save`
+`/var/lib/lms2012/prjs/BrkDL_Save/`
 : Location where the on-brick data logger stores `.rdf` files.
 
-`/var/lib/lms2012/BrkProg_Save`
+`/var/lib/lms2012/prjs/BrkProg_Save/`
 : Location where the on-brick programmer stores `.rpf` files.
 
-`/var/lib/lms2012/SD_Card`
+`/var/lib/lms2012/prjs/SD_Card/`
 : Used as the "SD Card" directory.
 
-`/var/lib/lms2012/sys`
+`/var/lib/lms2012/sys/`
 : The working directory for `lms2012` (regardless of where it was run).
 
-`/var/lib/lms2012/sys/settings`
+`/var/lib/lms2012/sys/settings/`
 : Contains settings files used by `lms2012`. These files should not be edited
 manually!
 
-`/var/lib/lms2012/sys/ui`
+`/var/lib/lms2012/sys/ui/`
 : Contains the default user interface program.
 
-`/var/lib/lms2012/tools`
+`/var/lib/lms2012/tools/`
 : Contains tool directories that are listed on the tools tab of the user
 interface.
