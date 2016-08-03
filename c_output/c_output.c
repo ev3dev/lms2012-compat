@@ -1734,7 +1734,7 @@ void      cOutputGetCount(void)
 {
   DATA8   Layer;
   DATA8   No;
-  DATA32  Tacho;
+  DATA32  Tacho = 0;
 
   Layer  = *(DATA8*)PrimParPointer();
   No     = *(DATA8*)PrimParPointer();

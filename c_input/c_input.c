@@ -3416,7 +3416,7 @@ void      cInputUpdate(UWORD Time)
 {
 #ifndef DISABLE_BUMPED
   DATA8   Device;
-  DATAF   Value;
+  DATAF   Value = 0.0;
   DATAF   Diff;
 #endif
 

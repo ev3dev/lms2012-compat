@@ -669,6 +669,8 @@ UWORD cWiFiReadTcp(UBYTE* Buffer, UWORD Length)
             TcpReadBufPointer = 0;
             if (TcpRestLen < Length) {
                 read_length = TcpRestLen;
+            } else {
+                read_length = Length;
             }
             break;
         default:
@@ -1172,7 +1174,7 @@ static void cWifiStartConnection(ConnmanService *proxy)
     GInetAddress *address;
     GSocketAddress *socket_address;
     GError *error = NULL;
-    guint8 bytes[4];
+    guint32 bytes, mask;
 
     pr_dbg("cWifiStartConnection\n");
 
@@ -1196,19 +1198,20 @@ static void cWifiStartConnection(ConnmanService *proxy)
     value = g_variant_lookup_value(ipv4, "Address", NULL);
     address = g_inet_address_new_from_string(g_variant_get_string(value, NULL));
     g_variant_unref(value);
-    *(guint32*)bytes = *(guint32*)g_inet_address_to_bytes(address);
+    memcpy(&bytes, g_inet_address_to_bytes(address), sizeof(bytes));
     socket_address = g_inet_socket_address_new(address, TCP_PORT);
     g_object_unref(address);
 
     value = g_variant_lookup_value(ipv4, "Netmask", NULL);
     address = g_inet_address_new_from_string(g_variant_get_string(value, NULL));
     g_variant_unref(value);
-    *(guint32*)bytes |= ~(*(guint32*)g_inet_address_to_bytes(address));
+    memcpy(&mask, g_inet_address_to_bytes(address), sizeof(mask));
     g_object_unref(address);
 
     // init the UDP broadcast address
 
-    address = g_inet_address_new_from_bytes(bytes, G_SOCKET_FAMILY_IPV4);
+    bytes |= ~mask;
+    address = g_inet_address_new_from_bytes((guint8 *)&bytes, G_SOCKET_FAMILY_IPV4);
     g_socket_set_broadcast(data->broadcast, TRUE);
     data->broadcast_address = g_inet_socket_address_new(address, BROADCAST_PORT);
     g_object_unref(address);

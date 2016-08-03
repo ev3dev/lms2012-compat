@@ -1495,7 +1495,7 @@ void      BtUpdate(void)
     case I_AM_IN_IDLE:
     {
       BTSOCKET  *pBtSocket;
-      UBYTE     Index;
+      UBYTE     Index = 0;
 
       cBtHandleHCI();
       dbus_connection_read_write_dispatch(conn, 0);
@@ -1614,7 +1614,7 @@ void      BtUpdate(void)
       // All packets go into the same buffer for the communication module and VM
       // and all packets needs to be wrapped with the channel number
       UBYTE     Cnt;
-      UBYTE     Index;
+      UBYTE     Index = 0;
       int       BytesRead;
       READBUF   *pReadBuf;
       BTSOCKET  *pBtSocket;
@@ -3842,6 +3842,9 @@ static DBusHandlerResult request_pincode_message(DBusConnection *conn, DBusMessa
         dbus_message_unref(reply);
 
         BtInstance.TrustedDev.Status = FALSE;  //Only one trusted pin per pin event
+
+        // TODO: not sure if this is the correct DBusHandlerResult value
+        Result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
       }
       else
       {

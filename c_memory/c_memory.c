@@ -648,7 +648,7 @@ RESULT    ConstructFilename(PRGID PrgId,char *pFilename,char *pName,const char *
     }
 
     // Construct filename for open
-    snprintf(pName,vmFILENAMESIZE,"%s%s%s",Path,Name,Ext);
+    snprintf(pName,MAX_FILENAME_SIZE,"%s%s%s",Path,Name,Ext);
 
 #ifdef DEBUG_TRACE_FILENAME
     printf("c_memory  ConstructFilename:       [%s]\n",pName);

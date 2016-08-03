@@ -1339,7 +1339,7 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
             // Check parameter value
             if ((Pars >= PAR8) && (Pars <= PAR32))
             {
-              if (((*(DATA32*)pParValue) >= ParMin[ParType - PAR]) && ((*(DATA32*)pParValue) <= ParMax[ParType - PAR]))
+              if (((*(DATA32*)pParValue) >= ParMin[Pars - PAR]) && ((*(DATA32*)pParValue) <= ParMax[Pars - PAR]))
               {
                 Result  =  OK;
               }

@@ -1937,7 +1937,7 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
     {
       SLONG           TmpN;
       ULONG           BytesToRead;
-      ULONG           Len;
+      ULONG           Len = 0;
       ULONG           BytesToSend;
       ULONG           NameLen;
       ULONG           RemCharCnt;
@@ -2148,7 +2148,7 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
     {
       MAKE_DIR        *pMakeDir;
       RPLY_MAKE_DIR   *pReplyMakeDir;
-      char            Folder[60];
+      char            Folder[vmFILENAMESIZE];
 
       //Setup pointers
       pMakeDir        =  (MAKE_DIR*)pRxBuf->Buf;
@@ -3631,19 +3631,20 @@ void      cComWriteMailBox(void)
         {
           pDescr = (DESCR*)pTmp;
           Size = (pDescr->Elements);
+
+          if (MAILBOX_CONTENT_SIZE < Size)
+          {
+            //Truncate if larger than buffer size
+            Size = MAILBOX_CONTENT_SIZE;
+          }
+
+          memcpy((char*)&Payload[0],(DATA8*)(pDescr->pArray), Size);
         }
         else
         {
           Size = 0;
         }
 
-        if (MAILBOX_CONTENT_SIZE < Size)
-        {
-          //Truncate if larger than buffer size
-          Size = MAILBOX_CONTENT_SIZE;
-        }
-
-        memcpy((char*)&Payload[0],(DATA8*)(pDescr->pArray), Size);
         PayloadSize = Size;
       }
       break;
@@ -4185,9 +4186,9 @@ void      cComGet(void)
   DATA8   Length;
   DATA8   *pPin;
   DATA8   Items;
-  DATA8   Paired;
-  DATA8   Connected;
-  DATA8   Visible;
+  DATA8   Paired = 0;
+  DATA8   Connected = 0;
+  DATA8   Visible = 0;
   DATA8   Type;
   DATA8   *pMac;
   DATA8   *pIp;
@@ -4262,8 +4263,6 @@ void      cComGet(void)
 
     case GET_VISIBLE :
     {
-      DATA8   Visible;
-
       Hardware    =  *(DATA8*)PrimParPointer();
 
       if (Hardware < HWTYPES)
