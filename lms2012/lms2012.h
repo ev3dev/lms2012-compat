@@ -76,6 +76,12 @@
 #define   EXT_PROGRAM                   vmEXT_PROGRAM                 //!< Rudolf program byte code file
 #define   EXT_CONFIG                    vmEXT_CONFIG                  //!< rudolf configuration file
 
+// Permissions
+
+#define   FILEPERMISSIONS               (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+#define   DIRPERMISSIONS                (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
+#define   SYSPERMISSIONS                (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+
 /*! \page system System Configuration
  *
  *  <hr size="1"/>

@@ -461,7 +461,7 @@ void      BtExit(void)
 
   BtClose();
 
-  File  =  open(NONVOL_BT_DATA,O_CREAT | O_WRONLY | O_TRUNC,0666);
+  File  =  open(NONVOL_BT_DATA,O_CREAT | O_WRONLY | O_TRUNC,SYSPERMISSIONS);
   if (File >= MIN_HANDLE)
   {
     write(File,(UBYTE*)&BtInstance.NonVol, sizeof(BtInstance.NonVol));

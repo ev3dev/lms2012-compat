@@ -1052,9 +1052,9 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
               Folder[Tmp + 1]  =  0;
               if ((strcmp("~/",Folder) != 0) && (strcmp("../",Folder) != 0))
               {
-                if (mkdir(Folder,S_IRWXU | S_IRWXG | S_IRWXO) == 0)
+                if (mkdir(Folder,DIRPERMISSIONS) == 0)
                 {
-                  chmod(Folder,S_IRWXU | S_IRWXG | S_IRWXO);
+                  chmod(Folder,DIRPERMISSIONS);
                   #ifdef DEBUG
                     printf("Folder %s created\n",Folder);
                   #endif
@@ -1070,7 +1070,7 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
             Tmp++;
           }
 
-          pRxBuf->pFile->File  =  open(pRxBuf->pFile->Name, O_CREAT | O_WRONLY | O_TRUNC | O_SYNC, 0x666);
+          pRxBuf->pFile->File  =  open(pRxBuf->pFile->Name, O_CREAT | O_WRONLY | O_TRUNC | O_SYNC, FILEPERMISSIONS);
 
           if (pRxBuf->pFile->File >= 0)
           {
@@ -1106,7 +1106,7 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
             if (pRxBuf->pFile->Pointer >= pRxBuf->pFile->Size)
             {
               cComCloseFileHandle(&(pRxBuf->pFile->File));
-              chmod(ComInstance.Files[FileHandle].Name,S_IRWXU | S_IRWXG | S_IRWXO);
+              chmod(ComInstance.Files[FileHandle].Name,FILEPERMISSIONS);
               cComFreeHandle(FileHandle);
 
               pReplyDl->Status  =  END_OF_FILE;
@@ -1227,7 +1227,7 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
             #endif
 
             cComCloseFileHandle(&(ComInstance.Files[FileHandle].File));
-            chmod(ComInstance.Files[FileHandle].Name,S_IRWXU | S_IRWXG | S_IRWXO);
+            chmod(ComInstance.Files[FileHandle].Name,FILEPERMISSIONS);
             cComFreeHandle(FileHandle);
             pRplyContiDl->Status  =  END_OF_FILE;
           }
@@ -2167,9 +2167,9 @@ void      cComSystemCommand(RXBUF *pRxBuf, TXBUF *pTxBuf)
 
       snprintf(Folder,sizeof(ComInstance.Files[FileHandle].Name),"%s",(char*)(pMakeDir->Dir));
 
-      if (0 == mkdir(Folder,S_IRWXU | S_IRWXG | S_IRWXO))
+      if (0 == mkdir(Folder,DIRPERMISSIONS))
       {
-        chmod(Folder,S_IRWXU | S_IRWXG | S_IRWXO);
+        chmod(Folder,DIRPERMISSIONS);
         #ifdef DEBUG
           printf("Folder %s created\n",Folder);
         #endif
@@ -2804,7 +2804,7 @@ void      cComUpdate(void)
           if (pRxBuf->pFile->Pointer >= pRxBuf->pFile->Size)
           {
             cComCloseFileHandle(&(pRxBuf->pFile->File));
-            chmod(pRxBuf->pFile->Name, S_IRWXU | S_IRWXG | S_IRWXO);
+            chmod(pRxBuf->pFile->Name, FILEPERMISSIONS);
             cComFreeHandle(pRxBuf->FileHandle);
           }
         }

@@ -59,10 +59,6 @@
 
 #define   vmCHAIN_DEPT                  4                             //!< Number of bricks in the USB daisy chain (master + slaves)
 
-#define   FILEPERMISSIONS               (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
-#define   DIRPERMISSIONS                (S_IRWXU | S_IRWXG | S_IRWXO)
-#define   SYSPERMISSIONS                (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
-
 #define   vmPATHSIZE                    84                            //!< Max path size excluding trailing forward slash including zero termination
 #define   vmNAMESIZE                    32                            //!< Max name size including zero termination (must be divideable by 4)
 #define   vmEXTSIZE                     5                             //!< Max extension size including dot and zero termination
