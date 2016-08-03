@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+/usr/share/lms2012-compat/scripts/install-to-working-directory.sh
+
+#DEBHELPER#

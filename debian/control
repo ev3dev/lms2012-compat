@@ -1,0 +1,19 @@
+Source: lms2012-compat
+Priority: optional
+Maintainer: David Lechner <david@lechnology.com>
+Build-Depends: debhelper (>= 9.0.0), cmake, pkg-config,
+    default-jre, sox, imagemagick, pandoc,
+    libasound2-dev, libbluetooth-dev, libdbus-1-dev, libglib2.0-dev,
+    libgrx-3.0-dev, libudev-dev, libusb-1.0-0-dev
+Standards-Version: 3.9.5
+Section: embedded
+Homepage: https://github.com/ev3dev/lms2012-compat
+Vcs-Git: git://github.com/ev3dev/lms2012-compat.git
+Vcs-Browser: https://github.com/ev3dev/lms2012-compat
+
+Package: lms2012-compat
+Architecture: armel armhf i386
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Recommends: connman
+Description: LEGO MINDSTORMS EV3 compatible VM for ev3dev
+ Fork of the official LEGO MINDSTORMS EV3 VM that runs on the ev3dev OS.

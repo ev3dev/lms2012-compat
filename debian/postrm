@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+if [ "$1" == "purge" ]; then
+    rm -rf /var/lib/lms2012
+fi
+
+#DEBHELPER#
