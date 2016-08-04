@@ -1522,6 +1522,7 @@ typedef   struct
   ULONG   Content[(MAILBOX_CONTENT_SIZE/4) + 1];
 }MAILBOX;
 
+typedef struct _SystemdManager SystemdManager;
 
 typedef struct
 {
@@ -1552,6 +1553,9 @@ typedef struct
   char      BrickName[vmBRICKNAMESIZE];
   char     *udc_syspath;
   USB_SPEED udc_speed;
+
+  SystemdManager *systemd_manager;
+  char usb_hid_service_name[50];
 } COM_GLOBALS;
 
 extern COM_GLOBALS ComInstance;

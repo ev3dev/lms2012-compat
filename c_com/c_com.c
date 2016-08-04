@@ -50,6 +50,7 @@
 #include "c_i2c.h"
 #include "c_output.h"
 #include "c_memory.h"
+#include "systemd.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -119,6 +120,70 @@ static char *cComGetUdcDevice(void)
     return syspath;
 }
 
+static void cComUsbHidServiceInit(void)
+{
+    struct udev_device *udc_device;
+    gchar *job;
+    GError *error = NULL;
+
+    ComInstance.systemd_manager = systemd_manager_proxy_new_for_bus_sync(
+        G_BUS_TYPE_SYSTEM, G_DBUS_PROXY_FLAGS_NONE, "org.freedesktop.systemd1",
+        "/org/freedesktop/systemd1", NULL, &error);
+    if (!ComInstance.systemd_manager) {
+        g_warning("Could not get systemd dbus proxy: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    if (!ComInstance.udc_syspath) {
+        return;
+    }
+
+    udc_device = udev_device_new_from_syspath(VMInstance.udev,
+                                              ComInstance.udc_syspath);
+    if (!udc_device) {
+        g_warning("Failed to get udc device");
+        return;
+    }
+
+    g_snprintf(ComInstance.usb_hid_service_name, 50,
+               "lms2012-compat-hid@%s.service",
+               udev_device_get_sysname(udc_device));
+    udev_device_unref(udc_device);
+
+    if (!systemd_manager_call_restart_unit_sync(ComInstance.systemd_manager,
+        ComInstance.usb_hid_service_name, "replace", &job, NULL, &error))
+    {
+        g_warning("Failed to start %s: %s", ComInstance.usb_hid_service_name,
+                  error->message);
+        g_error_free(error);
+        return;
+    }
+
+    g_free(job);
+}
+
+static void cComUsbHidServiceExit(void)
+{
+    gchar *job;
+    GError *error = NULL;
+
+    if (!ComInstance.systemd_manager) {
+        return;
+    }
+
+    if (!systemd_manager_call_stop_unit_sync(ComInstance.systemd_manager,
+        ComInstance.usb_hid_service_name, "replace", &job, NULL, &error))
+    {
+        g_warning("Failed to stop %s: %s", ComInstance.usb_hid_service_name,
+                  error->message);
+        g_error_free(error);
+        return;
+    }
+
+    g_free(job);
+}
+
 RESULT    cComInit(void)
 {
   RESULT  Result = FAIL;
@@ -127,6 +192,8 @@ RESULT    cComInit(void)
   FILE    *File;
 
   ComInstance.udc_syspath = cComGetUdcDevice();
+
+  cComUsbHidServiceInit();
 
   ComInstance.CommandReady      =  0;
   ComInstance.Cmdfd             =  open("/dev/hidg0", O_RDWR);
@@ -256,6 +323,7 @@ RESULT    cComExit(void)
 
   cWiFiExit();
   BtExit();
+  cComUsbHidServiceExit();
 
   return (Result);
 }
