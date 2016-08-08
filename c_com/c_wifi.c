@@ -48,6 +48,12 @@
 #define pr_dbg(f, ...) while (0) { }
 #endif
 
+#define C_WIFI_CONNMAN_AGENT_DBUS_PATH "/org/ev3dev/lms2012/connman/agent"
+
+#define C_WIFI_SERVICE_SSID_QUARK c_wifi_service_ssid_quark()
+#define C_WIFI_SERVICE_PASSPHRASE_QUARK c_wifi_service_passphrase_quark()
+#define C_WIFI_SERVICE_CONNECT_RESULT_QUARK c_wifi_service_connect_result_quark()
+
 typedef struct {
     ConnmanService *proxy;
     GSocket *broadcast;
@@ -84,11 +90,12 @@ static ConnmanTechnology *wifi_technology = NULL;
 static GList *service_list = NULL;
 static DATA16 service_list_state = 1;
 static GList *removed_list = NULL;
-
-#define C_WIFI_SERVICE_CONNECT_RESULT_QUARK c_wifi_service_connect_result_quark()
+static ConnmanAgent *connman_agent = NULL;
 
 // ******************************************************************************
 
+static G_DEFINE_QUARK(cWifiServiceSsidQuark, c_wifi_service_ssid)
+static G_DEFINE_QUARK(cWifiServicePassphraseQuark, c_wifi_service_passphrase)
 static G_DEFINE_QUARK(cWifiServiceConnectResultQuark, c_wifi_service_connect_result)
 
 /**
@@ -149,11 +156,13 @@ void cWiFiMoveDownInList(int Index)
 
 void cWiFiSetEncryptToWpa2(int Index)
 {
+    WiFiStatus = OK;
     // TODO: Connman does not allow us to select the security.
 }
 
 void cWiFiSetEncryptToNone(int Index)
 {
+    WiFiStatus = OK;
     // TODO: Connman does not allow us to select the security.
 }
 
@@ -329,11 +338,9 @@ static void cWifiConnectToApFinish(GObject *source_object,
     GError *error = NULL;
 
     if (connman_service_call_connect_finish(proxy, res, &error)) {
-        WiFiStatus = OK;
         g_object_set_qdata(source_object, C_WIFI_SERVICE_CONNECT_RESULT_QUARK,
                            GINT_TO_POINTER(START));
     } else {
-        WiFiStatus = FAIL;
         g_object_set_qdata(source_object, C_WIFI_SERVICE_CONNECT_RESULT_QUARK,
                            GINT_TO_POINTER(FAIL));
         g_printerr("Connect failed: %s\n", error->message);
@@ -392,11 +399,23 @@ RESULT cWiFiConnectToAp(int Index)
 // And store it in ApTable[Index]
 RESULT cWiFiMakePsk(char *ApSsid, char *PassPhrase, int Index)
 {
-    RESULT Return = FAIL;
+    GObject *service;
+    RESULT Result = FAIL;
 
-    // TODO: How does this work with ConnMan?
+    WiFiStatus = BUSY;
 
-    return Return;
+    service = g_list_nth_data(service_list, Index);
+    if (service) {
+        g_free(g_object_get_qdata(service, C_WIFI_SERVICE_SSID_QUARK));
+        g_object_set_qdata(service, C_WIFI_SERVICE_SSID_QUARK, g_strdup(ApSsid));
+        g_free(g_object_get_qdata(service, C_WIFI_SERVICE_PASSPHRASE_QUARK));
+        g_object_set_qdata(service, C_WIFI_SERVICE_PASSPHRASE_QUARK, g_strdup(PassPhrase));
+        Result = OK;
+    }
+
+    WiFiStatus = OK;
+
+    return Result;
 }
 
 /**
@@ -440,6 +459,8 @@ RESULT cWiFiScanForAPs()
 
     pr_dbg("cWiFiScanForAPs\n");
 
+    WiFiStatus = BUSY;
+
     // if there are any removals pending, we can remove them from service_list
     // safely now.
     while (removed_list) {
@@ -454,6 +475,8 @@ RESULT cWiFiScanForAPs()
         connman_technology_call_scan(wifi_technology, NULL, NULL, NULL);
         Result = OK;
     }
+
+    WiFiStatus = OK;
 
     return Result;
 }
@@ -1501,12 +1524,139 @@ static ConnmanManager *cWiFiGetConnmanManagerProxy(void)
     return proxy;
 }
 
+static gboolean on_connman_agent_report_error(ConnmanAgent *object,
+                                              GDBusMethodInvocation *invocation,
+                                              const gchar *arg_service,
+                                              const gchar *arg_error)
+{
+    g_printerr("ConnMan agent error on %s: %s\n", arg_service, arg_error);
+
+    connman_agent_complete_report_error(object, invocation);
+
+    return TRUE;
+}
+
+static gboolean on_connman_agent_request_input(ConnmanAgent *object,
+                                               GDBusMethodInvocation *invocation,
+                                               const gchar *arg_service,
+                                               GVariant *arg_fields)
+{
+    GList *match;
+    GObject *service;
+    GVariantDict args, result;
+g_message("on_connman_agent_request_input");
+g_message("%s", g_variant_print(arg_fields, TRUE));
+    match = g_list_find_custom(service_list, arg_service,
+                               (GCompareFunc)compare_proxy_path);
+    if (!match) {
+        g_dbus_method_invocation_return_dbus_error(invocation,
+            "net.connman.Agent.Error.Canceled",
+            "Could not find matching service.");
+
+        return TRUE;
+    }
+
+    service = match->data;
+    g_variant_dict_init(&args, arg_fields);
+    g_variant_dict_init(&result, NULL);
+    if (g_variant_dict_contains(&args, "Passphrase")) {
+        GVariantDict passphrase_dict;
+
+        g_message("passphrase");
+        g_variant_dict_init(&passphrase_dict,
+                            g_variant_dict_lookup_value(&args, "Passphrase", NULL));
+
+        g_variant_dict_insert(&result, "Passphrase", "s",
+            g_object_get_qdata(service, C_WIFI_SERVICE_PASSPHRASE_QUARK));
+
+        connman_agent_complete_request_input(object, invocation,
+                                             g_variant_dict_end(&result));
+    }
+    else {
+        g_dbus_method_invocation_return_dbus_error(invocation,
+            "net.connman.Agent.Error.Canceled",
+            "Unexpected agent request.");
+    }
+
+    return TRUE;
+}
+
+static gboolean on_connman_agent_cancel(ConnmanAgent *object,
+                                        GDBusMethodInvocation *invocation)
+{
+    g_printerr("ConnMan agent canceled\n");
+
+    connman_agent_complete_cancel(object, invocation);
+
+    return TRUE;
+}
+
+static void cWiFiRegisterAgent(void)
+{
+    GDBusConnection *connection;
+    GError *error = NULL;
+
+    connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
+    if (!connection) {
+        g_printerr("Failed to get system bus: %s\n", error->message);
+        g_clear_error(&error);
+    }
+
+    connman_agent = connman_agent_skeleton_new();
+    g_signal_connect(connman_agent,
+                     "handle-report-error",
+                     G_CALLBACK(on_connman_agent_report_error),
+                     NULL);
+    g_signal_connect(connman_agent,
+                     "handle-request-input",
+                     G_CALLBACK(on_connman_agent_request_input),
+                     NULL);
+    g_signal_connect(connman_agent,
+                     "handle-cancel",
+                     G_CALLBACK(on_connman_agent_cancel),
+                     NULL);
+    if (!g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(connman_agent),
+                                          connection,
+                                          C_WIFI_CONNMAN_AGENT_DBUS_PATH,
+                                          &error))
+    {
+        g_printerr("Failed export connman agent: %s\n", error->message);
+        g_clear_error(&error);
+    }
+
+    if (!connman_manager_call_register_agent_sync(connman_manager,
+                                                  C_WIFI_CONNMAN_AGENT_DBUS_PATH,
+                                                  NULL,
+                                                  &error))
+    {
+        g_printerr("Failed register connman agent: %s\n", error->message);
+        g_clear_error(&error);
+    }
+
+    g_object_unref(connection);
+}
+
 RESULT cWiFiExit(void)
 {
+    GError *error = NULL;
     RESULT Result;
 
     // TODO: Do we want to always turn off WiFi on exit? This is what LEGO does.
     Result = OK; //cWiFiTurnOff();
+
+    if (connman_agent) {
+        if (!connman_manager_call_unregister_agent_sync(connman_manager,
+                                                        C_WIFI_CONNMAN_AGENT_DBUS_PATH,
+                                                        NULL,
+                                                        &error))
+        {
+            g_printerr("Failed to unregister connman agent: %s\n", error->message);
+            g_clear_error(&error);
+        }
+        g_dbus_interface_skeleton_unexport(G_DBUS_INTERFACE_SKELETON(connman_agent));
+        g_object_unref(connman_agent);
+    }
+
     if (connman_manager) {
         if (wifi_technology) {
             on_wifi_technology_removed();
@@ -1535,6 +1685,7 @@ RESULT cWiFiInit(void)
     cWiFiSetBrickName();
     connman_manager = cWiFiGetConnmanManagerProxy();
     if (connman_manager) {
+        cWiFiRegisterAgent();
         Result = OK;
     }
 
