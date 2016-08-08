@@ -390,23 +390,19 @@ RESULT cWiFiGetIndexFromName(char *Name, UBYTE *Index)
  * @brief           Scan for new access points
  *
  * If WiFi is not present or turned off, this does nothing (returns FAIL).
+ * This just triggers a scan in the background and returns immediately.
  *
- * @return          OK if scan was successful, otherwise FAIL.
+ * @return          OK if scan was started, otherwise FAIL.
  */
 RESULT cWiFiScanForAPs()
 {
     RESULT Result = FAIL;
-    GError *error = NULL;
 
     pr_dbg("cWiFiScanForAPs\n");
 
     if (wifi_technology && connman_technology_get_powered(wifi_technology)) {
-        if (connman_technology_call_scan_sync(wifi_technology, NULL, &error)) {
-            Result = OK;
-        } else {
-            g_printerr("WiFi scan failed: %s\n", error->message);
-            g_error_free(error);
-        }
+        connman_technology_call_scan(wifi_technology, NULL, NULL, NULL);
+        Result = OK;
     }
 
     return Result;
