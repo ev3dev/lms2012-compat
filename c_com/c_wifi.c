@@ -83,6 +83,7 @@ static ConnmanTechnology *ethernet_technology = NULL;
 static ConnmanTechnology *wifi_technology = NULL;
 static GList *service_list = NULL;
 static DATA16 service_list_state = 1;
+static GList *removed_list = NULL;
 
 #define C_WIFI_SERVICE_CONNECT_RESULT_QUARK c_wifi_service_connect_result_quark()
 
@@ -91,10 +92,7 @@ static DATA16 service_list_state = 1;
 static G_DEFINE_QUARK(cWifiServiceConnectResultQuark, c_wifi_service_connect_result)
 
 /**
- * @brief           Attempt to move a service up in the service list.
- *
- * ConnMan does it's own ordering of services, so don't expect this to have a
- * visible effect.
+ * @brief           Move a service up in the service list.
  *
  * @param Index     The index of the service to move.
  */
@@ -116,13 +114,13 @@ void cWiFiMoveUpInList(int Index)
         g_printerr("Failed to move up: %s\n", error->message);
         g_error_free(error);
     }
+
+    service_list = g_list_remove(service_list, service);
+    service_list = g_list_insert(service_list, service, Index - 1);
 }
 
 /**
- * @brief           Attempt to move a service down in the service list.
- *
- * ConnMan does it's own ordering of services, so don't expect this to have
- * a visible effect.
+ * @brief           Move a service down in the service list.
  *
  * @param Index     The index of the service to move.
  */
@@ -144,6 +142,9 @@ void cWiFiMoveDownInList(int Index)
         g_printerr("Failed to move down: %s\n", error->message);
         g_error_free(error);
     }
+
+    service_list = g_list_remove(service_list, service);
+    service_list = g_list_insert(service_list, service, Index + 1);
 }
 
 void cWiFiSetEncryptToWpa2(int Index)
@@ -438,6 +439,16 @@ RESULT cWiFiScanForAPs()
     RESULT Result = FAIL;
 
     pr_dbg("cWiFiScanForAPs\n");
+
+    // if there are any removals pending, we can remove them from service_list
+    // safely now.
+    while (removed_list) {
+        ConnmanService *service = g_list_nth_data(removed_list, 0);
+
+        service_list = g_list_remove(service_list, service);
+        removed_list = g_list_remove(removed_list, service);
+        g_object_unref(service);
+    }
 
     if (wifi_technology && connman_technology_get_powered(wifi_technology)) {
         connman_technology_call_scan(wifi_technology, NULL, NULL, NULL);
@@ -1360,8 +1371,9 @@ static gint compare_proxy_path(GDBusProxy *proxy, const gchar *path)
 /**
  * @brief           Handles service change events
  *
- * Updates the global service_list and sorts it to match the order received
- * from ConnMan.
+ * Updates the global service_list. Once an item is in service_list, we ignore
+ * the order supplied from connman. This is necessary because lms expects the
+ * order to not change since it uses "index" to access services.
  *
  * @param object    The ConnMan manager instance.
  * @param changed   A list of services that have changed.
@@ -1373,26 +1385,8 @@ static void on_services_changed(ConnmanManager *object, GVariant *changed,
     GVariantIter iter;
     gchar *path;
     GVariant **properties;
-    GList *new_list = NULL;
 
     pr_dbg("on_services_changed\n");
-
-    // handle removed items first to make later search more efficient
-    for (; *removed; removed++) {
-        GList *match;
-
-        path = *removed;
-        match = g_list_find_custom(service_list, path,
-                                   (GCompareFunc)compare_proxy_path);
-        if (match) {
-            service_list = g_list_remove_link(service_list, match);
-            g_object_unref(G_OBJECT(match->data));
-            g_list_free1(match);
-            pr_dbg("removed: %s\n", path);
-        } else {
-            g_critical("Failed to remove %s", path);
-        }
-    }
 
     g_variant_iter_init(&iter, changed);
     while (g_variant_iter_loop(&iter, "(oa{sv})", &path, &properties)) {
@@ -1400,13 +1394,10 @@ static void on_services_changed(ConnmanManager *object, GVariant *changed,
 
         match = g_list_find_custom(service_list, path,
                                    (GCompareFunc)compare_proxy_path);
-        if (match) {
-            service_list = g_list_remove_link(service_list, match);
-            new_list = g_list_concat(match, new_list);
-            pr_dbg("changed: %s\n", path);
-        } else {
+        if (!match) {
+            // only add the service if it is not already in the list
             ConnmanService *proxy = cWiFiGetConnmanServiceProxy(path);
-            new_list = g_list_prepend(new_list, proxy);
+            service_list = g_list_append(service_list, proxy);
             g_signal_connect(proxy, "notify::state",
                              G_CALLBACK(on_service_state_changed), NULL);
             on_service_state_changed(proxy);
@@ -1415,15 +1406,27 @@ static void on_services_changed(ConnmanManager *object, GVariant *changed,
         // path and properties are freed by g_variant_iter_loop
     }
 
-    if (new_list) {
-        g_warn_if_fail(service_list == NULL);
-        service_list = g_list_reverse(new_list);
-    }
-
     if (service_list_state == DATA16_MAX) {
         service_list_state = 1;
     } else {
         service_list_state++;
+    }
+
+    for (; *removed; removed++) {
+        GList *match;
+
+        path = *removed;
+        match = g_list_find_custom(service_list, path,
+                                   (GCompareFunc)compare_proxy_path);
+        if (match) {
+            // removed services are saved since we can't change the index of
+            // items in service_list here. They will be removed when we call
+            // cWiFiScanForAPs
+            removed_list = g_list_prepend(removed_list, match->data);
+            pr_dbg("removed: %s\n", path);
+        } else {
+            g_critical("Failed to remove %s", path);
+        }
     }
 }
 
