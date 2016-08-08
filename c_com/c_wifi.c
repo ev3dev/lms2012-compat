@@ -84,7 +84,11 @@ static ConnmanTechnology *wifi_technology = NULL;
 static GList *service_list = NULL;
 static DATA16 service_list_state = 1;
 
+#define C_WIFI_SERVICE_CONNECT_RESULT_QUARK c_wifi_service_connect_result_quark()
+
 // ******************************************************************************
+
+static G_DEFINE_QUARK(cWifiServiceConnectResultQuark, c_wifi_service_connect_result)
 
 /**
  * @brief           Attempt to move a service up in the service list.
@@ -316,33 +320,68 @@ WIFI_STATE_FLAGS cWiFiGetFlags(int Index)
     return flags;
 }
 
+static void cWifiConnectToApFinish(GObject *source_object,
+                                   GAsyncResult *res,
+                                   gpointer user_data)
+{
+    ConnmanService *proxy = CONNMAN_SERVICE(source_object);
+    GError *error = NULL;
+
+    if (connman_service_call_connect_finish(proxy, res, &error)) {
+        WiFiStatus = OK;
+        g_object_set_qdata(source_object, C_WIFI_SERVICE_CONNECT_RESULT_QUARK,
+                           GINT_TO_POINTER(START));
+    } else {
+        WiFiStatus = FAIL;
+        g_object_set_qdata(source_object, C_WIFI_SERVICE_CONNECT_RESULT_QUARK,
+                           GINT_TO_POINTER(FAIL));
+        g_printerr("Connect failed: %s\n", error->message);
+        g_error_free(error);
+    }
+}
+
 /**
  * @brief           Connect to the service at the specified index.
  *
  * @param Index     Index of the service in the service_list.
+ *
+ * @return          OK on success, BUSY if waiting for completion or FAIL on
+ *                  error.
  */
 RESULT cWiFiConnectToAp(int Index)
 {
     ConnmanService *proxy;
-    GError *error = NULL;
-    RESULT Result = FAIL;
+    RESULT Result;
 
-    WiFiStatus = BUSY;
     pr_dbg("cWiFiConnectToAp(int Index = %d)\n", Index);
 
     proxy = g_list_nth_data(service_list, Index);
     g_return_if_fail(proxy != NULL);
 
-    // TODO: need to make this async so that we can handle agent request for passphrase
-    if (connman_service_call_connect_sync(proxy, NULL, &error)) {
-        Result = OK;
-        pr_dbg("cWiFiMakeConnectionToAp(Index = %d) == OK)\n", Index);
-        WiFiStatus = OK;
-    } else {
-        WiFiStatus = FAIL;
-        g_printerr("Connect failed: %s\n", error->message);
-        g_error_free(error);
+    Result = GPOINTER_TO_INT(g_object_get_qdata(G_OBJECT(proxy),
+                             C_WIFI_SERVICE_CONNECT_RESULT_QUARK));
+    if (Result == OK) {
+        // if we are not already trying to connect, start a connection request
+        connman_service_call_connect(proxy, NULL, cWifiConnectToApFinish, NULL);
+        g_object_set_qdata(G_OBJECT(proxy), C_WIFI_SERVICE_CONNECT_RESULT_QUARK,
+                           GINT_TO_POINTER(BUSY));
+        WiFiStatus = BUSY;
+        Result = BUSY;
     }
+    else if (Result == START) {
+        // the service was successfully connected
+        g_object_set_qdata(G_OBJECT(proxy), C_WIFI_SERVICE_CONNECT_RESULT_QUARK,
+                           GINT_TO_POINTER(OK));
+        WiFiStatus = OK;
+        Result = OK;
+    }
+    else if (Result == FAIL) {
+        // connection failed - pass error to caller and reset connection state (quark)
+        g_object_set_qdata(G_OBJECT(proxy), C_WIFI_SERVICE_CONNECT_RESULT_QUARK,
+                           GINT_TO_POINTER(OK));
+        WiFiStatus = FAIL;
+    }
+    // implicit else if (Result == BUSY) { // do nothing }
 
     return Result;
 }
@@ -1116,6 +1155,10 @@ static ConnmanService *cWiFiGetConnmanServiceProxy(const gchar *path)
                        error->message);
             g_error_free(error);
         }
+
+        // this is used to keep track of state when connecting
+        g_object_set_qdata(G_OBJECT(proxy), C_WIFI_SERVICE_CONNECT_RESULT_QUARK,
+                           GINT_TO_POINTER(OK));
     } else {
         g_printerr("Error creating connman service proxy: %s\n", error->message);
         g_error_free(error);

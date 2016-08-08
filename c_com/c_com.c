@@ -5096,7 +5096,9 @@ void      cComSet(void)
   DATA8   Connection;
   DATA8   Item;
   DATA8   Type;
+  IP      TmpIp;
 
+  TmpIp = GetObjectIp();
   Cmd  =  *(DATA8*)PrimParPointer();
 
   switch (Cmd)
@@ -5365,13 +5367,15 @@ void      cComSet(void)
                 printf("cWiFiConnect => index: %d, Name: %s\n", Item, pName);
               #endif
 
-              cWiFiConnectToAp((int)Item);
+              if (cWiFiConnectToAp((int)Item) == BUSY) {
+                DspStat = BUSYBREAK;
+              } else {
+                DspStat = NOBREAK;
+              }
 
               #ifdef DEBUG
                 printf("We have tried to connect....\n");
               #endif
-
-              DspStat  =  NOBREAK;
             }
             else
             {
@@ -5540,6 +5544,11 @@ void      cComSet(void)
       }
     }
 
+  }
+  if (DspStat == BUSYBREAK)
+  {
+    // Rewind IP
+    SetObjectIp(TmpIp - 1);
   }
   SetDispatchStatus(DspStat);
 }
