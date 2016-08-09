@@ -309,7 +309,7 @@ define    SEARCH_LINE_ICONX     40                                    //
 define    SEARCH_LINE_STARTX    24                                    //
 define    SEARCH_LINE_STARTY    21                                    //
 define    SEARCH_LINE_SPACEY    17                                    //
-define    SEARCH_LINES          3                                     //
+define    SEARCH_LINES          4                                     //
 define    SEARCH_CURSOR_STARTX  21                                    //
 define    SEARCH_CURSOR_STARTY  35                                    //
 define    SEARCH_CURSOR_WIDTH   127                                   //
@@ -327,7 +327,7 @@ define    SEARCH_BITMAP_STARTY  88                                    //
 define    SEARCH_BAR_STARTX     150                                   //
 define    SEARCH_BAR_STARTY     35                                    //
 define    SEARCH_BAR_WIDTH      5                                     //
-define    SEARCH_BAR_HEIGHT     48                                    //
+define    SEARCH_BAR_HEIGHT     64                                    //
                                                                       //
 subcall   SearchScreen                                                //  void SearchScreen(void)
 {                                                                     //  {
@@ -376,7 +376,7 @@ Loop:                                                                 //    {
 NoChange:                                                             //      }
                                                                       //
   UI_BUTTON(GET_VERT,Inc)                                             //      UI_BUTTON(GET_VERT,Inc)
-  CALL(ControlPointer,0,Entries,SEARCH_LINES,Inc,2,Pointer,Start,ExtPointer,Update) // ControlPointer(0,Entries,SEARCH_LINES,Inc,2,Pointer,Start,ExtPointer,Update)
+  CALL(ControlPointer,0,Entries,SEARCH_LINES,Inc,1,Pointer,Start,ExtPointer,Update) // ControlPointer(0,Entries,SEARCH_LINES,Inc,1,Pointer,Start,ExtPointer,Update)
                                                                       //
   JR_FALSE(Update,NoUpdate)                                           //      if (Update)
                                                                       //      {
@@ -497,28 +497,7 @@ EndEntry:                                                             //
   ADD16(1,Pointer,Tmp)                                                //        Tmp   =  Pointer + 1
   UI_DRAW(VERTBAR,FG_COLOR,SEARCH_BAR_STARTX,SEARCH_BAR_STARTY,SEARCH_BAR_WIDTH,SEARCH_BAR_HEIGHT,0,Entries,Tmp) // UI_DRAW(VERTBAR,FG_COLOR,SEARCH_BAR_STARTX,SEARCH_BAR_STARTY,SEARCH_BAR_WIDTH,SEARCH_BAR_HEIGHT,0,Entries,Tmp)
                                                                       //
-  // Draw separator line                                              //
-  SUB16(Ypos,5,TmpY)                                                  //        TmpY        =  Ypos + 5
-  UI_DRAW(LINE,FG_COLOR,SEARCH_SEPAR_STARTX,TmpY,SEARCH_SEPAR_ENDX,TmpY) //     UI_DRAW(LINE,FG_COLOR,SEARCH_SEPAR_STARTX,TmpY,SEARCH_SEPAR_ENDX,TmpY)
-                                                                      //
-  // Show add hidden icon                                             //
-  UI_DRAW(ICON,FG_COLOR,SEARCH_ICON_STARTX,Yipos,NORMAL_ICON,ICON_ADD_HIDDEN) // UI_DRAW(ICON,FG_COLOR,SEARCH_ICON_STARTX,Yipos,NORMAL_ICON,ICON_ADD_HIDDEN)
-                                                                      //
-  // Show "Add hidden"                                                //
-  ADD16(8,SEARCH_LINE_ICONX,Tmp)                                      //        Tmp         =  SEARCH_LINE_ICONX + 8
-  UI_DRAW(TEXT,FG_COLOR,Tmp,Ypos,'Add hidden')                        //        UI_DRAW(TEXT,FG_COLOR,Tmp,Ypos,'Add hidden')
-                                                                      //
-  // Draw bar if selected                                             //
-  JR_NEQ16(ExtPointer,1,NotSearch)                                    //        if (ExtPointer == 1)
-                                                                      //        {
-  MUL16(SEARCH_LINES,SEARCH_LINE_SPACEY,TmpY)                         //          TmpY   =  SEARCH_LINES * SEARCH_LINE_SPACEY
-  ADD16(TmpY,SEARCH_CURSOR_STARTY,TmpY)                               //          TmpY  +=  SEARCH_CURSOR_STARTY
-  ADD16(SEARCH_CURSOR_WIDTH,7,Tmp)                                    //          Tmp    =  SEARCH_CURSOR_WIDTH + 7
-  UI_DRAW(INVERSERECT,SEARCH_CURSOR_STARTX,TmpY,Tmp,SEARCH_CURSOR_HEIGHT) //      UI_DRAW(INVERSERECT,SEARCH_CURSOR_STARTX,TmpY,Tmp,SEARCH_CURSOR_HEIGHT)
-                                                                      //
 NotSearch:                                                            //        }
-                                                                      //
-  ADD16(Ypos,SEARCH_LINE_SPACEY,Ypos)                                 //        Ypos       +=  SEARCH_LINE_SPACEY
                                                                       //
   // Draw separator line                                              //
   SUB16(Ypos,5,TmpY)                                                  //        TmpY        =  Ypos + 6
@@ -528,7 +507,7 @@ NotSearch:                                                            //        
   ADD16(SEARCH_LINE_ICONX,32,Tmp)                                     //        Tmp         =  SEARCH_LINE_ICONX + 32
   SUB16(Ypos,4,TmpY)                                                  //        TmpY        =  Ypos - 4
                                                                       //
-  JR_NEQ16(ExtPointer,2,NotYes)                                       //        if (ExtPointer == 2)
+  JR_NEQ16(ExtPointer,1,NotYes)                                       //        if (ExtPointer == 1)
                                                                       //        {
   UI_DRAW(ICON,FG_COLOR,Tmp,TmpY,LARGE_ICON,YES_SEL)                  //          UI_DRAW(ICON,FG_COLOR,Tmp,TmpY,LARGE_ICON,YES_SEL)
                                                                       //
@@ -578,39 +557,8 @@ Not0:                                                                 //        
                                                                       //
   JR_NEQ16(ExtPointer,1,Not1)                                         //        if (ExtPointer == 1)
                                                                       //        {
-  MOVE16_8(Entry,Item)                                                //          Item  =  Entry
-  MOVE8_8(CHARSET_WIFISSID,State)                                     //          State   =  0
-  STRINGS(DUPLICATE,'',Name)                                          //          STRINGS(DUPLICATE,'',Name)
-  UI_DRAW(KEYBOARD,FG_COLOR,KEYBOARD_STARTX,KEYBOARD_STARTY,ICON_WIFI,DEVICENAMESIZE,'Network Name',State,Name) // UI_DRAW(KEYBOARD,FG_COLOR,KEYBOARD_STARTX,KEYBOARD_STARTY,ICON_WIFI,DEVICENAMESIZE,'Network Name',State,Name)
-                                                                      //
-  JR_FALSE(Name,Break)                                                //          if (Name[0])
-                                                                      //          {
-                                                                      //
-  CALL(ShowBlock)                                                     //            ShowBlock()
-  COM_SET(SET_SSID,HARDWARE,Name)                                     //            COM_SET(SET_SSID,HARDWARE,Name)
-  CALL(ShowWait,State)                                                //            ShowWait(State)
-                                                                      //
-  CALL(HiddenScreen,Item,Name,State)                                  //            HiddenScreen(Item,Name,State)
-  JR_FALSE(State,NotConnect)                                          //            {
-                                                                      //
-  JR(EndConnect)                                                      //            }
-                                                                      //            else
-NotConnect:                                                           //            {
-                                                                      //
-  MOVE8_8(0,Run)                                                      //              Run   =  0
-EndConnect:                                                           //            }
-  JR(EndBreak)                                                        //          }
-                                                                      //          else
-Break:                                                                //          {
-                                                                      //
-  MOVE8_8(0,Run)                                                      //            Run   =  0
-EndBreak:                                                             //          }
-Not1:                                                                 //        }
-                                                                      //
-  JR_NEQ16(ExtPointer,2,Not2)                                         //        if (ExtPointer == 2)
-                                                                      //        {
   MOVE8_8(0,Run)                                                      //          Run   =  0
-Not2:                                                                 //        }
+Not1:                                                                 //        }
                                                                       //
   MOVE8_8(1,Update)                                                   //        Update      =  1
 NotEnter:                                                             //      }
