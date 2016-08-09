@@ -40,6 +40,8 @@
  *
  */
 
+#include <glib.h>
+#include <glib/gstdio.h>
 
 #include "c_com.h"
 #include "lms2012.h"
@@ -190,16 +192,25 @@ RESULT    cComInit(void)
   UWORD   TmpFileHandle;
   UBYTE   Cnt;
   FILE    *File;
+  int timeout = 10;
 
   ComInstance.udc_syspath = cComGetUdcDevice();
 
   cComUsbHidServiceInit();
 
   ComInstance.CommandReady      =  0;
-  ComInstance.Cmdfd             =  open("/dev/hidg0", O_RDWR);
 
-  if (ComInstance.Cmdfd >= 0)
-  {
+  // this is a horrible way to wait for /dev/hidg0 to appear, but we have a
+  // better plan... https://github.com/ev3dev/ev3dev/issues/721
+  while (--timeout && g_access("/dev/hidg0", R_OK) == -1) {
+    g_usleep(100000);
+  }
+
+  ComInstance.Cmdfd             =  open("/dev/hidg0", O_RDWR);
+  if (ComInstance.Cmdfd == -1) {
+    g_warning("Failed to open /dev/hidg0: %s", strerror(errno));
+  }
+  else {
     memset(ComInstance.TxBuf[USBDEV].Buf,0,sizeof(ComInstance.TxBuf[USBDEV].Buf));
 
     Result  =  OK;
