@@ -300,6 +300,12 @@ RESULT cWiFiGetName(char *ApName, int Index, char Length)
     ConnmanService *service;
     RESULT Result = FAIL;
 
+    // Apparently the EV3 desktop software doesn't know (much) about null
+    // terminators. If we don't zero the entire array, there will be junk
+    // displayed after the name when editing the name in the Wireless Setup
+    // dialog in the desktop software.
+    memset(ApName, 0, Length);
+
     service = g_list_nth_data(service_list, Index);
     if (service) {
         snprintf(ApName, Length, "%s", connman_service_get_name(service));
