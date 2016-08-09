@@ -267,11 +267,9 @@ typedef struct
 }BT_GLOBALS;
 
 
-void      IncommingConnect(void);
 void      BtInit(char *pName);
 void      BtExit(void);
 void      BtUpdate(void);
-void      BtTxMsgs(void);
 UBYTE     cBtConnect(UBYTE *pName);
 UBYTE     cBtDisconnect(UBYTE *pName);
 UBYTE     cBtDiscChNo(UBYTE ChNo);

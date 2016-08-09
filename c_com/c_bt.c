@@ -234,23 +234,15 @@ enum
   MODE2 = 1
 };
 
-
-UBYTE     BtConnectTo(UBYTE Port, bdaddr_t BtAddr);
-void      BtTxMsgs(void);
-void      BtSetup(UBYTE State);
-UWORD     cBtHandleHCI(void);
-void      BtDisconnectAll(void);
-UBYTE     BtClearSearchListEntry(UBYTE Index);
-
-UBYTE     cBtFindDevChNo(UBYTE ChNo, UBYTE *pIndex);
-UBYTE     cBtFindDevConnHandle(UBYTE ConnHandle, UBYTE *pIndex);
-UBYTE     cBtFindDevAdr(bdaddr_t *pAdr, UBYTE *pIndex);
-void      cBtSetDevConnectedStatus(UBYTE Index);
-void      cBtCloseDevConnection(UBYTE Index);
-UBYTE     cBtFindSearchAdr(bdaddr_t *pAdr, UBYTE *pIndex);
-void      cBtSetSearchConnectedStatus(UBYTE Index);
-void      cBtClearSearchConnectedStatus(UBYTE Index);
-void      BtCloseBtSocket(SLONG *pBtSocket);
+static void  BtTxMsgs(void);
+static void  BtSetup(UBYTE State);
+static UWORD cBtHandleHCI(void);
+static UBYTE BtClearSearchListEntry(UBYTE Index);
+static UBYTE cBtFindDevChNo(UBYTE ChNo, UBYTE *pIndex);
+static UBYTE cBtFindDevAdr(bdaddr_t *pAdr, UBYTE *pIndex);
+static void  cBtSetDevConnectedStatus(UBYTE Index);
+static UBYTE cBtFindSearchAdr(bdaddr_t *pAdr, UBYTE *pIndex);
+static void  cBtSetSearchConnectedStatus(UBYTE Index);
 
 static char               *get_adapter_path(DBusConnection *conn, const char *adapter);
 static DBusHandlerResult   agent_message(DBusConnection *conn, DBusMessage *msg, void *data);
@@ -260,16 +252,11 @@ static DBusHandlerResult   request_pincode_message(DBusConnection *conn, DBusMes
 static char               *get_default_adapter_path(DBusConnection *conn);
 static void                sig_term(int sig);
 static int                 unregister_agent(DBusConnection *conn, const char *adapter_path, const char *agent_path);
-
 static int                 RemoveDevice(DBusConnection *conn, char *Device);
-void                       cBtStrNoColonToBa(UBYTE *pBtStrAddr, bdaddr_t *pAddr);
-
-void                       DecodeMode1(UBYTE BufNo);
-void                       DecodeMode2(void);
-
-void                       BtClose(void);
-UBYTE                      BtIssueHciVisible(UBYTE Visible, UBYTE Page);
-
+static void                cBtStrNoColonToBa(UBYTE *pBtStrAddr, bdaddr_t *pAddr);
+static void                DecodeMode2(void);
+static void                BtClose(void);
+static UBYTE               BtIssueHciVisible(UBYTE Visible, UBYTE Page);
 
 #define   STOPScanning                  {\
                                           BtSetup(BtInstance.OldState);\
@@ -278,21 +265,7 @@ UBYTE                      BtIssueHciVisible(UBYTE Visible, UBYTE Page);
                                           BtIssueHciVisible(BtInstance.NonVol.Visible, BtInstance.PageState);\
                                         }
 
-
-void    BtSetupHciSocket(void)
-{
-  int   dev_id;
-
-  dev_id = hci_get_route(NULL);
-  BtInstance.HciSocket.Socket = hci_open_dev( dev_id );
-  if (dev_id < 0 || BtInstance.HciSocket.Socket < 0)
-  {
-    perror("Can't open socket");
-    return;
-  }
-}
-
-void      BtSetupPinEvent(void)
+static void BtSetupPinEvent(void)
 {
   struct  hci_filter flt;
 
@@ -323,8 +296,7 @@ void      BtSetupPinEvent(void)
   BtInstance.HciSocket.p.events  = POLLIN | POLLERR | POLLHUP;
 }
 
-
-void    SetupListeningSocket(int *Socket)
+static void SetupListeningSocket(int *Socket)
 {
   SLONG   TmpSockFlags;
   struct  bt_security sec;
@@ -355,8 +327,7 @@ void    SetupListeningSocket(int *Socket)
   listen(*Socket,1);
 }
 
-
-void      BtClearChBuf(UBYTE ChNo)
+static void BtClearChBuf(UBYTE ChNo)
 {
   BtInstance.BtCh[ChNo].Status           =  CH_FREE;
   BtInstance.BtCh[ChNo].ReadBuf.Status   =  READ_BUF_EMPTY;
@@ -471,8 +442,7 @@ void      BtExit(void)
   I2cExit();
 }
 
-
-void      BtCloseBtSocket(SLONG *pBtSocket)
+static void BtCloseBtSocket(SLONG *pBtSocket)
 {
   if (MIN_HANDLE <= *pBtSocket)
   {
@@ -481,8 +451,7 @@ void      BtCloseBtSocket(SLONG *pBtSocket)
   }
 }
 
-
-void      BtCloseCh(UBYTE ChIndex)
+static void BtCloseCh(UBYTE ChIndex)
 {
 
   if (CH_CONNECTING == BtInstance.BtCh[ChIndex].Status)
@@ -518,8 +487,7 @@ void      BtCloseCh(UBYTE ChIndex)
   BtCloseBtSocket(&(BtInstance.BtCh[ChIndex].BtSocket.Socket));
 }
 
-
-void      BtDisconnectAll(void)
+static void BtDisconnectAll(void)
 {
   UBYTE   Tmp;
 
@@ -537,18 +505,12 @@ void      BtDisconnectAll(void)
   }
 }
 
-
-/*! \page ComModule
- *
- *  <hr size="1"/>
- *  <b>     write </b>
- */
 /*! \brief    cBtSetup
  *
  *  Function that handles all state switching
  *
  */
-void      BtSetup(UBYTE State)
+static void BtSetup(UBYTE State)
 {
   BtInstance.OldState = BtInstance.State;
   BtInstance.State    = State;
@@ -665,8 +627,7 @@ void      BtSetup(UBYTE State)
   }
 }
 
-
-UWORD     BtRequestName(void)
+static UWORD BtRequestName(void)
 {
   UWORD               RtnVal;
   remote_name_req_cp  cp;
@@ -806,7 +767,7 @@ UWORD cBtReadCh7(UBYTE *pBuf, UWORD Length)
     return cBtRead(7, pBuf, Length);
 }
 
-void      DecodeBtStream(UBYTE BufNo)
+static void DecodeBtStream(UBYTE BufNo)
 {
   if (MODE1 == BtInstance.NonVol.DecodeMode)
   {
@@ -1132,8 +1093,7 @@ void      DecodeMode1(UBYTE BufNo)
   }
 }
 
-
-void      BtTurnOnSeq(void)
+static void BtTurnOnSeq(void)
 {
   switch(BtInstance.OnOffSeqCnt)
   {
@@ -1443,8 +1403,7 @@ void      BtTurnOnSeq(void)
   }
 }
 
-
-void      BtClose(void)
+static void BtClose(void)
 {
   BtDisconnectAll();
 
@@ -1475,8 +1434,7 @@ void      BtClose(void)
   I2cStop();
 }
 
-
-void      BtTurnOffSeq(void)
+static void BtTurnOffSeq(void)
 {
   BtClose();
 
@@ -1747,8 +1705,7 @@ void      BtUpdate(void)
   BtTxMsgs();
 }
 
-
-void    create_paired_device_reply(DBusPendingCall *pending, void *user_data)
+static void create_paired_device_reply(DBusPendingCall *pending, void *user_data)
 {
   PAIREDDEVINFO *pPairedDevInfo;
   struct         sockaddr_rc  addr;
@@ -1797,12 +1754,12 @@ void    create_paired_device_reply(DBusPendingCall *pending, void *user_data)
   }
 }
 
-
-UBYTE   create_paired_device(DBusConnection *conn, const char *adapter_path,
-                             const char     *agent_path,
-                             const char     *capabilities,
-                             const char     *device,
-                             UBYTE           Port)
+static UBYTE create_paired_device(DBusConnection *conn,
+                                  const char *adapter_path,
+                                  const char *agent_path,
+                                  const char *capabilities,
+                                  const char *device,
+                                  UBYTE Port)
 {
   dbus_bool_t      success;
   DBusMessage     *msg;
@@ -1842,8 +1799,7 @@ UBYTE   create_paired_device(DBusConnection *conn, const char *adapter_path,
   return(1);
 }
 
-
-UBYTE   BtConnectTo(UBYTE Port, bdaddr_t BtAddr)
+static UBYTE BtConnectTo(UBYTE Port, bdaddr_t BtAddr)
 {
   const char   *capabilities = "DisplayYesNo";
   char          Addr[20];
@@ -1983,8 +1939,7 @@ UBYTE     BtGetOnOff(UBYTE *On)
   return(RtnVal);
 }
 
-
-UBYTE     BtIssueHciVisible(UBYTE Visible, UBYTE Page)
+static UBYTE BtIssueHciVisible(UBYTE Visible, UBYTE Page)
 {
   UBYTE   Visibility;
   UBYTE   Status;
@@ -2051,8 +2006,7 @@ UBYTE     BtGetVisibility(void)
   return(BtInstance.NonVol.Visible);
 }
 
-
-UBYTE     cBtFindDevName(UBYTE *pItem, UBYTE *pName, UBYTE StartIndex)
+static UBYTE cBtFindDevName(UBYTE *pItem, UBYTE *pName, UBYTE StartIndex)
 {
   UBYTE   RtnVal = FALSE;
   UBYTE   Index;
@@ -2082,8 +2036,7 @@ UBYTE     cBtFindDevName(UBYTE *pItem, UBYTE *pName, UBYTE StartIndex)
   return(RtnVal);
 }
 
-
-UBYTE     BtClearSearchListEntry(UBYTE Index)
+static UBYTE BtClearSearchListEntry(UBYTE Index)
 {
   UBYTE   RtnVal;
 
@@ -2099,8 +2052,7 @@ UBYTE     BtClearSearchListEntry(UBYTE Index)
   return(RtnVal);
 }
 
-
-UBYTE     cBtFindSearchName(UBYTE *pItem, UBYTE *pName)
+static UBYTE cBtFindSearchName(UBYTE *pItem, UBYTE *pName)
 {
   UBYTE   RtnVal = FALSE;
   UBYTE   Index;
@@ -2118,8 +2070,7 @@ UBYTE     cBtFindSearchName(UBYTE *pItem, UBYTE *pName)
   return(RtnVal);
 }
 
-
-UBYTE     Connect(bdaddr_t BdAddr, UBYTE PortNo)
+static UBYTE Connect(bdaddr_t BdAddr, UBYTE PortNo)
 {
   UBYTE   RtnVal;
   UBYTE   Tmp;
@@ -2307,8 +2258,7 @@ UBYTE     cBtConnect(UBYTE *pDevName)
   return(RtnVal);
 }
 
-
-UBYTE     cBtDiscDevIndex(UBYTE Index)
+static UBYTE cBtDiscDevIndex(UBYTE Index)
 {
   UBYTE   RtnVal;
 
@@ -2387,8 +2337,7 @@ UBYTE     cBtDisconnect(UBYTE *pName)
   return(RtnVal);
 }
 
-
-void      BtTxMsgs(void)
+static void BtTxMsgs(void)
 {
   UBYTE     Cnt;
   UWORD     ByteCnt;
@@ -2536,7 +2485,7 @@ UWORD cBtDevWriteBuf7(UBYTE *pBuf, UWORD Size)
     return cBtDevWriteBuf(7, pBuf, Size);
 }
 
-UBYTE     cBtFindSearchAdr(bdaddr_t *pAdr, UBYTE *pIndex)
+static UBYTE cBtFindSearchAdr(bdaddr_t *pAdr, UBYTE *pIndex)
 {
   UBYTE   Cnt;
   UBYTE   RtnVal;
@@ -2553,8 +2502,7 @@ UBYTE     cBtFindSearchAdr(bdaddr_t *pAdr, UBYTE *pIndex)
   return(RtnVal);
 }
 
-
-UBYTE     cBtFindDevAdr(bdaddr_t *pAdr, UBYTE *pIndex)
+static UBYTE cBtFindDevAdr(bdaddr_t *pAdr, UBYTE *pIndex)
 {
   UBYTE   Cnt;
   UBYTE   RtnVal;
@@ -2572,8 +2520,7 @@ UBYTE     cBtFindDevAdr(bdaddr_t *pAdr, UBYTE *pIndex)
   return(RtnVal);
 }
 
-
-UBYTE     cBtFindDevConnHandle(UBYTE ConnHandle, UBYTE *pIndex)
+static UBYTE cBtFindDevConnHandle(UBYTE ConnHandle, UBYTE *pIndex)
 {
   UBYTE   Cnt;
   UBYTE   RtnVal;
@@ -2592,8 +2539,7 @@ UBYTE     cBtFindDevConnHandle(UBYTE ConnHandle, UBYTE *pIndex)
   return(RtnVal);
 }
 
-
-UBYTE     cBtFindDevChNo(UBYTE ChNo, UBYTE *pIndex)
+static UBYTE cBtFindDevChNo(UBYTE ChNo, UBYTE *pIndex)
 {
   UBYTE   Cnt;
   UBYTE   RtnVal;
@@ -2612,8 +2558,7 @@ UBYTE     cBtFindDevChNo(UBYTE ChNo, UBYTE *pIndex)
   return(RtnVal);
 }
 
-
-UBYTE     cBtInsertInDeviceList(bdaddr_t *pBtAdr, UBYTE *pIndex)
+static UBYTE cBtInsertInDeviceList(bdaddr_t *pBtAdr, UBYTE *pIndex)
 {
   UBYTE   Cnt;
   UBYTE   Exit;
@@ -2659,15 +2604,13 @@ UBYTE     cBtInsertInDeviceList(bdaddr_t *pBtAdr, UBYTE *pIndex)
   return(RtnVal);
 }
 
-
-void      cBtSetDevConnectedStatus(UBYTE Index)
+static void cBtSetDevConnectedStatus(UBYTE Index)
 {
   BtInstance.NonVol.DevList[Index].Connected  = TRUE;
   BtInstance.NoOfConnDevs++;
 }
 
-
-void      cBtCloseDevConnection(UBYTE Index)
+static void cBtCloseDevConnection(UBYTE Index)
 {
   BtInstance.NonVol.DevList[Index].Connected  = FALSE;
 
@@ -2676,32 +2619,23 @@ void      cBtCloseDevConnection(UBYTE Index)
   BtInstance.NonVol.DevList[Index].ChNo  =  NO_OF_BT_CHS;
 }
 
-
-void      cBtSetSearchConnectedStatus(UBYTE Index)
+static void cBtSetSearchConnectedStatus(UBYTE Index)
 {
   BtInstance.SearchList[Index].Connected  = TRUE;
   BtInstance.SearchList[Index].Paired     = TRUE;
 }
 
-
-void      cBtClearSearchConnectedStatus(UBYTE Index)
+static void cBtClearSearchConnectedStatus(UBYTE Index)
 {
   BtInstance.SearchList[Index].Connected  = FALSE;
 }
 
-
-void      cBtInsertDevConnHandle(UBYTE Index, UWORD ConnHandle)
+static void cBtInsertDevConnHandle(UBYTE Index, UWORD ConnHandle)
 {
   BtInstance.NonVol.DevList[Index].ConnHandle =  ConnHandle;
 }
 
-
-/*! \page ComModule
- *
- *  <hr size="1"/>
- *  <b>     write </b>
- */
-UWORD     cBtHandleHCI(void)
+static UWORD cBtHandleHCI(void)
 {
   UWORD           RtnVal;
   int             len;
@@ -3273,8 +3207,7 @@ UBYTE     cBtGetHciBusyFlag(void)
   return(RtnVal);
 }
 
-
-UBYTE     cBtGetBtType(UBYTE *pCod)
+static UBYTE cBtGetBtType(UBYTE *pCod)
 {
   UBYTE   Type;
 
@@ -4079,7 +4012,7 @@ void    cBtSetTrustedDev(UBYTE *pBtAddr, UBYTE *pPin, UBYTE PinSize)
 }
 
 
-void      cBtStrNoColonToBa(UBYTE *pBtStrAddr, bdaddr_t *pAddr)
+static void cBtStrNoColonToBa(UBYTE *pBtStrAddr, bdaddr_t *pAddr)
 {
   ULONG   Ba[6];
 
@@ -4122,7 +4055,3 @@ UWORD     cBtSetBundleSeedId(UBYTE *pSeedId)
 
   return(RtnVal);
 }
-
-
-
-
