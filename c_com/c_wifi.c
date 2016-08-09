@@ -167,6 +167,30 @@ void cWiFiSetEncryptToNone(int Index)
 }
 
 /**
+ * @brief           Get the encryption type for the specified connection.
+ *
+ * @param Index     The index of the service int the service list.
+ *
+ * @return          The encryption type.
+ */
+LMS_ENCRYPT cWifiGetEncrypt(int Index)
+{
+    ConnmanService *service = g_list_nth_data(service_list, Index);
+
+    if (service) {
+        const gchar *const *security;
+        security = connman_service_get_security (service);
+        for (; *security; security++) {
+            if (g_strcmp0(*security, "psk") == 0) {
+                return LMS_ENCRYPT_WPA2;
+            }
+        }
+    }
+
+    return LMS_ENCRYPT_NONE;
+}
+
+/**
  * @brief           Remove the specified service from the list of known services
  *
  * @param Index     The index of the service in the service list.
@@ -1544,8 +1568,7 @@ static gboolean on_connman_agent_request_input(ConnmanAgent *object,
     GList *match;
     GObject *service;
     GVariantDict args, result;
-g_message("on_connman_agent_request_input");
-g_message("%s", g_variant_print(arg_fields, TRUE));
+
     match = g_list_find_custom(service_list, arg_service,
                                (GCompareFunc)compare_proxy_path);
     if (!match) {
@@ -1562,7 +1585,6 @@ g_message("%s", g_variant_print(arg_fields, TRUE));
     if (g_variant_dict_contains(&args, "Passphrase")) {
         GVariantDict passphrase_dict;
 
-        g_message("passphrase");
         g_variant_dict_init(&passphrase_dict,
                             g_variant_dict_lookup_value(&args, "Passphrase", NULL));
 

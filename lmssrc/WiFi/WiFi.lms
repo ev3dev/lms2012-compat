@@ -26,7 +26,7 @@
 //!
 //! \verbatim
 //**********************************************************************
-define appv 'WiFi V2.00'                                              //
+define appv 'WiFi V2.01'                                              //
 //**********************************************************************
                                                                       //
 define    LCDNAMESIZE     12                                          //  Max characters shown on LCD
@@ -590,7 +590,7 @@ Not0:                                                                 //        
   COM_SET(SET_SSID,HARDWARE,Name)                                     //            COM_SET(SET_SSID,HARDWARE,Name)
   CALL(ShowWait,State)                                                //            ShowWait(State)
                                                                       //
-  CALL(HiddenScreen,Name,State)                                       //            HiddenScreen(Name,State)
+  CALL(HiddenScreen,Item,Name,State)                                  //            HiddenScreen(Item,Name,State)
   JR_FALSE(State,NotConnect)                                          //            {
                                                                       //
   JR(EndConnect)                                                      //            }
@@ -657,8 +657,9 @@ define    HIDDEN_BAR_STARTY     35                                    //
 define    HIDDEN_BAR_WIDTH      5                                     //
 define    HIDDEN_BAR_HEIGHT     48                                    //
                                                                       //
-subcall   HiddenScreen                                                //  void HiddenScreen(void)
+subcall   HiddenScreen                                                //  void HiddenScreen(Item,Name,Result)
 {                                                                     //  {
+  IN_8    Item                                                        //
   IN_S    Name DEVICENAMESIZE                                         //
   OUT_8   Result                                                      //
                                                                       //
@@ -672,10 +673,8 @@ subcall   HiddenScreen                                                //  void H
                                                                       //
   MOVE8_8(0,Result)                                                   //    Result  =  0
                                                                       //
-  CALL(EncrypScreen,Name,Result,Encryption)                           //    EncrypScreen(Name,Result,Encryption)
-  JR_FALSE(Result,Break)                                              //    if (Result)
-                                                                      //    {
-  JR_EQ8(Encryption,LMS_ENCRYPT_NONE,NotEncrypted)                        //      if (!LMS_ENCRYPT_NONE)
+  COM_GET(GET_ENCRYPT,HARDWARE,Item,Encryption)                       //    EncrypScreen(Name,Result,Encryption)
+  JR_EQ8(Encryption,LMS_ENCRYPT_NONE,NotEncrypted)                    //      if (!LMS_ENCRYPT_NONE)
                                                                       //      {
                                                                       //
   MOVE8_8(CHARSET_WIFIPASSKEY,State)                                  //        State  =  CHARSET_WIFIPASSKEY
@@ -702,150 +701,7 @@ NotEncrypted:                                                         //      }
 NotConnected3:                                                        //        }
 NotConnected2:                                                        //      }
   MOVE8_8(1,Result)                                                   //      Result  =  1
-Break:                                                                //    }
-}                                                                     //  }
-                                                                      //
-                                                                      //
-// EncrypScreen ****************************************************************************************
-                                                                      //
-define    ENCRYP_STARTX        16                                     //
-define    ENCRYP_STARTY        50                                     //
-define    ENCRYP_LINE_ICONX    48                                     //
-define    ENCRYP_LINE_STARTX   24                                     //
-define    ENCRYP_LINE_STARTY   60                                     //
-define    ENCRYP_LINE_SPACEY   17                                     //
-define    ENCRYP_LINES         2                                      //
-define    ENCRYP_CURSOR_STARTX 21                                     //
-define    ENCRYP_CURSOR_STARTY 74                                     //
-define    ENCRYP_CURSOR_WIDTH  134                                    //
-define    ENCRYP_CURSOR_HEIGHT 14                                     //
-define    ENCRYP_SEPAR_STARTX  21                                     //
-define    ENCRYP_SEPAR_ENDX    154                                    //
-define    ENCRYP_ICON_STARTX   24                                     //
-define    ENCRYP_ICON_STARTY   58                                     //
-define    ENCRYP_ICON_SPACEY   17                                     //
-                                                                      //
-subcall   EncrypScreen                                                //  void EncrypScreen(Entry)
-{                                                                     //  {
-  IN_S    Name DEVICENAMESIZE                                         //
-  OUT_8   Result                                                      //
-  OUT_8   Encryption                                                  //
-                                                                      //
-  DATA8   Update                                                      //
-  DATA16  Xpos                                                        //
-  DATA16  Ypos                                                        //
-  DATA16  Yipos                                                       //
-  DATA16  Line                                                        //
-                                                                      //
-  DATA16  Entries                                                     //
-  DATA16  Inc                                                         //
-  DATA16  Pointer                                                     //
-  DATA16  Start                                                       //
-  DATA16  ExtPointer                                                  //
-  DATA16  Tmp                                                         //
-                                                                      //
-  DATA8   Run                                                         //
-  DATA8   State                                                       //
-  DATA8   Paired                                                      //
-  DATA8   Connected                                                   //
-  DATA8   Type                                                        //
-                                                                      //
-  UI_DRAW(STORE,1)                                                    //    UI_DRAW(STORE,1)
-  MOVE8_8(1,Result)                                                   //    Result      =  1
-  MOVE8_8(1,Run)                                                      //    Run         =  1
-  MOVE16_16(0,Pointer)                                                //    Pointer     =  0
-  MOVE16_16(ENCRYP_LINES,Entries)                                     //    Entries     =  ENCRYP_LINES
-  MOVE8_8(LMS_ENCRYPT_NONE,Encryption)                                    //    Encryption  =  LMS_ENCRYPT_NONE
-                                                                      //
-                                                                      //    do
-Loop:                                                                 //    {
-  UI_BUTTON(FLUSH)                                                    //      UI_BUTTON(FLUSH)
-  UI_DRAW(RESTORE,1)                                                  //      UI_DRAW(RESTORE,1)
-                                                                      //
-  // Show popup                                                       //
-  UI_DRAW(BMPFILE,FG_COLOR,ENCRYP_STARTX,ENCRYP_STARTY,'144x65_POP3') //      Draw bitmap
-                                                                      //
-  MOVE16_16(ENCRYP_LINE_STARTX,Xpos)                                  //      Xpos    =  ENCRYP_LINE_STARTX
-  MOVE16_16(ENCRYP_LINE_STARTY,Ypos)                                  //      Ypos    =  ENCRYP_LINE_STARTY
-  MOVE16_16(ENCRYP_ICON_STARTY,Yipos)                                 //      Yipos   =  ENCRYP_ICON_STARTY
-                                                                      //
-  // Show key icon                                                    //
-  UI_DRAW(ICON,FG_COLOR,ENCRYP_ICON_STARTX,Yipos,NORMAL_ICON,ICON_KEY) //     UI_DRAW(ICON,FG_COLOR,ENCRYP_ICON_STARTX,Yipos,NORMAL_ICON,ICON_WIFI)
-                                                                      //
-  // Show "Encryption"                                                //
-  UI_DRAW(SELECT_FONT,1)                                              //      UI_DRAW(SELECT_FONT,1)
-  UI_DRAW(TEXT,FG_COLOR,ENCRYP_LINE_ICONX,Ypos,'Encryption')          //      UI_DRAW(TEXT,FG_COLOR,ENCRYP_LINE_ICONX,Ypos,'Encryption')
-  UI_DRAW(SELECT_FONT,0)                                              //      UI_DRAW(SELECT_FONT,0)
-                                                                      //
-  // Show separator line                                              //
-  UI_DRAW(LINE,FG_COLOR,ENCRYP_SEPAR_STARTX,72,ENCRYP_SEPAR_ENDX,72)  //      UI_DRAW(LINE,FG_COLOR,ENCRYP_SEPAR_STARTX,72,ENCRYP_SEPAR_ENDX,72)
-                                                                      //
-  // Show "WPA2"                                                      //
-  ADD16(Ypos,ENCRYP_LINE_SPACEY,Ypos)                                 //      Ypos   +=  ENCRYP_LINE_SPACEY
-  UI_DRAW(TEXT,FG_COLOR,Xpos,Ypos,'WPA2')                             //      UI_DRAW(TEXT,FG_COLOR,Xpos,Ypos,'WPA2')
-                                                                      //
-  // Show "None"                                                      //
-  ADD16(Ypos,ENCRYP_LINE_SPACEY,Ypos)                                 //      Ypos   +=  ENCRYP_LINE_SPACEY
-                                                                      //
-  ADD16(Yipos,ENCRYP_ICON_SPACEY,Yipos)                               //      Yipos  +=  ENCRYP_ICON_SPACEY
-                                                                      //
-  // Show "None"                                                      //
-  UI_DRAW(TEXT,FG_COLOR,Xpos,Ypos,'None')                             //      UI_DRAW(TEXT,FG_COLOR,Xpos,Ypos,'None')
-                                                                      //
-  // Draw bar if selected                                             //
-  JR_GTEQ16(Pointer,Entries,TooHigh)                                  //      if (Pointer < Entries)
-                                                                      //      {
-  MUL16(Pointer,ENCRYP_LINE_SPACEY,Tmp)                               //        Tmp   =  Pointer * ENCRYP_LINE_SPACEY
-  ADD16(Tmp,ENCRYP_CURSOR_STARTY,Tmp)                                 //        Tmp  +=  ENCRYP_CURSOR_STARTY
-  UI_DRAW(INVERSERECT,ENCRYP_CURSOR_STARTX,Tmp,ENCRYP_CURSOR_WIDTH,ENCRYP_CURSOR_HEIGHT) // UI_DRAW(INVERSERECT,ENCRYP_CURSOR_STARTX,Tmp,ENCRYP_CURSOR_WIDTH,ENCRYP_CURSOR_HEIGHT)
-TooHigh:                                                              //      }
-                                                                      //
-  // Update display                                                   //
-  UI_DRAW(UPDATE)                                                     //      UI_DRAW(UPDATE)
-                                                                      //
-  UI_BUTTON(WAIT_FOR_PRESS)                                           //      UI_BUTTON(WAIT_FOR_PRESS)
-                                                                      //
-  UI_BUTTON(GET_VERT,Inc)                                             //      UI_BUTTON(GET_VERT,Inc)
-  CALL(ControlPointer,0,Entries,ENCRYP_LINES,Inc,0,Pointer,Start,ExtPointer,Update) // ControlPointer(0,Entries,ENCRYP_LINES,Inc,0,Pointer,Start,ExtPointer,Update)
-                                                                      //
-                                                                      //
-  UI_BUTTON(SHORTPRESS,ENTER_BUTTON,State)                            //      UI_BUTTON(SHORTPRESS,ENTER_BUTTON,State)
-  JR_FALSE(State,NotEnterButton)                                      //      if (State != FALSE)
-                                                                      //      {
-                                                                      //
-  JR_NEQ16(Pointer,0,Not0)                                            //        if (Pointer == 0)
-                                                                      //        {
-  // WPA2                                                             //
-  MOVE8_8(LMS_ENCRYPT_WPA2,Encryption)                                    //          Encryption  =  LMS_ENCRYPT_WPA2
-                                                                      //  
-  CALL(ShowBlock)                                                     //          ShowBlock()
-  COM_SET(SET_ENCRYPT,HARDWARE,Name,Encryption)                       //          COM_SET(SET_ENCRYPT,HARDWARE,Name,Encryption)
-  CALL(ShowWait,State)                                                //          ShowWait(State)
-                                                                      //
-                                                                      //
-Not0:                                                                 //        }
-  JR_NEQ16(Pointer,1,Not1)                                            //        if (Pointer == 1)
-                                                                      //        {
-  // None                                                             //
-  MOVE8_8(LMS_ENCRYPT_NONE,Encryption)                                    //          Encryption  =  LMS_ENCRYPT_NONE
-                                                                      //
-  CALL(ShowBlock)                                                     //          ShowBlock()
-  COM_SET(SET_ENCRYPT,HARDWARE,Name,Encryption)                       //          COM_SET(SET_ENCRYPT,HARDWARE,Name,Encryption)
-  CALL(ShowWait,State)                                                //          ShowWait(State)
-                                                                      //
-                                                                      //
-Not1:                                                                 //        }
-  MOVE8_8(0,Run)                                                      //        Run       =  0
-NotEnterButton:                                                       //      }
-  UI_BUTTON(SHORTPRESS,BACK_BUTTON,State)                             //      UI_BUTTON(SHORTPRESS,BACK_BUTTON,State)
-  JR_FALSE(State,NotBackButton)                                       //      if (State != FALSE)
-                                                                      //      {
-  MOVE8_8(0,Result)                                                   //        Result    =  0
-  MOVE8_8(0,Run)                                                      //        Run       =  0
-                                                                      //
-NotBackButton:                                                        //      }
-                                                                      //    }
-  JR_TRUE(Run,Loop)                                                   //    while (Run)
+Break:                                                                //
 }                                                                     //  }
                                                                       //
                                                                       //
@@ -959,7 +815,7 @@ TooHigh:                                                              //      }
                                                                       //
   JR_NEQ16(Pointer,0,Not0)                                            //        if (Pointer == 0)
                                                                       //        {
-  CALL(HiddenScreen,Name,State)                                       //          HiddenScreen(Name,State)
+  CALL(HiddenScreen,Item,Name,State)                                  //          HiddenScreen(Item,Name,State)
 Not0:                                                                 //        }
   MOVE8_8(0,Run)                                                      //        Run  =  0
 NotEnterButton:                                                       //      }

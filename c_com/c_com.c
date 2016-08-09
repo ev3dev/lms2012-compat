@@ -4896,7 +4896,7 @@ void      cComGet(void)
       Hardware   =  *(DATA8*)PrimParPointer();
       Item       =  *(DATA8*)PrimParPointer();
 
-      Type       =  0;
+      Type       =  LMS_ENCRYPT_NONE;
       switch(Hardware)
       {
         case HW_USB:
@@ -4909,6 +4909,7 @@ void      cComGet(void)
         break;
         case HW_WIFI:
         {
+          Type = cWifiGetEncrypt(Item);
           DspStat   =  NOBREAK;
         }
         break;
