@@ -311,7 +311,7 @@ RESULT cWiFiGetName(char *ApName, int Index, char Length)
         snprintf(ApName, Length, "%s", connman_service_get_name(service));
         Result = OK;
     } else {
-        strcpy(ApName, "None");
+        strncpy(ApName, "None", Length);
     }
 
     return Result;
