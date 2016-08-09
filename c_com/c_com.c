@@ -5250,10 +5250,8 @@ void      cComSet(void)
         {
           if (Search)
           {
-            if (FAIL != cWiFiScanForAPs())
-            {
-              DspStat  =  NOBREAK;
-            }
+            cWiFiScanForAPs();
+            DspStat  =  NOBREAK;
           }
           else
           {

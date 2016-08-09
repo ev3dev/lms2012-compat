@@ -245,9 +245,6 @@ EndYes:                                                               //      }
 Not0:                                                                 //        }
   JR_NEQ16(Pointer,1,Not1)                                            //        if (Pointer == 1)
                                                                       //        {
-//! \todo WiFi search off status hack
-  JR_NEQ8(On,1,NotTurnedOn2)
-  
   CALL(ShowBlock)                                                     //          ShowBlock()
   COM_SET(SET_SEARCH,HARDWARE,1)                                      //          COM_SET(SET_SEARCH,HARDWARE,1)
   CALL(ShowWait,State)                                                //          ShowWait(State)
@@ -263,8 +260,6 @@ SearchOk:                                                             //        
 EndSearch:                                                            //          }
                                                                       //
   MOVE8_8(1,Update)                                                   //          Update      =  1
-  
-NotTurnedOn2:  
                                                                       //
 Not1:                                                                 //        }
   JR_NEQ16(Pointer,2,Not2)                                            //        if (Pointer == 2)
