@@ -244,7 +244,7 @@ RESULT    cComInit(void)
 
   ComInstance.WriteChannel[0]  = cComWriteBuffer;
   ComInstance.WriteChannel[1]  = NULL;
-  ComInstance.WriteChannel[2]  = cBtDevWriteBuf;
+  ComInstance.WriteChannel[2]  = cBtDevWriteBuf0;
   ComInstance.WriteChannel[3]  = cBtDevWriteBuf1;
   ComInstance.WriteChannel[4]  = cBtDevWriteBuf2;
   ComInstance.WriteChannel[5]  = cBtDevWriteBuf3;

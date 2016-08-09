@@ -2473,141 +2473,68 @@ UWORD     cBtI2cToBtBuf(UBYTE *pBuf, UWORD Size)
   return(Size);
 }
 
-
-UWORD     cBtDevWriteBuf(UBYTE *pBuf, UWORD Size)
+static UWORD cBtDevWriteBuf(UBYTE index, UBYTE *pBuf, UWORD Size)
 {
-  if (MODE2 == BtInstance.NonVol.DecodeMode)
-  {
-    if(0 == BtInstance.Mode2WriteBuf.InPtr)
-    {
-      memcpy(BtInstance.Mode2WriteBuf.Buf, pBuf, Size);
-      BtInstance.Mode2WriteBuf.InPtr = Size;
+    if (BtInstance.BtCh[index].WriteBuf.InPtr == 0) {
+        memcpy(BtInstance.BtCh[index].WriteBuf.Buf, pBuf, Size);
+        BtInstance.BtCh[index].WriteBuf.InPtr = Size;
+    } else {
+        Size = 0;
     }
-    else
-    {
-      Size = 0;
+
+    return Size;
+}
+
+UWORD cBtDevWriteBuf0(UBYTE *pBuf, UWORD Size)
+{
+    if (MODE2 == BtInstance.NonVol.DecodeMode) {
+        if (0 == BtInstance.Mode2WriteBuf.InPtr) {
+            memcpy(BtInstance.Mode2WriteBuf.Buf, pBuf, Size);
+            BtInstance.Mode2WriteBuf.InPtr = Size;
+        } else {
+            Size = 0;
+        }
+    } else {
+        Size = cBtDevWriteBuf(0, pBuf, Size);
     }
-  }
-  else
-  {
-    if(0 == BtInstance.BtCh[0].WriteBuf.InPtr)
-    {
-      memcpy(BtInstance.BtCh[0].WriteBuf.Buf, pBuf, Size);
-      BtInstance.BtCh[0].WriteBuf.InPtr = Size;
-    }
-    else
-    {
-      Size = 0;
-    }
-  }
-  return(Size);
+
+    return Size;
 }
 
-
-UWORD     cBtDevWriteBuf1(UBYTE *pBuf, UWORD Size)
+UWORD cBtDevWriteBuf1(UBYTE *pBuf, UWORD Size)
 {
-  if(0 == BtInstance.BtCh[1].WriteBuf.InPtr)
-  {
-    memcpy(BtInstance.BtCh[1].WriteBuf.Buf, pBuf, Size);
-    BtInstance.BtCh[1].WriteBuf.InPtr = Size;
-  }
-  else
-  {
-    Size = 0;
-  }
-  return(Size);
+    return cBtDevWriteBuf(1, pBuf, Size);
 }
 
-
-UWORD     cBtDevWriteBuf2(UBYTE *pBuf, UWORD Size)
+UWORD cBtDevWriteBuf2(UBYTE *pBuf, UWORD Size)
 {
-  if(0 == BtInstance.BtCh[2].WriteBuf.InPtr)
-  {
-    memcpy(BtInstance.BtCh[2].WriteBuf.Buf, pBuf, Size);
-    BtInstance.BtCh[2].WriteBuf.InPtr = Size;
-  }
-  else
-  {
-    Size = 0;
-  }
-  return(Size);
+    return cBtDevWriteBuf(2, pBuf, Size);
 }
 
-
-UWORD     cBtDevWriteBuf3(UBYTE *pBuf, UWORD Size)
+UWORD cBtDevWriteBuf3(UBYTE *pBuf, UWORD Size)
 {
-  if(0 == BtInstance.BtCh[3].WriteBuf.InPtr)
-  {
-    memcpy(BtInstance.BtCh[3].WriteBuf.Buf, pBuf, Size);
-    BtInstance.BtCh[3].WriteBuf.InPtr = Size;
-  }
-  else
-  {
-    Size = 0;
-  }
-  return(Size);
+    return cBtDevWriteBuf(3, pBuf, Size);
 }
 
-
-UWORD     cBtDevWriteBuf4(UBYTE *pBuf, UWORD Size)
+UWORD cBtDevWriteBuf4(UBYTE *pBuf, UWORD Size)
 {
-  if(0 == BtInstance.BtCh[4].WriteBuf.InPtr)
-  {
-    memcpy(BtInstance.BtCh[4].WriteBuf.Buf, pBuf, Size);
-    BtInstance.BtCh[4].WriteBuf.InPtr = Size;
-  }
-  else
-  {
-    Size = 0;
-  }
-  return(Size);
+    return cBtDevWriteBuf(4, pBuf, Size);
 }
 
-
-UWORD     cBtDevWriteBuf5(UBYTE *pBuf, UWORD Size)
+UWORD cBtDevWriteBuf5(UBYTE *pBuf, UWORD Size)
 {
-  if(0 == BtInstance.BtCh[5].WriteBuf.InPtr)
-  {
-    memcpy(BtInstance.BtCh[5].WriteBuf.Buf, pBuf, Size);
-    BtInstance.BtCh[5].WriteBuf.InPtr = Size;
-  }
-  else
-  {
-    Size = 0;
-  }
-  return(Size);
+    return cBtDevWriteBuf(5, pBuf, Size);
 }
 
-
-UWORD     cBtDevWriteBuf6(UBYTE *pBuf, UWORD Size)
+UWORD cBtDevWriteBuf6(UBYTE *pBuf, UWORD Size)
 {
-  if(0 == BtInstance.BtCh[6].WriteBuf.InPtr)
-  {
-    memcpy(BtInstance.BtCh[6].WriteBuf.Buf, pBuf, Size);
-    BtInstance.BtCh[6].WriteBuf.InPtr = Size;
-  }
-  else
-  {
-    Size = 0;
-  }
-  return(Size);
+    return cBtDevWriteBuf(6, pBuf, Size);
 }
 
-
-UWORD     cBtDevWriteBuf7(UBYTE *pBuf, UWORD Size)
+UWORD cBtDevWriteBuf7(UBYTE *pBuf, UWORD Size)
 {
-  if(0 == BtInstance.BtCh[7].WriteBuf.InPtr)
-  {
-    memcpy(BtInstance.BtCh[7].WriteBuf.Buf, pBuf, Size);
-    BtInstance.BtCh[7].WriteBuf.InPtr = Size;
-  }
-  else
-  {
-    Size = 0;
-  }
-  return(Size);
+    return cBtDevWriteBuf(7, pBuf, Size);
 }
-
 
 UBYTE     cBtFindSearchAdr(bdaddr_t *pAdr, UBYTE *pIndex)
 {

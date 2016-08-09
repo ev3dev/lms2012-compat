@@ -285,7 +285,7 @@ UWORD     cBtReadCh5(UBYTE *pBuf, UWORD Length);
 UWORD     cBtReadCh6(UBYTE *pBuf, UWORD Length);
 UWORD     cBtReadCh7(UBYTE *pBuf, UWORD Length);
 
-UWORD     cBtDevWriteBuf(UBYTE *pBuf, UWORD Size);
+UWORD     cBtDevWriteBuf0(UBYTE *pBuf, UWORD Size);
 UWORD     cBtDevWriteBuf1(UBYTE *pBuf, UWORD Size);
 UWORD     cBtDevWriteBuf2(UBYTE *pBuf, UWORD Size);
 UWORD     cBtDevWriteBuf3(UBYTE *pBuf, UWORD Size);
