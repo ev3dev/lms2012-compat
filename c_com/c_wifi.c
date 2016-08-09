@@ -48,6 +48,7 @@
 #define pr_dbg(f, ...) while (0) { }
 #endif
 
+#define C_WIFI_HIDDEN_NAME "[HIDDEN]"
 #define C_WIFI_CONNMAN_AGENT_DBUS_PATH "/org/ev3dev/lms2012/connman/agent"
 
 #define C_WIFI_SERVICE_SSID_QUARK c_wifi_service_ssid_quark()
@@ -308,7 +309,15 @@ RESULT cWiFiGetName(char *ApName, int Index, char Length)
 
     service = g_list_nth_data(service_list, Index);
     if (service) {
-        snprintf(ApName, Length, "%s", connman_service_get_name(service));
+        const gchar *name;
+
+        // hidden WiFi SSIDs will return NULL
+        name = connman_service_get_name(service);
+        if (name) {
+            snprintf(ApName, Length, "%s", name);
+        } else {
+            snprintf(ApName, Length, "%s", C_WIFI_HIDDEN_NAME);
+        }
         Result = OK;
     } else {
         strncpy(ApName, "None", Length);
@@ -455,10 +464,16 @@ RESULT cWiFiMakePsk(char *ApSsid, char *PassPhrase, int Index)
  * @param Index     Pointer to store the index if found.
  * @return          OK if a match was found, otherwise FAIL
  */
-RESULT cWiFiGetIndexFromName(char *Name, UBYTE *Index)
+RESULT cWiFiGetIndexFromName(const char *Name, UBYTE *Index)
 {
     GList *item;
     RESULT Result = FAIL;
+
+    // Publicly, hidden APs are listed as C_WIFI_HIDDEN_NAME, but in connman,
+    // they are NULL.
+    if (g_strcmp0(Name, C_WIFI_HIDDEN_NAME) == 0) {
+        Name = NULL;
+    }
 
     *Index = 0;
     for (item = service_list; item; item = g_list_next(item)) {

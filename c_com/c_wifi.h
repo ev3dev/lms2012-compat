@@ -93,7 +93,7 @@ void cWiFiMoveUpInList(int Index);
 void cWiFiMoveDownInList(int Index);
 RESULT cWiFiGetName(char *ApName, int Index, char Length);
 RESULT cWiFiSetName(char *ApName, int Index);
-RESULT cWiFiGetIndexFromName(char *Name, UBYTE *Index);
+RESULT cWiFiGetIndexFromName(const char *Name, UBYTE *Index);
 void cWiFiSetEncryptToWpa2(int Index);
 void cWiFiSetEncryptToNone(int Index);
 LMS_ENCRYPT cWifiGetEncrypt(int Index);
