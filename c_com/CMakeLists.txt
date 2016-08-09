@@ -8,10 +8,16 @@ set (SOURCE_FILES
     c_i2c.c
     c_md5.c
     c_wifi.c
+    ${CMAKE_CURRENT_BINARY_DIR}/bluez.c
     ${CMAKE_CURRENT_BINARY_DIR}/connman.c
     ${CMAKE_CURRENT_BINARY_DIR}/systemd.c
 )
 
+add_gdbus_codegen(bluez
+    INTERFACE_PREFIX org.bluez
+    C_NAMESPACE Bluez
+    XML_FILES org.bluez.xml
+)
 add_gdbus_codegen(connman
     INTERFACE_PREFIX net.connman
     C_NAMESPACE Connman
