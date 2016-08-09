@@ -532,8 +532,7 @@ void cSoundEntry(void)
 
             // Open SoundFile
 
-            SoundInstance.hSoundFile = open(SoundInstance.PathBuffer, O_RDONLY,
-                                            0666);
+            SoundInstance.hSoundFile = open(SoundInstance.PathBuffer, O_RDONLY);
 
             if (SoundInstance.hSoundFile >= 0) {
                 // BIG Endianess
