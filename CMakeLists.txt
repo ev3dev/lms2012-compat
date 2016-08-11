@@ -14,6 +14,7 @@ set (LMS2012_DEBUG_UART_PORT 0
      CACHE string "Input port used for debugging (1-4) or 0 to disable")
 option (LMS2012_DEBUG_VM "Enable VM debug messages in lms2012")
 option (LMS2012_DEBUG_TRACE_TASK "Enable task trace messages in lms2012")
+option (LMS2012_DEBUG_C_BT "Enable debug messages in c_bt")
 option (LMS2012_DEBUG_C_COM "Enable debug messages in c_com")
 option (LMS2012_DEBUG_C_INPUT "Enable debug messages in c_input")
 option (LMS2012_DEBUG_C_INPUT_DAISYCHAIN "Enable daisy chain debug messages in c_input")
@@ -84,6 +85,7 @@ add_definitions ("-DDEBUG_UART=(${LMS2012_DEBUG_UART_PORT}-1)")
 set (LMS2012_DEBUG_OPTIONS
     VM
     TRACE_TASK
+    C_BT
     C_COM
     C_INPUT
     C_INPUT_DAISYCHAIN
@@ -174,7 +176,6 @@ add_compile_options (-Wall -Werror -Wno-unused-result)
 find_package (PkgConfig REQUIRED)
 pkg_check_modules (LMS2012_DEPS REQUIRED
     alsa
-    bluez
     dbus-1
     gio-2.0
     gio-unix-2.0

@@ -23,24 +23,9 @@
 
 
 #include  "lms2012.h"
-#include  <bluetooth/bluetooth.h>
-#include  <bluetooth/rfcomm.h>
-#include  <sys/poll.h>
-#include  <sys/ioctl.h>
-#include  <bluetooth/hci.h>
-
-
-#define   NONVOL_BT_DATA                "settings/nonvolbt"
-
-
-#define   MAX_DEV_TABLE_ENTRIES         30
-#define   BT_CH_OFFSET                   2
-#define   MAX_NAME_SIZE                 32
-#define   MAX_BT_NAME_SIZE              248
 
 #define   MAX_BUNDLE_ID_SIZE            35
 #define   MAX_BUNDLE_SEED_ID_SIZE       11
-
 
 enum
 {
@@ -69,36 +54,6 @@ enum
   READ_BUF_EMPTY,
   READ_BUF_FULL
 };
-
-enum
-{
-  SCAN_OFF,
-  SCAN_INQ_STATE,
-  SCAN_NAME_STATE
-};
-
-// Defines related to Channels
-enum
-{
-  CH_CONNECTING,
-  CH_FREE,
-  CH_CONNECTED
-};
-
-// Defines related to BtInstance.HciSocket.Busy
-enum
-{
-  HCI_IDLE        =  0x00,
-  HCI_ONOFF       =  0x01,
-  HCI_VISIBLE     =  0x02,
-  HCI_NAME        =  0x04,
-  HCI_SCAN        =  0x08,
-  HCI_CONNECT     =  0x10,
-  HCI_DISCONNECT  =  0x20,
-  HCI_RESTART     =  0x40,
-  HCI_FAIL        =  0x80
-};
-
 
 // Buffer to read into from the socket
 typedef struct
@@ -131,147 +86,11 @@ typedef struct
   UBYTE LargeMsg;
 }MSGBUF;
 
-
-// Control socket
-typedef   struct
-{
-  SLONG             Socket;
-  struct  pollfd    p;
-  UBYTE             WaitForEvent;
-  UBYTE             Busy;
-}HCISOCKET;
-
-
-// Socket to listen for incoming requests
-typedef   struct
-{
-  SLONG               Socket;
-  struct  sockaddr_rc loc_addr;
-  struct  sockaddr_rc rem_addr;
-  ULONG               opt;
-}LISTENSOCKET;
-
-
-// Communication sockets
-typedef   struct
-{
-  SLONG     Socket;
-  bdaddr_t  Addr;
-  struct    timeval     Cmdtv;
-  fd_set    Cmdfds;
-}BTSOCKET;
-
-
-typedef struct
-{
-  char      Name[MAX_BT_NAME_SIZE];
-  bdaddr_t  Adr;
-  UWORD     ConnHandle;
-  UBYTE     DevClass[3];
-  UBYTE     Passkey[6];
-  UBYTE     Connected;
-  UBYTE     ChNo;
-  UBYTE     Status;
-}DEVICELIST;
-
-
-typedef struct
-{
-  char      Name[MAX_BT_NAME_SIZE];
-  bdaddr_t  Adr;
-  UBYTE     DevClass[3];
-  UBYTE     Connected;
-  UBYTE     Paired;
-  UBYTE     ChNo;
-}SEARCHLIST;
-
-
-typedef struct
-{
-  WRITEBUF  WriteBuf;
-  READBUF   ReadBuf;
-  MSGBUF    MsgBuf;
-  BTSOCKET  BtSocket;
-  UBYTE     Status;
-}BTCH;
-
-
-typedef   struct
-{
-  DEVICELIST  DevList[MAX_DEV_TABLE_ENTRIES];
-  UBYTE       DevListEntries;
-  UBYTE       Visible;
-  UBYTE       On;
-  UBYTE       DecodeMode;
-  UBYTE       BundleID[MAX_BUNDLE_ID_SIZE];
-  UBYTE       BundleSeedID[MAX_BUNDLE_SEED_ID_SIZE];
-}NONVOLBT;
-
-typedef   struct
-{
-  ULONG     Passkey;
-  UWORD     ConnHandle;
-  char      Name[MAX_BT_NAME_SIZE];
-  bdaddr_t  Adr;
-  UBYTE     DevClass[3];
-}INCOMMING;
-
-typedef   struct
-{
-  UBYTE     ChNo;
-}OUTGOING;
-
-typedef   struct
-{
-  bdaddr_t  Adr;
-  UBYTE     PinLen;
-  UBYTE     Pin[10];
-  UBYTE     Status;
-}TRUSTED_DEV;
-
-
-typedef struct
-{
-  //*****************************************************************************
-  // Bluetooth Global variables
-  //*****************************************************************************
-
-  HCISOCKET     HciSocket;            // Control socket
-  LISTENSOCKET  ListenSocket;         // Socket to listen for incoming requests
-  BTCH          BtCh[NO_OF_BT_CHS];   // Communication sockets
-  READBUF       Mode2Buf;
-  WRITEBUF      Mode2WriteBuf;
-
-  SEARCHLIST    SearchList[MAX_DEV_TABLE_ENTRIES];
-  INCOMMING     Incoming;
-  OUTGOING      OutGoing;
-  TRUSTED_DEV   TrustedDev;
-  char          Adr[13];
-  UBYTE         SearchIndex;
-  UBYTE         NoOfFoundDev;
-  UBYTE         NoOfFoundNames;
-  UBYTE         PageState;
-  UBYTE         ScanState;
-  UBYTE         NoOfConnDevs;
-
-  SLONG         State;
-  SLONG         OldState;
-  ULONG         Delay;
-  NONVOLBT      NonVol;
-  UBYTE         OnOffSeqCnt;
-  UBYTE         RestartSeqCnt;
-  UBYTE         Events;
-  UBYTE         DecodeMode;
-  UBYTE         SspPairingMethod;
-  char          BtName[vmBRICKNAMESIZE];
-}BT_GLOBALS;
-
-
-void      BtInit(char *pName);
+void      BtInit(const char *pName);
 void      BtExit(void);
 void      BtUpdate(void);
-UBYTE     cBtConnect(UBYTE *pName);
-UBYTE     cBtDisconnect(UBYTE *pName);
+RESULT    cBtConnect(const char *pName);
+RESULT    cBtDisconnect(const char *pName);
 UBYTE     cBtDiscChNo(UBYTE ChNo);
 
 UWORD     cBtReadCh0(UBYTE *pBuf, UWORD Length);
@@ -296,37 +115,37 @@ UBYTE     cBtI2cBufReady(void);
 UWORD     cBtI2cToBtBuf(UBYTE *pBuf, UWORD Size);
 
 // Generic Bluetooth commands
-UBYTE     BtSetVisibility(UBYTE State);
+RESULT    BtSetVisibility(UBYTE State);
 UBYTE     BtGetVisibility(void);
-UBYTE     BtSetOnOff(UBYTE On);
-UBYTE     BtGetOnOff(UBYTE *On);
-UBYTE     BtSetMode2(UBYTE Mode2);
-UBYTE     BtGetMode2(UBYTE *pMode2);
+RESULT    BtSetOnOff(UBYTE On);
+RESULT    BtGetOnOff(UBYTE *On);
+RESULT    BtSetMode2(UBYTE Mode2);
+RESULT    BtGetMode2(UBYTE *pMode2);
 UBYTE     BtStartScan(void);
 UBYTE     BtStopScan(void);
 UBYTE     cBtGetNoOfConnListEntries(void);
-UBYTE     cBtGetConnListEntry(UBYTE Item, UBYTE *pName, SBYTE Length, UBYTE* pType);
+RESULT    cBtGetConnListEntry(UBYTE Item, char *pName, SBYTE Length, UBYTE* pType);
 UBYTE     cBtGetNoOfDevListEntries(void);
-UBYTE     cBtGetDevListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, UBYTE *pName, SBYTE Length);
-UBYTE     cBtDeleteFavourItem(UBYTE *pName);
+RESULT    cBtGetDevListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, char *pName, SBYTE Length);
+RESULT    cBtRemoveItem(const char *pName);
 UBYTE     cBtGetNoOfSearchListEntries(void);
-UBYTE     cBtGetSearchListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, SBYTE *pPaired, UBYTE *pName, SBYTE Length);
-UBYTE     cBtGetHciBusyFlag(void);
+RESULT    cBtGetSearchListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, SBYTE *pPaired, char *pName, SBYTE Length);
+RESULT    cBtGetHciBusyFlag(void);
 void      DecodeMode1(UBYTE BufNo);
 
 UBYTE     cBtGetStatus(void);
 void      cBtGetId(UBYTE *pId, UBYTE Length);
-UBYTE     cBtSetName(UBYTE *pName, UBYTE Length);
+RESULT    cBtSetName(const char *pName, UBYTE Length);
 UBYTE     cBtGetChNo(UBYTE *pName, UBYTE *pChNo);
-void      cBtGetIncoming(UBYTE *pName, UBYTE *pCod, UBYTE Len);
-UBYTE     cBtGetEvent(void);
-UBYTE     cBtSetPin(UBYTE *pPin);
-UBYTE     cBtSetPasskey(UBYTE Accept);
+void      cBtGetIncoming(char *pName, UBYTE *pCod, UBYTE Len);
+COM_EVENT cBtGetEvent(void);
+RESULT    cBtSetPin(const char *pPin);
+RESULT    cBtSetPasskey(UBYTE Accept);
 
 void      cBtSetTrustedDev(UBYTE *pBtAddr, UBYTE *pPin, UBYTE PinSize);
 
-UWORD     cBtSetBundleId(UBYTE *pId);
-UWORD     cBtSetBundleSeedId(UBYTE *pSeedId);
+int       cBtSetBundleId(const char *pId);
+int       cBtSetBundleSeedId(const char *pSeedId);
 
 
 #endif /* C_BT_H_ */

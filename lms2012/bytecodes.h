@@ -69,6 +69,7 @@
 
 #define   vmERR_STRING_SIZE             32                            // Inclusive zero termination
 
+#define   vmEVENT_NONE                  0
 #define   vmEVENT_BT_PIN                1
 #define   vmEVENT_BT_REQ_CONF           2
 

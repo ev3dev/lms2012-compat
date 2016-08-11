@@ -2901,8 +2901,7 @@ void      cComUpdate(void)
 
   }
 
-  // TODO: Get Bluetooth working
-  // BtUpdate();
+  BtUpdate();
 }
 
 DATA8 cComGetUsbStatus(void)
@@ -4471,7 +4470,7 @@ void      cComGet(void)
         {
           if (NULL != pName)
           {
-            cBtGetConnListEntry(Item, (UBYTE *)pName, Length, (UBYTE*) &Type);
+            cBtGetConnListEntry(Item, (char *)pName, Length, (UBYTE*) &Type);
             *(DATA8*)PrimParPointer() = Type;
           }
           DspStat =  NOBREAK;
@@ -4568,7 +4567,7 @@ void      cComGet(void)
 
           if (NULL != pName)
           {
-            cBtGetSearchListEntry(Item, &Connected, &Type, &Paired, (UBYTE*)pName, Length);
+            cBtGetSearchListEntry(Item, &Connected, &Type, &Paired, (char *)pName, Length);
           }
 
           DspStat   =  NOBREAK;
@@ -4677,7 +4676,7 @@ void      cComGet(void)
 
           if (NULL != pName)
           {
-            cBtGetDevListEntry(Item, &Connected, &Type,(UBYTE*)pName, Length);
+            cBtGetDevListEntry(Item, &Connected, &Type,(char *)pName, Length);
           }
           DspStat  =  NOBREAK;
         }
@@ -4955,7 +4954,7 @@ void      cComGet(void)
         {
           if (NULL != pName)
           {
-            cBtGetIncoming((UBYTE*)pName,(UBYTE*)&Type, Length);
+            cBtGetIncoming((char *)pName,(UBYTE*)&Type, Length);
           }
 
           *(DATA8*)PrimParPointer() = Type;
@@ -5281,7 +5280,7 @@ void      cComSet(void)
         break;
         case HW_BT:
         {
-          if (FAIL != cBtSetPin((UBYTE*)pPin))
+          if (FAIL != cBtSetPin((char*)pPin))
           {
             DspStat  =  NOBREAK;
           }
@@ -5352,7 +5351,7 @@ void      cComSet(void)
         {
           if (Connection)
           {
-            if (FAIL != cBtConnect((UBYTE *)pName))
+            if (FAIL != cBtConnect((char *)pName))
             {
               DspStat = NOBREAK;
             }
@@ -5360,7 +5359,7 @@ void      cComSet(void)
           }
           else
           {
-            if (FAIL != cBtDisconnect((UBYTE *)pName))
+            if (FAIL != cBtDisconnect((char *)pName))
             {
               DspStat = NOBREAK;
             }
@@ -5416,7 +5415,7 @@ void      cComSet(void)
 
       if (OK == ValidateString(pName,vmCHARSET_NAME) && ((vmBRICKNAMESIZE - 1) > strlen((char*)pName)))
       {
-        if (FAIL != cBtSetName((UBYTE*)pName, Len + 1))
+        if (FAIL != cBtSetName((char*)pName, Len + 1))
         {
           File  =  fopen("./settings/BrickName","w");
           if (File != NULL)
@@ -5594,7 +5593,7 @@ void      cComRemove(void)
     break;
     case HW_BT:
     {
-      if (FAIL != cBtDeleteFavourItem((UBYTE *)pName))
+      if (FAIL != cBtRemoveItem((char *)pName))
       {
       }
     }
@@ -5644,10 +5643,9 @@ void      cComGetBrickName(DATA8 Length, DATA8 *pBrickName)
   snprintf((char*)pBrickName,Length,"%s",ComInstance.BrickName);
 }
 
-
-DATA8     cComGetEvent(void)
+COM_EVENT cComGetEvent(void)
 {
-  return(cBtGetEvent());
+    return cBtGetEvent();
 }
 
 //*****************************************************************************

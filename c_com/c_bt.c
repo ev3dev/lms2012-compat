@@ -2,6 +2,7 @@
  * LEGO® MINDSTORMS EV3
  *
  * Copyright (C) 2010-2013 The LEGO Group
+ * Copyright (C) 2016 David Lechner <david@lechnology.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -148,299 +149,136 @@
   \endverbatim
   */
 
+#include <glib.h>
+#include <glib/gstdio.h>
+#include <gio/gunixfdlist.h>
+
+#include <fcntl.h>
+#include <string.h>
 
 #include "lms2012.h"
 #include "c_com.h"
 #include "c_bt.h"
 #include "c_i2c.h"
+#include "bluez.h"
 
-#include <stdio.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
-#include <sys/mman.h>
-#include <time.h>
-#include <errno.h>
+#ifdef DEBUG_C_BT
+#define DEBUG
+#endif
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/rfcomm.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/hci_lib.h>
-#include <bluetooth/sdp.h>
-#include <bluetooth/sdp_lib.h>
-#include <sys/socket.h>
+#define C_BT_AGENT_PATH         "/org/ev3dev/lms2012/bluez/agent"
+#define C_BT_SPP_PROFILE_PATH   "/org/ev3dev/lms2012/bluez/spp_profile"
+#define NONVOL_BT_DATA          "settings/nonvolbt"
+#define MAX_DEV_TABLE_ENTRIES   30
+#define MAX_BT_NAME_SIZE        248
 
-#include <dbus/dbus.h>
+#define SPP_UUID                "00001101-0000-1000-8000-00805f9b34fb"
+#define SVC_UUID                "00000000-deca-fade-deca-deafdecacaff"
 
-#include <sys/poll.h>
-#include <sys/ioctl.h>
-
-
-typedef struct
-{
-  bdaddr_t  Addr;
-  UBYTE     Port;
-} PAIREDDEVINFO;
-
-
-static PAIREDDEVINFO    PairedDevInfo;
-static UBYTE            NameReqDueToPin = FALSE;
-
-static BT_GLOBALS       BtInstance;
-static DBusConnection  *conn;
-static DBusMessage     *reply;
-static DBusMessage     *RejectReply;
-
-static sdp_session_t   *session                   =   0;
-
-static char            *adapter_path              =  NULL;
-static const char      *agent_path                =  "/org/bluez/agent";
-static UBYTE            SimplePairingDisable[]    = {0x06, 0x73, 0xFF};
-static UBYTE            SimplePairingEnable[]     = {0x06, 0x7B, 0xFF};
-static UBYTE            ExtendedFeaturesDisable[] = {0x07, 0x03, 0xFF};
-static UBYTE            ExtendedFeaturesEnable[]  = {0x07, 0x83, 0xFF};
-
-static volatile sig_atomic_t __io_canceled         = 0;
-static volatile sig_atomic_t __io_terminated       = 0;
-
-
-enum
-{
-  I_AM_IN_IDLE    = 0,
-  I_AM_MASTER     = 1,
-  I_AM_SLAVE      = 2,
-  I_AM_SCANNING   = 3,
-  STOP_SCANNING   = 4,
-  TURN_ON         = 5,
-  TURN_OFF        = 6,
-  RESTART         = 7,
-  BLUETOOTH_OFF   = 8
+enum {
+    I_AM_IN_IDLE    = 0,
+    I_AM_MASTER     = 1,
+    I_AM_SLAVE      = 2,
+    I_AM_SCANNING   = 3,
+    STOP_SCANNING   = 4,
+    TURN_ON         = 5,
+    TURN_OFF        = 6,
+    RESTART         = 7,
+    BLUETOOTH_OFF   = 8
 };
 
-enum
-{
-  MSG_BUF_EMPTY   = 0,
-  MSG_BUF_LEN     = 1,
-  MSG_BUF_BODY    = 2,
-  MSG_BUF_FULL    = 3
+enum {
+    MSG_BUF_EMPTY   = 0,
+    MSG_BUF_LEN     = 1,
+    MSG_BUF_BODY    = 2,
+    MSG_BUF_FULL    = 3
+};
+
+// Defines related to Channels
+enum {
+    CH_CONNECTING,
+    CH_FREE,
+    CH_CONNECTED
 };
 
 /* Constants related to Decode mode */
-enum
-{
-  MODE1 = 0,
-  MODE2 = 1
+enum {
+    MODE1,      // normal
+    MODE2,      // iPhone/iPad/iPod
 };
 
-static void  BtTxMsgs(void);
-static void  BtSetup(UBYTE State);
-static UWORD cBtHandleHCI(void);
-static UBYTE BtClearSearchListEntry(UBYTE Index);
-static UBYTE cBtFindDevChNo(UBYTE ChNo, UBYTE *pIndex);
-static UBYTE cBtFindDevAdr(bdaddr_t *pAdr, UBYTE *pIndex);
-static void  cBtSetDevConnectedStatus(UBYTE Index);
-static UBYTE cBtFindSearchAdr(bdaddr_t *pAdr, UBYTE *pIndex);
-static void  cBtSetSearchConnectedStatus(UBYTE Index);
+// Communication sockets
+typedef struct {
+    SLONG     Socket;
+    // bdaddr_t  Addr;
+    struct    timeval     Cmdtv;
+    fd_set    Cmdfds;
+} BTSOCKET;
 
-static char               *get_adapter_path(DBusConnection *conn, const char *adapter);
-static DBusHandlerResult   agent_message(DBusConnection *conn, DBusMessage *msg, void *data);
-static int                 register_agent(DBusConnection *conn, const char *adapter_path, const char *agent_path, const char *capabilities);
-static DBusHandlerResult   agent_filter(DBusConnection *conn, DBusMessage *msg, void *data);
-static DBusHandlerResult   request_pincode_message(DBusConnection *conn, DBusMessage *msg, void *data);
-static char               *get_default_adapter_path(DBusConnection *conn);
-static void                sig_term(int sig);
-static int                 unregister_agent(DBusConnection *conn, const char *adapter_path, const char *agent_path);
-static int                 RemoveDevice(DBusConnection *conn, char *Device);
-static void                cBtStrNoColonToBa(UBYTE *pBtStrAddr, bdaddr_t *pAddr);
-static void                DecodeMode2(void);
-static void                BtClose(void);
-static UBYTE               BtIssueHciVisible(UBYTE Visible, UBYTE Page);
+typedef struct {
+    WRITEBUF  WriteBuf;
+    READBUF   ReadBuf;
+    MSGBUF    MsgBuf;
+    BTSOCKET  BtSocket;
+    UBYTE     Status;
+} BTCHANNEL;
 
-#define   STOPScanning                  {\
-                                          BtSetup(BtInstance.OldState);\
-                                          BtInstance.ScanState        =   SCAN_OFF;\
-                                          BtInstance.HciSocket.Busy  &=  ~HCI_SCAN;\
-                                          BtIssueHciVisible(BtInstance.NonVol.Visible, BtInstance.PageState);\
-                                        }
+// This is serialized. Don't change unless absolutely necessary.
+typedef struct {
+    UBYTE       DecodeMode;
+    char        BundleID[MAX_BUNDLE_ID_SIZE];
+    char        BundleSeedID[MAX_BUNDLE_SEED_ID_SIZE];
+} NONVOLBT;
 
-static void BtSetupPinEvent(void)
-{
-  struct  hci_filter flt;
+typedef struct {
+  UBYTE     ChNo;
+}OUTGOING;
 
-  hci_filter_clear(&flt);
-  hci_filter_set_ptype(HCI_EVENT_PKT, &flt);
-  hci_filter_set_event(EVT_CONN_COMPLETE, &flt);
-  hci_filter_set_event(EVT_DISCONN_COMPLETE, &flt);
-  hci_filter_set_event(EVT_LINK_KEY_NOTIFY, &flt);
-  hci_filter_set_event(EVT_ENCRYPT_CHANGE, &flt);
-  hci_filter_set_event(EVT_CMD_COMPLETE, &flt);
-  hci_filter_set_event(EVT_CMD_STATUS, &flt);
+typedef struct {
+    BTCHANNEL     BtCh[NO_OF_BT_CHS];   // Communication sockets
+    READBUF       Mode2Buf;
+    WRITEBUF      Mode2WriteBuf;
 
-  hci_filter_set_event(EVT_INQUIRY_RESULT, &flt);
-  hci_filter_set_event(EVT_INQUIRY_RESULT_WITH_RSSI, &flt);
-  hci_filter_set_event(EVT_INQUIRY_COMPLETE, &flt);
-  hci_filter_set_event(EVT_REMOTE_NAME_REQ_COMPLETE, &flt);
-  hci_filter_set_event(EVT_PIN_CODE_REQ, &flt);
+    OUTGOING      OutGoing;
+    char          Adr[13];
+    UBYTE         SearchIndex;
+    UBYTE         NoOfFoundDev;
+    UBYTE         PageState;
+    UBYTE         NoOfConnDevs;
 
-  hci_filter_set_event(EVT_CONN_REQUEST, &flt);
-  hci_filter_set_event(EVT_LINK_KEY_NOTIFY, &flt);
+    SLONG         State;
+    SLONG         OldState;
+    ULONG         Delay;
+    NONVOLBT      NonVol;
+    COM_EVENT     Events;
+    UBYTE         DecodeMode;
+    char          BtName[vmBRICKNAMESIZE];
 
-  if (setsockopt(BtInstance.HciSocket.Socket, SOL_HCI, HCI_FILTER, &flt, sizeof(flt)) < 0)
-  {
-    perror("Can't set HCI filter");
-    return;
-  }
-  BtInstance.HciSocket.p.fd      = BtInstance.HciSocket.Socket;
-  BtInstance.HciSocket.p.events  = POLLIN | POLLERR | POLLHUP;
-}
+    gboolean ConnectBusy;
+    gboolean DisconnectBusy;
+    gboolean Fail;
 
-static void SetupListeningSocket(int *Socket)
-{
-  SLONG   TmpSockFlags;
-  struct  bt_security sec;
+    GDBusObjectManager      *object_manager;
+    BluezAdapter1           *adapter;
+    BluezAgentManager1      *agent_manager;
+    BluezAgent1             *agent;
+    BluezProfileManager1    *profile_manager;
+    BluezProfile1           *spp_profile;
+    BluezDevice1            *incoming_device;
 
-  memset(&sec, 0, sizeof(sec));
-  sec.level = 3;
+    GList *unpaired_list;   // list of unpaired devices
+    GList *paired_list;     // list of paired devices
+    GList *connected_list;  // list of connected devices
 
-  int lm_map[] =
-  {
-    0,
-    RFCOMM_LM_AUTH,
-    RFCOMM_LM_AUTH | RFCOMM_LM_ENCRYPT,
-    RFCOMM_LM_AUTH | RFCOMM_LM_ENCRYPT | RFCOMM_LM_SECURE,
-  }, opt = lm_map[sec.level];
+    GIOChannel *channel0;
+    guint channel0_source_id;
 
-  *Socket = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
-  BtInstance.ListenSocket.loc_addr.rc_family  = AF_BLUETOOTH;
-  BtInstance.ListenSocket.loc_addr.rc_bdaddr  = *BDADDR_ANY;
-  BtInstance.ListenSocket.loc_addr.rc_channel = 1;
-  bind(*Socket, (struct sockaddr *)&(BtInstance.ListenSocket.loc_addr), sizeof(BtInstance.ListenSocket.loc_addr));
+    GDBusMethodInvocation *request_pin_invocation;
+    GDBusMethodInvocation *request_confirmation_invocation;
+} BT_GLOBALS;
 
-  setsockopt(*Socket, SOL_BLUETOOTH, BT_SECURITY, &sec, sizeof(sec));
-  setsockopt(*Socket, SOL_RFCOMM, RFCOMM_LM, &opt, sizeof(opt));
+static BT_GLOBALS BtInstance;
 
-  TmpSockFlags = fcntl(*Socket, F_GETFL, 0);
-  fcntl(*Socket, F_SETFL, TmpSockFlags | O_NONBLOCK);
-
-  listen(*Socket,1);
-}
-
-static void BtClearChBuf(UBYTE ChNo)
-{
-  BtInstance.BtCh[ChNo].Status           =  CH_FREE;
-  BtInstance.BtCh[ChNo].ReadBuf.Status   =  READ_BUF_EMPTY;
-  BtInstance.BtCh[ChNo].ReadBuf.InPtr    =  0;
-  BtInstance.BtCh[ChNo].ReadBuf.OutPtr   =  0;
-
-  if (0 == ChNo)
-  {
-    BtInstance.Mode2Buf.Status           =  MSG_BUF_EMPTY;
-    BtInstance.Mode2Buf.InPtr            =  0;
-    BtInstance.Mode2Buf.OutPtr           =  0;
-  }
-
-  BtInstance.BtCh[ChNo].MsgBuf.Status    =  MSG_BUF_EMPTY;
-  BtInstance.BtCh[ChNo].MsgBuf.InPtr     =  0;
-  BtInstance.BtCh[ChNo].MsgBuf.LargeMsg  =  FALSE;
-  BtInstance.BtCh[ChNo].MsgBuf.MsgLen    =  0;
-  BtInstance.BtCh[ChNo].MsgBuf.RemMsgLen =  0;
-}
-
-
-void      BtInit(char* pName)
-{
-  int     File;
-  int     Tmp;
-  FILE    *FSer;
-
-  BtInstance.OnOffSeqCnt  =  0;
-  BtInstance.NoOfConnDevs =  0;
-
-  // Load all persistent variables
-  FSer  =  fopen("./settings/BTser","r");
-  if (FSer != NULL)
-  {
-    fgets((char*)&(BtInstance.Adr[0]), (int)13, FSer);
-    fclose (FSer);
-  }
-  else
-  {
-    //Error - Fil with zeros
-    strcpy((char*)&(BtInstance.Adr[0]), "000000000000");
-  }
-
-  File  =  open(NONVOL_BT_DATA,O_RDWR,0666);
-  if (File >= MIN_HANDLE)
-  {
-    // Reads both Visible and ON/OFF status
-    if (read(File,(UBYTE*)&BtInstance.NonVol, sizeof(BtInstance.NonVol)) != sizeof(BtInstance.NonVol))
-    {
-      close (File);
-      File  =  -1;
-    }
-    else
-    {
-      close (File);
-    }
-  }
-  else
-  {
-    // Default settings
-    BtInstance.NonVol.Visible     =  TRUE;
-    BtInstance.NonVol.On          =  FALSE;
-    BtInstance.NonVol.DecodeMode  =  MODE1;
-
-    snprintf((char*)&BtInstance.NonVol.BundleID[0], MAX_BUNDLE_ID_SIZE, "%s", (char*)LEGO_BUNDLE_ID);
-    snprintf((char*)&BtInstance.NonVol.BundleSeedID[0], MAX_BUNDLE_SEED_ID_SIZE, "%s", (char*)LEGO_BUNDLE_SEED_ID);
-
-    for(Tmp = 0; Tmp < MAX_DEV_TABLE_ENTRIES; Tmp++)
-    {
-      BtInstance.NonVol.DevList[Tmp].Status = DEV_EMPTY;
-    }
-    BtInstance.NonVol.DevListEntries = 0;
-  }
-
-  BtInstance.HciSocket.Socket = -1;
-
-  if (TRUE == BtInstance.NonVol.On)
-  {
-    BtInstance.State =  TURN_ON;
-    BtSetup(TURN_ON);
-  }
-  else
-  {
-    BtInstance.State =  TURN_OFF;
-    BtSetup(TURN_OFF);
-  }
-
-  BtInstance.Events             =  0;
-  BtInstance.TrustedDev.Status  =  FALSE;
-
-  BtInstance.BtName[0] = 0;
-  snprintf((char*)&(BtInstance.BtName[0]), vmBRICKNAMESIZE, "%s",(char*)pName);
-  bacpy(&(BtInstance.TrustedDev.Adr), BDADDR_ANY);   // BDADDR_ANY = all zeros!
-
-  I2cInit(&(BtInstance.BtCh[0].ReadBuf), &(BtInstance.Mode2WriteBuf), (char *)&(BtInstance.NonVol.BundleID[0]), (char*)&(BtInstance.NonVol.BundleSeedID[0]));
-}
-
-
-void      BtExit(void)
-{
-  int     File;
-
-  BtClose();
-
-  File  =  open(NONVOL_BT_DATA,O_CREAT | O_WRONLY | O_TRUNC,SYSPERMISSIONS);
-  if (File >= MIN_HANDLE)
-  {
-    write(File,(UBYTE*)&BtInstance.NonVol, sizeof(BtInstance.NonVol));
-    close (File);
-  }
-
-  I2cExit();
-}
 
 static void BtCloseBtSocket(SLONG *pBtSocket)
 {
@@ -458,7 +296,7 @@ static void BtCloseCh(UBYTE ChIndex)
   {
     if ((0 == BtInstance.NoOfConnDevs) && ((I_AM_MASTER == BtInstance.State) || (I_AM_SLAVE == BtInstance.State)))
 	  {
-	    BtSetup(I_AM_IN_IDLE);
+	    // BtSetup(I_AM_IN_IDLE);
 	  }
   }
   else
@@ -470,7 +308,7 @@ static void BtCloseCh(UBYTE ChIndex)
         BtInstance.NoOfConnDevs--;
         if (0 == BtInstance.NoOfConnDevs)
         {
-          BtSetup(I_AM_IN_IDLE);
+          // BtSetup(I_AM_IN_IDLE);
         }
       }
       else
@@ -478,7 +316,7 @@ static void BtCloseCh(UBYTE ChIndex)
         if ((I_AM_MASTER == BtInstance.State) || (I_AM_SLAVE == BtInstance.State))
         {
           //Ensure going back to idle if only pairing (no application running on remote device)
-          BtSetup(I_AM_IN_IDLE);
+          // BtSetup(I_AM_IN_IDLE);
         }
       }
     }
@@ -489,222 +327,62 @@ static void BtCloseCh(UBYTE ChIndex)
 
 static void BtDisconnectAll(void)
 {
-  UBYTE   Tmp;
+    GList *device = BtInstance.connected_list;
+    UBYTE Tmp;
 
-  for(Tmp = 0; Tmp < MAX_DEV_TABLE_ENTRIES; Tmp++)
-  {
-    BtInstance.NonVol.DevList[Tmp].Connected = FALSE;
-  }
-
-  for(Tmp = 0; Tmp < NO_OF_BT_CHS; Tmp++)
-  {
-    if (CH_FREE != BtInstance.BtCh[Tmp].Status)
-    {
-      BtCloseCh(Tmp);
+    for (; device != NULL; device = g_list_next(device)) {
+        bluez_device1_call_disconnect(BLUEZ_DEVICE1(device->data), NULL, NULL, NULL);
     }
-  }
+
+    for (Tmp = 0; Tmp < NO_OF_BT_CHS; Tmp++) {
+        if (CH_FREE != BtInstance.BtCh[Tmp].Status) {
+            BtCloseCh(Tmp);
+        }
+    }
 }
 
-/*! \brief    cBtSetup
+/**
+ * @brief               Start scanning for bluetooth devices.
  *
- *  Function that handles all state switching
- *
+ * @return              OK on success, otherwise FAIL.
  */
-static void BtSetup(UBYTE State)
+UBYTE BtStartScan(void)
 {
-  BtInstance.OldState = BtInstance.State;
-  BtInstance.State    = State;
-  switch(State)
-  {
-    case TURN_ON:
-    {
-      BtInstance.OnOffSeqCnt = 0;
+    GError *error = NULL;
+
+    if (!BtInstance.adapter) {
+        return FAIL;
     }
-    break;
 
-    case TURN_OFF:
-    {
-      BtInstance.OnOffSeqCnt = 0;
+    if (!bluez_adapter1_call_start_discovery_sync(BtInstance.adapter, NULL, &error)) {
+        g_warning("Failed to start bluetooth scan: %s", error->message);
+        g_clear_error(&error);
+        return FAIL;
     }
-    break;
 
-    case I_AM_IN_IDLE:
-    {
-      // Stop Mode2 decoding - can be called even if not used
-      I2cStop();
-      SetupListeningSocket(&(BtInstance.ListenSocket.Socket));
-      BtInstance.PageState = SCAN_PAGE;
-      BtIssueHciVisible(BtInstance.NonVol.Visible, BtInstance.PageState);
-      BtInstance.HciSocket.Busy  |=  HCI_VISIBLE;
-    }
-    break;
-
-    case I_AM_MASTER:
-    {
-      // Cannot be accepting other incoming connections.. scatter-net not supported
-      BtCloseBtSocket(&(BtInstance.ListenSocket.Socket));
-    }
-    break;
-
-    case I_AM_SLAVE:
-    {
-      // Cannot be accepting other incoming connections.. scatter-net not supported
-      BtCloseBtSocket(&(BtInstance.ListenSocket.Socket));
-      BtClearChBuf(0);
-    }
-    break;
-
-    case I_AM_SCANNING:
-    {
-      UBYTE                   TmpCnt;
-      inquiry_cp              cp;
-      write_inquiry_mode_cp   cmp;
-
-      // Do not accept incoming connects during scan
-      BtIssueHciVisible(BtInstance.NonVol.Visible, 0);
-      BtCloseBtSocket(&(BtInstance.ListenSocket.Socket));
-
-      cmp.mode = 0x01;
-      if (hci_send_cmd(BtInstance.HciSocket.Socket, OGF_HOST_CTL, OCF_WRITE_INQUIRY_MODE, WRITE_INQUIRY_MODE_RP_SIZE, &cmp) < 0)
-      {
-        #ifdef DEBUG
-          printf("Can't set inquiry mode");
-        #endif
-
-        return;
-      }
-
-      // This is general inquiry LAP
-      memset (&cp, 0, sizeof(cp));
-      cp.lap[2]  = 0x9e;
-      cp.lap[1]  = 0x8b;
-      cp.lap[0]  = 0x33;
-      cp.num_rsp = 0;
-      cp.length  = 0x0F;
-
-      #ifdef DEBUG
-        printf("Starting inquiry with RSSI...\n");
-      #endif
-
-      if (hci_send_cmd (BtInstance.HciSocket.Socket, OGF_LINK_CTL, OCF_INQUIRY, INQUIRY_CP_SIZE, &cp) < 0)
-      {
-        #ifdef DEBUG
-          printf("\nCan't start inquiry\n");
-        #endif
-        return;
-      }
-
-      // Clear the search list
-      for(TmpCnt = 0; TmpCnt < MAX_DEV_TABLE_ENTRIES; TmpCnt++)
-      {
-        BtClearSearchListEntry(TmpCnt);
-      }
-
-      BtInstance.NoOfFoundNames     = 0;
-      BtInstance.NoOfFoundDev       = 0;
-      BtInstance.SearchIndex        = 0;
-      BtInstance.State              = I_AM_SCANNING;
-      BtInstance.ScanState          = SCAN_INQ_STATE;
-    }
-    break;
-
-    case STOP_SCANNING:
-    {
-    }
-    break;
-
-    case BLUETOOTH_OFF:
-    {
-    }
-    break;
-
-    case RESTART:
-    {
-      BtInstance.OnOffSeqCnt    =  0;
-      BtInstance.RestartSeqCnt  =  0;
-    }
-    break;
-  }
+    return OK;
 }
 
-static UWORD BtRequestName(void)
+/**
+ * @brief               Stop scanning for bluetooth devices.
+ *
+ * @return              OK on success, otherwise FAIL.
+ */
+UBYTE BtStopScan(void)
 {
-  UWORD               RtnVal;
-  remote_name_req_cp  cp;
+    GError *error = NULL;
 
-  RtnVal = TRUE;
-
-  memset(&cp, 0, sizeof(cp));
-  bacpy(&cp.bdaddr, &BtInstance.SearchList[BtInstance.SearchIndex].Adr);
-  cp.pscan_rep_mode = 0x02;
-
-  if(hci_send_cmd(BtInstance.HciSocket.Socket, OGF_LINK_CTL, OCF_REMOTE_NAME_REQ, REMOTE_NAME_REQ_CP_SIZE, &cp))
-  {
-    RtnVal = FALSE;
-  }
-
-  return(RtnVal);
-}
-
-
-UBYTE     BtStartScan(void)
-{
-  UBYTE   RtnVal;
-
-  if(((HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy)) &&
-      (BLUETOOTH_OFF != BtInstance.State) && (NUMBER_OF_ATTACHED_SLAVES > BtInstance.NoOfConnDevs))
-  {
-    BtInstance.HciSocket.Busy = HCI_SCAN;
-    BtSetup(I_AM_SCANNING);
-    RtnVal = OK;
-  }
-  else
-  {
-    RtnVal = FAIL;
-  }
-  return(RtnVal);
-}
-
-
-UBYTE      BtStopScan(void)
-{
-  UBYTE    RtnVal;
-  if (HCI_SCAN == BtInstance.HciSocket.Busy)
-  {
-    switch(BtInstance.ScanState)
-    {
-      case SCAN_OFF:
-      {
-        BtInstance.HciSocket.Busy  = HCI_IDLE;
-        BtIssueHciVisible(BtInstance.NonVol.Visible, BtInstance.PageState);
-      }
-      break;
-      case SCAN_INQ_STATE:
-      {
-        hci_send_cmd (BtInstance.HciSocket.Socket, OGF_LINK_CTL, OCF_INQUIRY_CANCEL, 0, NULL);
-      }
-      break;
-      case SCAN_NAME_STATE:
-      {
-        BtInstance.ScanState       = SCAN_OFF;
-      }
-      break;
+    if (!BtInstance.adapter) {
+        return FAIL;
     }
-    RtnVal = OK;
-  }
-  else
-  {
-    if((HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy))
-    {
-      BtInstance.HciSocket.Busy = HCI_IDLE;
-      RtnVal = OK;
+
+    if (!bluez_adapter1_call_stop_discovery_sync(BtInstance.adapter, NULL, &error)) {
+        g_warning("Failed to stop bluetooth scan: %s", error->message);
+        g_clear_error(&error);
+        return FAIL;
     }
-    else
-    {
-      RtnVal = FAIL;
-    }
-  }
-  return(RtnVal);
+
+    return OK;
 }
 
 static UWORD cBtRead(DATA8 ch, UBYTE *pBuf, UWORD Length)
@@ -766,20 +444,6 @@ UWORD cBtReadCh7(UBYTE *pBuf, UWORD Length)
 {
     return cBtRead(7, pBuf, Length);
 }
-
-static void DecodeBtStream(UBYTE BufNo)
-{
-  if (MODE1 == BtInstance.NonVol.DecodeMode)
-  {
-    DecodeMode1(BufNo);
-  }
-  else
-  {
-    // Need to decode mode2 before decoding mode1
-    DecodeMode2();
-  }
-}
-
 
 void      DecodeMode2(void)
 {
@@ -1093,1311 +757,344 @@ void      DecodeMode1(UBYTE BufNo)
   }
 }
 
-static void BtTurnOnSeq(void)
+static void DecodeBtStream(UBYTE BufNo)
 {
-  switch(BtInstance.OnOffSeqCnt)
-  {
-    case 0:
-    {
-      UBYTE   Tmp;
-      struct  timespec  TimerData;
-
-      // Clear all channel buffers
-      memset(&(BtInstance.BtCh), 0, sizeof(BtInstance.BtCh));
-      for (Tmp = 0; Tmp < NO_OF_BT_CHS; Tmp++)
-      {
-        BtClearChBuf(Tmp);
-        BtInstance.BtCh[Tmp].BtSocket.Socket = -1;
-      }
-      for (Tmp = 0; Tmp < MAX_DEV_TABLE_ENTRIES; Tmp++)
-      {
-        BtInstance.NonVol.DevList[Tmp].ChNo = NO_OF_BT_CHS;
-      }
-
-      BtInstance.Mode2WriteBuf.InPtr  =  0;
-      BtInstance.Mode2WriteBuf.OutPtr =  0;
-
-      BtInstance.ScanState            =  SCAN_OFF;
-      BtInstance.PageState            =  TRUE;
-      BtInstance.ListenSocket.Socket  =  -1;
-      BtInstance.NoOfFoundNames       =   0;
-      BtInstance.NoOfConnDevs         =   0;
-
-      BtInstance.HciSocket.Socket = hci_open_dev( 0 );
-      ioctl(BtInstance.HciSocket.Socket, HCIDEVDOWN, 0);
-      ioctl(BtInstance.HciSocket.Socket, HCIDEVUP, 0);
-
-      clock_gettime(CLOCK_MONOTONIC,&TimerData);
-      BtInstance.Delay  =  (ULONG)TimerData.tv_nsec;
-
-      BtInstance.OnOffSeqCnt++ ;
+    if (BtInstance.NonVol.DecodeMode == MODE1) {
+        DecodeMode1(BufNo);
+    } else {
+        DecodeMode2();
     }
-    break;
-
-    case 1:
-    {
-      struct  timespec  TimerData;
-      ULONG   Time;
-
-      cBtHandleHCI();
-
-      clock_gettime(CLOCK_MONOTONIC,&TimerData);
-      Time = (ULONG)TimerData.tv_nsec;
-      if (400000000 < (Time - BtInstance.Delay))
-      {
-        // Wait min. 400mS
-        // Events are setup here to be ready for coming hci_send_cmd
-        BtSetupPinEvent();
-        BtInstance.OnOffSeqCnt++;
-      }
-    }
-    break;
-
-    case 2:
-    {
-      if (MODE2 == BtInstance.NonVol.DecodeMode)
-      {
-        hci_send_cmd(BtInstance.HciSocket.Socket, OGF_VENDOR_CMD, 0xFF26, 0x03, &SimplePairingEnable);
-      }
-      else
-      {
-        hci_send_cmd(BtInstance.HciSocket.Socket, OGF_VENDOR_CMD, 0xFF26, 0x03, &SimplePairingDisable);
-      }
-      BtInstance.HciSocket.WaitForEvent = TRUE;
-      BtInstance.OnOffSeqCnt++;
-    }
-    break;
-
-    case 3:
-    {
-      cBtHandleHCI();
-      if (FALSE == BtInstance.HciSocket.WaitForEvent)
-      {
-        if (MODE2 == BtInstance.NonVol.DecodeMode)
-        {
-          hci_send_cmd(BtInstance.HciSocket.Socket, OGF_VENDOR_CMD, 0xFF26, 0x03, &ExtendedFeaturesEnable);
-        }
-        else
-        {
-          hci_send_cmd(BtInstance.HciSocket.Socket, OGF_VENDOR_CMD, 0xFF26, 0x03, &ExtendedFeaturesDisable);
-        }
-        BtInstance.HciSocket.WaitForEvent = TRUE;
-        BtInstance.OnOffSeqCnt++;
-      }
-    }
-    break;
-
-    case 4:
-    {
-      cBtHandleHCI();
-      if (FALSE == BtInstance.HciSocket.WaitForEvent)
-      {
-        UBYTE Auth;
-        if (MODE2 == BtInstance.NonVol.DecodeMode)
-        {
-          Auth = AUTH_DISABLED;
-        }
-        else
-        {
-          Auth = AUTH_ENABLED;
-        }
-
-        hci_send_cmd(BtInstance.HciSocket.Socket, OGF_HOST_CTL, OCF_WRITE_AUTH_ENABLE, 1, &Auth);
-        BtInstance.HciSocket.WaitForEvent = TRUE;
-        BtInstance.OnOffSeqCnt++;
-      }
-    }
-    break;
-
-    case 5:
-    {
-      struct  timespec  TimerData;
-
-      cBtHandleHCI();
-      if (FALSE == BtInstance.HciSocket.WaitForEvent)
-      {
-        ioctl(BtInstance.HciSocket.Socket, HCIDEVDOWN, 0);
-        ioctl(BtInstance.HciSocket.Socket, HCIDEVUP, 0);
-
-        clock_gettime(CLOCK_MONOTONIC,&TimerData);
-        BtInstance.Delay  =  (ULONG)TimerData.tv_nsec;
-
-        BtInstance.OnOffSeqCnt++;
-      }
-    }
-    break;
-
-    case 6:
-    {
-      struct  timespec  TimerData;
-      ULONG   Time;
-
-      cBtHandleHCI();
-
-      clock_gettime(CLOCK_MONOTONIC,&TimerData);
-      Time = (ULONG)TimerData.tv_nsec;
-      if (400000000 < (Time - BtInstance.Delay))
-      {
-
-        // Update Name
-        BtIssueHciVisible(BtInstance.NonVol.Visible, BtInstance.PageState);
-
-        BtInstance.HciSocket.WaitForEvent = TRUE;
-        BtInstance.OnOffSeqCnt++;
-      }
-    }
-    break;
-
-    case 7:
-    {
-      cBtHandleHCI();
-      if (FALSE == BtInstance.HciSocket.WaitForEvent)
-      {
-        change_local_name_cp  cp;
-
-        snprintf((char *)&(cp.name[0]), vmBRICKNAMESIZE, "%s", (char *)BtInstance.BtName);
-        hci_send_cmd(BtInstance.HciSocket.Socket, OGF_HOST_CTL, OCF_CHANGE_LOCAL_NAME, CHANGE_LOCAL_NAME_CP_SIZE, &cp);
-        BtInstance.HciSocket.WaitForEvent = TRUE;
-        BtInstance.OnOffSeqCnt++;
-      }
-    }
-    break;
-
-    case 8:
-    {
-      cBtHandleHCI();
-      if (FALSE == BtInstance.HciSocket.WaitForEvent)
-      {
-        /* Setup Mode2 if it is enabled */
-        if (MODE2 == BtInstance.NonVol.DecodeMode)
-        {
-          uint32_t svc_uuid_int[]       =   { 0, 0xDEFACADE, 0xAFDECADE, 0xFFCACADE };
-          uint8_t rfcomm_channel        =   1;
-          const char *service_name      =   "Wireless EV3";
-          const char *service_dsc       =   "MINDSTORMS EV3";
-          const char *service_prov      =   "LEGO";
-
-          uuid_t root_uuid, l2cap_uuid, rfcomm_uuid, svc_uuid;//, svc_class_uuid;
-          sdp_list_t *l2cap_list        =   0,
-                     *rfcomm_list       =   0,
-                     *root_list         =   0,
-                     *proto_list        =   0,
-                     *access_proto_list =   0,
-                     *svc_class_list    =   0,
-                     *profile_list      =   0;
-          sdp_data_t *channel           =   0;                //, *psm = 0;
-          sdp_profile_desc_t profile;
-
-          sdp_record_t *record = sdp_record_alloc();
-
-          // set the general service ID
-          sdp_uuid128_create( &svc_uuid, &svc_uuid_int );
-
-          sdp_set_service_id( record, svc_uuid );
-
-          // set the service class
-          svc_class_list = sdp_list_append(0, &svc_uuid);
-          sdp_set_service_classes(record, svc_class_list);
-
-          // set the Bluetooth profile information
-          sdp_uuid16_create(&profile.uuid, SERIAL_PORT_PROFILE_ID);
-          profile.version = 0x0100;
-          profile_list = sdp_list_append(0, &profile);
-          sdp_set_profile_descs(record, profile_list);
-
-          // make the service record publicly browsable
-          sdp_uuid16_create(&root_uuid, PUBLIC_BROWSE_GROUP);
-          root_list = sdp_list_append(0, &root_uuid);
-          sdp_set_browse_groups( record, root_list );
-
-          // set l2cap information
-          sdp_uuid16_create(&l2cap_uuid, L2CAP_UUID);
-          l2cap_list = sdp_list_append( 0, &l2cap_uuid );
-          proto_list = sdp_list_append( 0, l2cap_list );
-
-          // register the RFCOMM channel for RFCOMM sockets
-          sdp_uuid16_create(&rfcomm_uuid, RFCOMM_UUID);
-          channel     = sdp_data_alloc(SDP_UINT8, &rfcomm_channel);
-          rfcomm_list = sdp_list_append( 0, &rfcomm_uuid );
-          sdp_list_append( rfcomm_list, channel );
-          sdp_list_append( proto_list, rfcomm_list );
-          access_proto_list = sdp_list_append( 0, proto_list );
-          sdp_set_access_protos( record, access_proto_list );
-
-          // set the name, provider, and description
-          sdp_set_info_attr(record, service_name, service_prov, service_dsc);
-
-          session = sdp_connect( BDADDR_ANY, BDADDR_LOCAL, SDP_RETRY_IF_BUSY );
-
-          sdp_record_register(session, record, 0);
-
-          // cleanup
-          sdp_data_free( channel );
-          sdp_list_free( l2cap_list, 0 );
-          sdp_list_free( rfcomm_list, 0 );
-          sdp_list_free( root_list, 0 );
-          sdp_list_free( access_proto_list, 0 );
-
-          sdp_list_free( proto_list, 0 );
-          sdp_list_free( svc_class_list, 0 );
-          sdp_list_free( profile_list, 0 );
-
-        }
-
-        BtInstance.OnOffSeqCnt++;
-      }
-    }
-    break;
-
-    case 9:
-    {
-      struct   agent;
-      char     match_string[128], *adapter_id = NULL;
-      struct   sigaction sa;
-
-      static const DBusObjectPathVTable agent_table =
-      {
-        .message_function = agent_message,
-      };
-      const char *capabilities = "DisplayYesNo";
-
-      cBtHandleHCI();
-      if (FALSE == BtInstance.HciSocket.WaitForEvent)
-      {
-        BtInstance.OnOffSeqCnt      =  0;
-        BtInstance.NonVol.On        =  TRUE;
-        BtInstance.HciSocket.Busy  &=  ~HCI_ONOFF;
-        BtSetup(I_AM_IN_IDLE);
-
-        conn          =  dbus_bus_get(DBUS_BUS_SYSTEM, NULL);
-        adapter_path  =  get_adapter_path(conn, adapter_id);
-
-        if (!dbus_connection_register_object_path(conn, agent_path, &agent_table, NULL))
-        {
-          fprintf(stderr, "Can't register object path for agent\n");
-        }
-
-        if (register_agent(conn, adapter_path, agent_path, capabilities) < 0)
-        {
-          dbus_connection_unref(conn);
-          exit(1);
-        }
-
-        if (!dbus_connection_add_filter(conn, agent_filter, NULL, NULL))
-          fprintf(stderr, "Can't add signal filter");
-
-        snprintf(match_string, sizeof(match_string),
-            "interface=%s,member=NameOwnerChanged,arg0=%s",
-            DBUS_INTERFACE_DBUS, "org.bluez");
-
-        dbus_bus_add_match(conn, match_string, NULL);
-
-        memset(&sa, 0, sizeof(sa));
-        sa.sa_flags   = SA_NOCLDSTOP;
-        sa.sa_handler = sig_term;
-        sigaction(SIGTERM, &sa, NULL);
-        sigaction(SIGINT,  &sa, NULL);
-      }
-    }
-    break;
-  }
 }
 
 static void BtClose(void)
 {
   BtDisconnectAll();
 
-  if (TRUE == BtInstance.NonVol.On)
-  {
-    // Unregister agent can only be done if already registered
-    unregister_agent(conn, adapter_path, agent_path);
-  }
-
-  if (MODE2 == BtInstance.NonVol.DecodeMode)
-  {
-    if (0 != session)
-    {
-      sdp_close(session);
-      session = 0;
-    }
-  }
-
-  BtCloseBtSocket(&(BtInstance.ListenSocket.Socket));
-
-  if (MIN_HANDLE <= BtInstance.HciSocket.Socket)
-  {
-    ioctl(BtInstance.HciSocket.Socket, HCIDEVDOWN, 0);
-    hci_close_dev(BtInstance.HciSocket.Socket);
-    BtInstance.HciSocket.Socket = -1;
-  }
+  // if (MIN_HANDLE <= BtInstance.HciSocket.Socket)
+  // {
+  //   ioctl(BtInstance.HciSocket.Socket, HCIDEVDOWN, 0);
+  //   hci_close_dev(BtInstance.HciSocket.Socket);
+  //   BtInstance.HciSocket.Socket = -1;
+  // }
 
   I2cStop();
 }
 
-static void BtTurnOffSeq(void)
-{
-  BtClose();
-
-  BtSetup(BLUETOOTH_OFF);
-  BtInstance.NonVol.On       =  FALSE;
-  BtInstance.HciSocket.Busy  =  HCI_IDLE;
-  BtInstance.OnOffSeqCnt     =  0;
-}
-
-
-void      BtUpdate(void)
-{
-
-  switch(BtInstance.State)
-  {
-    case I_AM_IN_IDLE:
-    {
-      BTSOCKET  *pBtSocket;
-      UBYTE     Index = 0;
-
-      cBtHandleHCI();
-      dbus_connection_read_write_dispatch(conn, 0);
-
-      pBtSocket = &(BtInstance.BtCh[0].BtSocket); // BtCh = 0 is the slave port
-
-      // Check for incoming connection from known device
-      BtInstance.ListenSocket.opt   = sizeof(struct sockaddr_rc );
-      pBtSocket->Socket = accept(BtInstance.ListenSocket.Socket, (struct sockaddr *)&(BtInstance.ListenSocket.rem_addr), &(BtInstance.ListenSocket.opt));
-      if (0 <= pBtSocket->Socket)
-      {
-
-        #ifdef DEBUG
-          char tmpbuf[50];
-        #endif
-
-        bacpy(&(pBtSocket->Addr),(bdaddr_t*)(&(BtInstance.ListenSocket.rem_addr.rc_bdaddr)));
-
-        #ifdef DEBUG
-          ba2str((const bdaddr_t*)(&(BtInstance.ListenSocket.rem_addr.rc_bdaddr)), tmpbuf);
-          printf("Remote connection accepted, address: %s\n",tmpbuf);
-        #endif
-
-        if (OK == cBtFindDevAdr(&(pBtSocket->Addr), &Index))
-        {
-          cBtSetDevConnectedStatus(Index);
-        }
-        if (OK == cBtFindSearchAdr(&(BtInstance.NonVol.DevList[Index].Adr), &Index))
-        {
-          cBtSetSearchConnectedStatus(Index);
-        }
-
-        BtSetup(I_AM_SLAVE);
-        BtInstance.BtCh[0].Status = CH_CONNECTED;
-
-        if (MODE2 == BtInstance.NonVol.DecodeMode)
-        {
-          I2cStart();
-        }
-      }
-    }
-    break;
-
-    case I_AM_SLAVE:
-    {
-      int       BytesRead;
-      READBUF   *pReadBuf;
-      BTSOCKET  *pBtSocket;
-
-      cBtHandleHCI();
-
-      if (MODE1 == BtInstance.NonVol.DecodeMode)
-      {
-        pReadBuf  = &(BtInstance.BtCh[0].ReadBuf);   // BtCh = 0 is the slave port
-      }
-      else
-      {
-        pReadBuf  = &(BtInstance.Mode2Buf);          // dedicated buffer used for Mode2
-      }
-
-      pBtSocket = &(BtInstance.BtCh[0].BtSocket);
-
-      if ((pBtSocket->Socket != -1))
-      {
-        /* Check if it is possible to read more byte from the BT stream */
-        if (READ_BUF_EMPTY  ==  pReadBuf->Status)
-        {
-          pBtSocket->Cmdtv.tv_sec    =  0;
-          pBtSocket->Cmdtv.tv_usec   =  0;
-          FD_ZERO(&(pBtSocket->Cmdfds));
-          FD_SET(pBtSocket->Socket, &(pBtSocket->Cmdfds));
-          if (select(pBtSocket->Socket + 1, &(pBtSocket->Cmdfds), NULL, NULL, &(pBtSocket->Cmdtv)))
-          {
-            BytesRead = read(pBtSocket->Socket, pReadBuf->Buf, sizeof(pReadBuf->Buf));
-
-            if (0 <= BytesRead)
-            {
-              if (0 < BytesRead)
-              {
-                #ifdef DEBUG
-                  int Cnt;
-                  printf("\nData received on BT in Slave mode");
-                  for (Cnt = 0; Cnt < BytesRead; Cnt++)
-                  {
-                    printf("\n Rx byte nr %02d = %02X",Cnt,pReadBuf->Buf[Cnt]);
-                  }
-                  printf("\n");
-                #endif
-
-                pReadBuf->OutPtr = 0;
-                pReadBuf->InPtr  = BytesRead;
-                pReadBuf->Status = READ_BUF_FULL;
-
-                DecodeBtStream((UBYTE) 0);
-              }
-            }
-            else
-            {
-              // Socket closed at the other end -> close it
-              BtCloseBtSocket(&(BtInstance.BtCh[0].BtSocket.Socket));
-            }
-          }
-        }
-        else
-        {
-          DecodeBtStream((UBYTE) 0);
-        }
-      }
-      usleep(20);
-    }
-    break;
-
-    case I_AM_MASTER:
-    {
-      // Can have up till 7 slaves
-      // All packets go into the same buffer for the communication module and VM
-      // and all packets needs to be wrapped with the channel number
-      UBYTE     Cnt;
-      UBYTE     Index = 0;
-      int       BytesRead;
-      READBUF   *pReadBuf;
-      BTSOCKET  *pBtSocket;
-      int       SocketReturn;
-
-      cBtHandleHCI();
-      dbus_connection_read_write_dispatch(conn, 0);
-
-      // Check all 7 channels
-      for(Cnt = 1; Cnt < NO_OF_BT_CHS; Cnt++)
-      {
-        pReadBuf  = &(BtInstance.BtCh[Cnt].ReadBuf);
-        pBtSocket = &(BtInstance.BtCh[Cnt].BtSocket);
-
-        if ((CH_FREE != BtInstance.BtCh[Cnt].Status) && (pBtSocket->Socket != -1))
-        {
-          if ((READ_BUF_EMPTY  ==  pReadBuf->Status))
-          {
-            pBtSocket->Cmdtv.tv_sec    =  0;
-            pBtSocket->Cmdtv.tv_usec   =  0;
-            FD_ZERO(&(pBtSocket->Cmdfds));
-            FD_SET(pBtSocket->Socket, &(pBtSocket->Cmdfds));
-
-            if (CH_CONNECTING == BtInstance.BtCh[Cnt].Status)
-            {
-              // When writing becomes possible then socket is up running
-              SocketReturn = select(pBtSocket->Socket + 1, NULL, &(pBtSocket->Cmdfds), NULL, &(pBtSocket->Cmdtv));
-
-              if (0 < SocketReturn)
-              {
-                // This is acceptance from the slave
-                if (OK == cBtFindDevChNo(Cnt, &Index))
-                {
-                  cBtSetDevConnectedStatus(Index);
-                }
-                if (OK == cBtFindSearchAdr(&(BtInstance.NonVol.DevList[Index].Adr), &Index))
-                {
-                  cBtSetSearchConnectedStatus(Index);
-                }
-
-                BtInstance.HciSocket.Busy   &= ~HCI_CONNECT;
-                BtInstance.BtCh[Cnt].Status  =  CH_CONNECTED;
-              }
-            }
-            else
-            {
-              if (0 < select(pBtSocket->Socket + 1, &(pBtSocket->Cmdfds), NULL, NULL, &(pBtSocket->Cmdtv)))
-              {
-                BytesRead = read(pBtSocket->Socket, pReadBuf->Buf, sizeof(pReadBuf->Buf));
-                if (0 <= BytesRead)
-                {
-                  if (0 < BytesRead)
-                  {
-                    pReadBuf->OutPtr = 0;
-                    pReadBuf->InPtr  = BytesRead;
-                    pReadBuf->Status = READ_BUF_FULL;
-
-                    DecodeBtStream(Cnt);
-                  }
-                }
-                else
-                {
-                  BtCloseBtSocket(&(pBtSocket->Socket));
-                }
-              }
-            }
-          }
-          else
-          {
-           DecodeBtStream(Cnt);
-          }
-        }
-      }
-      usleep(20);
-    }
-    break;
-
-    case I_AM_SCANNING:
-    {
-      cBtHandleHCI();
-    }
-    break;
-
-    case TURN_ON:
-    {
-      BtTurnOnSeq();
-    }
-    break;
-
-    case TURN_OFF:
-    {
-      BtTurnOffSeq();
-    }
-    break;
-
-    case RESTART:
-    {
-      if (0 == BtInstance.RestartSeqCnt)
-      {
-        BtTurnOffSeq();
-
-        // Check if power down is done
-        if (0 == (HCI_ONOFF & BtInstance.HciSocket.Busy))
-        {
-          BtInstance.RestartSeqCnt++;
-          BtInstance.HciSocket.Busy |= HCI_ONOFF;
-
-          //Stay in this state - not an elegant way to do this!
-          //But the BtTurnOffSeq sets state to OFF when done.
-          BtInstance.State = RESTART;
-        }
-      }
-      else
-      {
-        BtTurnOnSeq();
-      }
-    }
-    break;
-
-    case BLUETOOTH_OFF:
-    {
-    }
-    break;
-
-    default:
-    {
-    }
-    break;
-  }
-  BtTxMsgs();
-}
-
-static void create_paired_device_reply(DBusPendingCall *pending, void *user_data)
-{
-  PAIREDDEVINFO *pPairedDevInfo;
-  struct         sockaddr_rc  addr;
-  int            sock_flags;
-
-  DBusMessage   *message;
-  DBusError     err;
-  UWORD         Status;
-
-  Status = TRUE;
-
-  // Get the device info from the user data (device info is bluetooth addr and port number)
-  pPairedDevInfo = (PAIREDDEVINFO*)user_data;
-
-  message = dbus_pending_call_steal_reply(pending);
-  dbus_error_init(&err);
-
-  if (dbus_set_error_from_message(&err, message))
-  {
-
-//    printf("\nPending information: %s\n",err.name);
-    if (0 != strcmp("org.bluez.Error.AlreadyExists", err.name))
-    {
-      Status = FALSE;
-    }
-    dbus_error_free(&err);
-  }
-
-  if (TRUE == Status)
-  {
-    BtInstance.BtCh[pPairedDevInfo->Port].BtSocket.Socket = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
-
-    addr.rc_family  = AF_BLUETOOTH;
-    addr.rc_channel = 1;
-
-    bacpy(&(addr.rc_bdaddr), &(pPairedDevInfo->Addr));
-
-    sock_flags = fcntl(BtInstance.BtCh[pPairedDevInfo->Port].BtSocket.Socket, F_GETFL, 0);
-    fcntl(BtInstance.BtCh[pPairedDevInfo->Port].BtSocket.Socket, F_SETFL, sock_flags | O_NONBLOCK);
-
-    connect(BtInstance.BtCh[pPairedDevInfo->Port].BtSocket.Socket,(struct sockaddr *) &addr, sizeof(addr));
-    BtClearChBuf(pPairedDevInfo->Port);
-    BtInstance.BtCh[pPairedDevInfo->Port].Status = CH_CONNECTING;
-
-    usleep(20);
-  }
-}
-
-static UBYTE create_paired_device(DBusConnection *conn,
-                                  const char *adapter_path,
-                                  const char *agent_path,
-                                  const char *capabilities,
-                                  const char *device,
-                                  UBYTE Port)
-{
-  dbus_bool_t      success;
-  DBusMessage     *msg;
-  DBusPendingCall *pending;
-
-  //Copy the device info to be used when paired reply is issued
-  str2ba(device, &(PairedDevInfo.Addr));
-  PairedDevInfo.Port = Port;
-
-  msg = dbus_message_new_method_call("org.bluez", adapter_path, "org.bluez.Adapter", "CreatePairedDevice");
-  if (!msg)
-  {
-    fprintf(stderr, "Can't allocate new method call\n");
-    return(0);
-  }
-
-  dbus_message_append_args(msg, DBUS_TYPE_STRING, &device, DBUS_TYPE_OBJECT_PATH, &agent_path, DBUS_TYPE_STRING, &capabilities, DBUS_TYPE_INVALID);
-
-  success = dbus_connection_send_with_reply(conn, msg, &pending, -1);
-
-  if (pending)
-  {
-    dbus_pending_call_set_notify(pending, create_paired_device_reply, (void*)&PairedDevInfo, NULL);
-  }
-
-  dbus_message_unref(msg);
-
-  if (!success)
-  {
-    fprintf(stderr, "Not enough memory for message send\n");
-    return(0);
-  }
-
-  dbus_connection_flush(conn);
-  usleep(20);
-
-  return(1);
-}
-
-static UBYTE BtConnectTo(UBYTE Port, bdaddr_t BtAddr)
-{
-  const char   *capabilities = "DisplayYesNo";
-  char          Addr[20];
-  char          Agent[128];
-  UBYTE         success;
-  UBYTE         RtnVal;
-
-  snprintf(Agent, sizeof(Agent), "/org/bluez/agent_%d", getpid());
-
-  ba2str((bdaddr_t *)(&(BtAddr)), Addr);
-
-  success = create_paired_device(conn, adapter_path, Agent, capabilities, Addr, Port);
-
-  if (!success)
-  {
-    RtnVal = FALSE;
-  }
-  else
-  {
-    RtnVal = TRUE;
-  }
-  return(RtnVal);
-}
-
-
-UBYTE   BtSetMode2(UBYTE Mode2)
-{
-  UBYTE   RtnVal = OK;
-
-  if ((HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy))
-  {
-    if (Mode2)
-    {
-      if (0 == BtInstance.NonVol.DecodeMode)
-      {
-        // If not already mode2 then set mode2
-        BtInstance.NonVol.DecodeMode = MODE2;
-
-        // Recycle on/off on BT to enable the changes
-        if (BLUETOOTH_OFF != BtInstance.State)
-        {
-          BtInstance.HciSocket.Busy = HCI_RESTART;
-          BtSetup(RESTART);
-        }
-      }
-      else
-      {
-        BtInstance.HciSocket.Busy = HCI_IDLE;
-      }
-    }
-    else
-    {
-      if (BtInstance.NonVol.DecodeMode)
-      {
-        // If in mode2 then set mode1
-        BtInstance.NonVol.DecodeMode = MODE1;
-
-        // Recycle on/off on BT to enable the changes
-        if (BLUETOOTH_OFF != BtInstance.State)
-        {
-          BtInstance.HciSocket.Busy  = HCI_RESTART;
-          BtSetup(RESTART);
-        }
-      }
-      else
-      {
-        BtInstance.HciSocket.Busy = HCI_IDLE;
-      }
-    }
-  }
-  else
-  {
-    RtnVal = FAIL;
-  }
-
-  return(RtnVal);
-}
-
-
-UBYTE     BtGetMode2(UBYTE *pMode2)
-{
-  UBYTE   RtnVal = OK;
-
-  *pMode2 = BtInstance.NonVol.DecodeMode;
-
-  return(RtnVal);
-}
-
-
-UBYTE     BtSetOnOff(UBYTE On)
-{
-  UBYTE   RtnVal = OK;
-
-  if ((HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy))
-  {
-    if (On)
-    {
-      if(BLUETOOTH_OFF == BtInstance.State)
-      {
-        BtSetup(TURN_ON);
-        BtInstance.HciSocket.Busy = HCI_ONOFF;
-      }
-      else
-      {
-        // Already ON
-        BtInstance.HciSocket.Busy = HCI_IDLE;
-      }
-    }
-    else
-    {
-      if (BLUETOOTH_OFF != BtInstance.State)
-      {
-        BtSetup(TURN_OFF);
-        BtInstance.HciSocket.Busy = HCI_ONOFF;
-      }
-      else
-      {
-        // Already off
-        BtInstance.HciSocket.Busy = HCI_IDLE;
-      }
-    }
-  }
-  else
-  {
-    RtnVal = FAIL;
-  }
-  return(RtnVal);
-}
-
-
-UBYTE     BtGetOnOff(UBYTE *On)
-{
-  UBYTE   RtnVal = OK;
-
-  *On    = BtInstance.NonVol.On;
-
-  return(RtnVal);
-}
-
-static UBYTE BtIssueHciVisible(UBYTE Visible, UBYTE Page)
-{
-  UBYTE   Visibility;
-  UBYTE   Status;
-
-  Visibility = 0;
-
-  if (Page)
-  {
-    Visibility |= SCAN_PAGE;
-  }
-
-  if (Visible)
-  {
-    Visibility |= SCAN_INQUIRY;
-  }
-
-  Status =  hci_send_cmd(BtInstance.HciSocket.Socket, OGF_HOST_CTL, OCF_WRITE_SCAN_ENABLE, 1, &Visibility);
-
-  return(Status);
-}
-
-
-/* Set visibility ON/OFF - which is the capability to respond to scanning */
-UBYTE     BtSetVisibility(UBYTE State)
-{
-  UBYTE   Status;
-  UBYTE   RtnVal;
-
-  RtnVal = OK;
-
-  if ((HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy))
-  {
-    if (BLUETOOTH_OFF != BtInstance.State)
-    {
-      Status = BtIssueHciVisible(State, BtInstance.PageState);
-      if (0 == Status)
-      {
-        BtInstance.HciSocket.Busy  =  HCI_VISIBLE;
-        BtInstance.NonVol.Visible  =  State;
-      }
-      else
-      {
-        BtInstance.HciSocket.Busy  =  HCI_FAIL;
-      }
-    }
-    else
-    {
-      BtInstance.HciSocket.Busy = HCI_IDLE;
-      BtInstance.NonVol.Visible = State;
-    }
-  }
-  else
-  {
-    RtnVal = FAIL;
-  }
-
-  return(RtnVal);
-}
-
-
-/* Get visibility */
-UBYTE     BtGetVisibility(void)
-{
-  return(BtInstance.NonVol.Visible);
-}
-
-static UBYTE cBtFindDevName(UBYTE *pItem, UBYTE *pName, UBYTE StartIndex)
-{
-  UBYTE   RtnVal = FALSE;
-  UBYTE   Index;
-
-  Index = StartIndex;
-  if (0 == pName[0])
-  {
-    // If search name is 0 then it is wildcard *
-    while((0 == BtInstance.NonVol.DevList[Index].Name[0]) && (Index < MAX_DEV_TABLE_ENTRIES))
-    {
-      Index++;
-    }
-  }
-  else
-  {
-    while((0 != strcmp((char*)pName,(char*)BtInstance.NonVol.DevList[Index].Name)) && (Index < MAX_DEV_TABLE_ENTRIES))
-    {
-      Index++;
-    }
-  }
-
-  if (Index < MAX_DEV_TABLE_ENTRIES)
-  {
-    RtnVal = TRUE;
-    *pItem = Index;
-  }
-  return(RtnVal);
-}
-
-static UBYTE BtClearSearchListEntry(UBYTE Index)
-{
-  UBYTE   RtnVal;
-
-  RtnVal = FAIL;
-  if (Index < MAX_DEV_TABLE_ENTRIES)
-  {
-    memset(&(BtInstance.SearchList[Index].Adr.b[0]), 0, sizeof(bdaddr_t));
-    BtInstance.SearchList[Index].Name[0]    =  0;
-    BtInstance.SearchList[Index].Connected  =  FALSE;
-    BtInstance.SearchList[Index].Paired     =  FALSE;
-    RtnVal = OK;
-  }
-  return(RtnVal);
-}
-
-static UBYTE cBtFindSearchName(UBYTE *pItem, UBYTE *pName)
-{
-  UBYTE   RtnVal = FALSE;
-  UBYTE   Index;
-
-  Index = 0;
-  while((0 != strcmp((char*)pName,(char*)BtInstance.SearchList[Index].Name)) && (Index < MAX_DEV_TABLE_ENTRIES))
-  {
-    Index++;
-  }
-  if (Index < MAX_DEV_TABLE_ENTRIES)
-  {
-    RtnVal = TRUE;
-    *pItem = Index;
-  }
-  return(RtnVal);
-}
-
-static UBYTE Connect(bdaddr_t BdAddr, UBYTE PortNo)
-{
-  UBYTE   RtnVal;
-  UBYTE   Tmp;
-
-  #ifdef DEBUG
-    char    Addr[20];
-  #endif
-
-  RtnVal = FALSE;
-  if (I_AM_IN_IDLE == BtInstance.State)
-  {
-    // State allows to connect to other devices
-    #ifdef DEBUG
-      printf("Connecting from IDLE...\n");
-    #endif
-
-    BtSetup(I_AM_MASTER);
-    if (TRUE == BtConnectTo(PortNo, BdAddr))
-    {
-      RtnVal = TRUE;
-    }
-    else
-    {
-      //Connection attempt failed return to idle
-      BtSetup(I_AM_IN_IDLE);
-      RtnVal = FALSE;
-    }
-  }
-  else
-  {
-    if (I_AM_MASTER == BtInstance.State)
-    {
-      // Can be the master of up to 7 units
-      #ifdef DEBUG
-        ba2str(&BdAddr, Addr);
-        printf("Connecting from MASTER PortIndex = %d, Addr = %s\n",PortNo,Addr);
-      #endif
-
-      RtnVal = BtConnectTo(PortNo, BdAddr);
-    }
-    else
-    {
-      if (I_AM_SLAVE == BtInstance.State)
-      {
-        // An outgoing connection will always disconnect Ch 0
-        // if already connected
-        for(Tmp = 0; Tmp < MAX_DEV_TABLE_ENTRIES; Tmp++)
-        {
-          if ((TRUE == BtInstance.NonVol.DevList[Tmp].Connected) && (0 == BtInstance.NonVol.DevList[Tmp].ChNo))
-          {
-            cBtDisconnect((UBYTE *)BtInstance.NonVol.DevList[Tmp].Name);
-            Tmp = MAX_DEV_TABLE_ENTRIES;
-          }
-        }
-        BtSetup(I_AM_MASTER);
-
-        if (TRUE == BtConnectTo(PortNo, BdAddr))
-        {
-          RtnVal = TRUE;
-        }
-        else
-        {
-          //Incoming connection has been closed and connection attempt failed -> return to idle
-          BtSetup(I_AM_IN_IDLE);
-          RtnVal = FALSE;
-        }
-      }
-      else
-      {
-        // Mode does not allow connecting
-        #ifdef DEBUG
-          printf("Wrong Mode... = %d\n", (int)BtInstance.State);
-        #endif
-      }
-    }
-  }
-  return(RtnVal);
-}
-
-
-/* This is the entry level to connecting */
-UBYTE     cBtConnect(UBYTE *pDevName)
-{
-  UBYTE     RtnVal;
-  UBYTE     Index;
-  UBYTE     PortIndex;
-  bdaddr_t  *pBdAddr;
-  UBYTE     AllReadyConn;
-
-  RtnVal       =  OK;
-  AllReadyConn = FALSE;
-  if (((HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy)) && (BLUETOOTH_OFF != BtInstance.State))
-  {
-    if (MODE1 == BtInstance.NonVol.DecodeMode)
-    {
-      //First check if already connected (can only be done if NOT using UI)
-      if (TRUE == cBtFindDevName(&Index, pDevName, 0))
-      {
-        if (TRUE == BtInstance.NonVol.DevList[Index].Connected)
-        {
-          AllReadyConn              = TRUE;
-          BtInstance.HciSocket.Busy = HCI_IDLE;
-        }
-      }
-
-      if (FALSE == AllReadyConn)
-      {
-        // Find free port to use for connection
-        PortIndex = BT_HOST_CH0;
-        while((PortIndex < NO_OF_BT_CHS) && (CH_FREE != BtInstance.BtCh[PortIndex].Status))
-        {
-          PortIndex++;
-        }
-
-        if (NO_OF_BT_CHS > PortIndex)
-        {
-          BtInstance.OutGoing.ChNo  = PortIndex;
-
-          #ifdef DEBUG
-            printf("\n ..... c_bt_connect....Name = %s\n",pDevName);
-          #endif
-
-          // First look in the known list
-          if (TRUE == cBtFindDevName(&Index, pDevName, 0))
-          {
-            #ifdef DEBUG
-              printf("\nFound in dev table: index = %d, name = %s, Port no = %d\n", Index, pDevName, PortIndex);
-            #endif
-
-            pBdAddr = &(BtInstance.NonVol.DevList[Index].Adr);
-          }
-          else
-          {
-            // Then look in the search list
-            if (TRUE == cBtFindSearchName(&Index, pDevName))
-            {
-              #ifdef DEBUG
-                printf("\n ..... Found in search table index = %d.... name = %s\n", Index, pDevName);
-              #endif
-
-              pBdAddr = &(BtInstance.SearchList[Index].Adr);
-            }
-            else
-            {
-              RtnVal = FAIL;
-              BtInstance.HciSocket.Busy = HCI_FAIL;
-            }
-          }
-
-          if (0 == (HCI_FAIL & BtInstance.HciSocket.Busy))
-          {
-            // All above went OK -> Connect
-            // Put name in incoming so it can be viewed in pin code pop up screen
-            snprintf((char*)&(BtInstance.Incoming.Name[0]), vmBRICKNAMESIZE, "%s", (char*)pDevName);
-            if (FALSE == Connect(*pBdAddr, PortIndex))
-            {
-              RtnVal = FAIL;
-              BtInstance.HciSocket.Busy = HCI_FAIL;
-            }
-            else
-            {
-              BtInstance.HciSocket.Busy = HCI_CONNECT;
-            }
-          }
-        }
-        else
-        {
-          // No more free ports
-          RtnVal = FAIL;
-          BtInstance.HciSocket.Busy = HCI_FAIL;
-        }
-      }
-    }
-    else
-    {
-      RtnVal = FAIL;
-      BtInstance.HciSocket.Busy = HCI_FAIL;
-    }
-  }
-  else
-  {
-    RtnVal = FAIL;
-    BtInstance.HciSocket.Busy = HCI_FAIL;
-  }
-  return(RtnVal);
-}
-
-static UBYTE cBtDiscDevIndex(UBYTE Index)
-{
-  UBYTE   RtnVal;
-
-  RtnVal = FALSE;
-  if(TRUE == BtInstance.NonVol.DevList[Index].Connected)
-  {
-    BtInstance.HciSocket.Busy  =  HCI_DISCONNECT;
-    BtCloseBtSocket(&(BtInstance.BtCh[BtInstance.NonVol.DevList[Index].ChNo].BtSocket.Socket));
-    RtnVal = TRUE;
-  }
-  return(RtnVal);
-}
-
-
-UBYTE     cBtDiscChNo(UBYTE ChNo)
-{
-  UBYTE   RtnVal;
-  UBYTE   TmpCnt;
-
-  RtnVal = FALSE;
-  for(TmpCnt = 0; TmpCnt < MAX_DEV_TABLE_ENTRIES; TmpCnt++)
-  {
-    if ((TRUE == BtInstance.NonVol.DevList[TmpCnt].Connected) && (ChNo == BtInstance.NonVol.DevList[TmpCnt].ChNo))
-    {
-      cBtDiscDevIndex(TmpCnt);
-      TmpCnt = MAX_DEV_TABLE_ENTRIES;
-      RtnVal = TRUE;
-    }
-  }
-  return(RtnVal);
-}
-
-
-UBYTE     cBtDisconnect(UBYTE *pName)
-{
-  UBYTE   Index;
-  UBYTE   RtnVal;
-  UBYTE   TmpCnt;
-
-  // Disconnect by name - find first index with the name which is connected
-  if (((HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy)) && (BLUETOOTH_OFF != BtInstance.State))
-  {
-    for(TmpCnt = 0; TmpCnt < MAX_DEV_TABLE_ENTRIES; TmpCnt++)
-    {
-      BtInstance.HciSocket.Busy = HCI_IDLE;
-      if (TRUE == cBtFindDevName(&Index, pName, TmpCnt))
-      {
-        if (cBtDiscDevIndex(Index))
-        {
-          TmpCnt = MAX_DEV_TABLE_ENTRIES;
-        }
-        else
-        {
-          // The device was found but not connected -
-          // Keep looking for a connected device
-          TmpCnt = Index;
-        }
-      }
-      else
-      {
-        TmpCnt = MAX_DEV_TABLE_ENTRIES;
-      }
-    }
-
-    #ifdef DEBUG
-      printf("\nDisconnecting Index = %d, Socketno = %d, Name = %s",Index,BtInstance.BtCh[BtInstance.NonVol.DevList[Index].ChNo].BtSocket.Socket,pName);
-    #endif
-
-    RtnVal = OK;
-  }
-  else
-  {
-    BtInstance.HciSocket.Busy = HCI_FAIL;
-    RtnVal = FAIL;
-  }
-  return(RtnVal);
-}
-
 static void BtTxMsgs(void)
 {
-  UBYTE     Cnt;
-  UWORD     ByteCnt;
-  SWORD     NoWritten;
-  WRITEBUF  *pWriteBuf;
-  BTSOCKET  *pBtSocket;
-  int       SocketReturn;
+    WRITEBUF  *pWriteBuf;
+    UWORD     ByteCnt;
+    guint     BytesWritten;
 
-  for (Cnt = 0; Cnt < NO_OF_BT_CHS; Cnt++)
-  {
-    pWriteBuf = &(BtInstance.BtCh[Cnt].WriteBuf);
-    pBtSocket = &(BtInstance.BtCh[Cnt].BtSocket);
-
-    ByteCnt   = pWriteBuf->InPtr - pWriteBuf->OutPtr;
-
-    if(ByteCnt)
-    {
-      if (-1 != pBtSocket->Socket)
-      {
-
-        pBtSocket->Cmdtv.tv_sec    =  0;
-        pBtSocket->Cmdtv.tv_usec   =  0;
-        FD_ZERO(&(pBtSocket->Cmdfds));
-        FD_SET(pBtSocket->Socket, &(pBtSocket->Cmdfds));
-
-        SocketReturn = select(pBtSocket->Socket + 1, NULL, &(pBtSocket->Cmdfds), NULL, &(pBtSocket->Cmdtv));
-
-        if (0 < SocketReturn)
-        {
-          // Still bytes to transmit on the requested channel
-          NoWritten = send(pBtSocket->Socket, &(pWriteBuf->Buf[pWriteBuf->OutPtr]), ByteCnt, (int)0);
-
-          if (0 < NoWritten)
-          {
-            pWriteBuf->OutPtr += NoWritten;
-
-            #ifdef DEBUG
-              printf("\n.... transmitted to socket = %d on chno = %d, Bytes to send %d, Bytes written = %d\n",pBtSocket->Socket, Cnt, ByteCnt, NoWritten);
-              printf("\n errno = %d\n", errno);
-            #endif
-
-            if (pWriteBuf->OutPtr == pWriteBuf->InPtr)
-            {
-              // All bytes has been written - clear the buffer
-              pWriteBuf->InPtr  = 0;
-              pWriteBuf->OutPtr = 0;
-            }
-          }
-        }
-      }
-      else
-      {
-        // Socket is closed (illegal handle) -> flush buffer
-        pWriteBuf->InPtr  = 0;
-        pWriteBuf->OutPtr = 0;
-      }
+    if (!BtInstance.channel0) {
+        return;
     }
-  }
+
+    pWriteBuf = &BtInstance.BtCh[0].WriteBuf;
+
+    ByteCnt = pWriteBuf->InPtr - pWriteBuf->OutPtr;
+
+    if (!ByteCnt) {
+        return;
+    }
+
+    g_io_channel_write_chars(BtInstance.channel0,
+                             (gchar *)&pWriteBuf->Buf[pWriteBuf->OutPtr],
+                             ByteCnt, &BytesWritten, NULL);
+    if (BytesWritten > 0) {
+        pWriteBuf->OutPtr += BytesWritten;
+
+#ifdef DEBUG
+        printf("transmitted Bytes to send %d, Bytes written = %d\n",
+               ByteCnt, BytesWritten);
+        printf(" errno = %d\n", errno);
+#endif
+
+        if (pWriteBuf->OutPtr == pWriteBuf->InPtr) {
+            // All bytes has been written - clear the buffer
+            pWriteBuf->InPtr  = 0;
+            pWriteBuf->OutPtr = 0;
+        }
+    }
+    g_io_channel_flush(BtInstance.channel0, NULL);
 }
 
+void BtUpdate(void)
+{
+    BtTxMsgs();
+}
+
+/**
+ * @brief           Sets the mode2 state.
+ *
+ * @param Mode2     The new state.
+ *
+ * @return          OK on success, otherwise FAIL
+ */
+RESULT BtSetMode2(UBYTE Mode2)
+{
+    // TODO: Need an iDevice to test mode2
+
+    return FAIL;
+}
+
+/**
+ * @brief           Gets the mode2 state.
+ *
+ * @param pMode2    Pointer to hold the result.
+ *
+ * @return          OK.
+ */
+RESULT BtGetMode2(UBYTE *pMode2)
+{
+    *pMode2 = BtInstance.NonVol.DecodeMode;
+
+    return OK;
+}
+
+/**
+ * @brief           Set the power state of the bluetooth adapter.
+ *
+ * @param on        TRUE to turn on or FALSE to turn off.
+ *
+ * @return          OK on success, otherwise FAIL.
+ */
+RESULT BtSetOnOff(UBYTE on)
+{
+    if (!BtInstance.adapter) {
+        return FAIL;
+    }
+
+    // TODO: need to use connman for power, not bluez
+    bluez_adapter1_set_powered(BtInstance.adapter, on);
+
+    // hack to make UI happy since setting property is async
+    g_dbus_proxy_set_cached_property(G_DBUS_PROXY(BtInstance.adapter),
+                                     "Powered",
+                                     g_variant_new_boolean(on));
+
+    return OK;
+}
+
+/**
+ * @brief           Get the power state of the bluetooth adapter.
+ *
+ * @param on        Pointer to hold the result. Set to TRUE if powered on,
+ *                  otherwise FALSE.
+ *
+ * @return          OK.
+ */
+RESULT BtGetOnOff(UBYTE *On)
+{
+    RESULT Result = OK;
+
+    if (BtInstance.adapter && bluez_adapter1_get_powered(BtInstance.adapter)) {
+        *On = TRUE;
+    } else {
+        *On = FALSE;
+    }
+
+    return Result;
+}
+
+/**
+ * @brief           Turn on/off bluetooth visibility.
+ *
+ * @param on        Set to TRUE to make the adapter visible.
+ *
+ * @return          OK.
+ */
+RESULT BtSetVisibility(UBYTE on)
+{
+    if (BtInstance.adapter) {
+
+        bluez_adapter1_set_discoverable(BtInstance.adapter, on);
+
+        // hack to make UI happy since setting property is async
+        g_dbus_proxy_set_cached_property(G_DBUS_PROXY(BtInstance.adapter),
+                                         "Discoverable",
+                                         g_variant_new_boolean(on));
+    }
+
+    return OK;
+}
+
+/**
+ * @brief           Check if Bluetooth is visible to other devices.
+ *
+ * @return          TRUE if visible, FALSE otherwise.
+ */
+UBYTE BtGetVisibility(void)
+{
+    if (!BtInstance.adapter) {
+        return FALSE;
+    }
+
+    return bluez_adapter1_get_discoverable(BtInstance.adapter);
+}
+
+static gint compare_bluez_device1_name(BluezDevice1 *device,
+                                       const gchar *name)
+{
+    return g_strcmp0(bluez_device1_get_name(device), name);
+}
+
+static void device_connect_callback(GObject *source_object,
+                                    GAsyncResult *res,
+                                    gpointer user_data)
+{
+    GError *error = NULL;
+
+    BtInstance.ConnectBusy = FALSE;
+
+    if (!bluez_device1_call_connect_finish(BLUEZ_DEVICE1(source_object), res, &error)) {
+        g_warning("Failed to connect bluetooth device: %s", error->message);
+        g_error_free(error);
+        BtInstance.Fail = TRUE;
+        return;
+    }
+
+    BtInstance.connected_list = g_list_append(BtInstance.connected_list,
+                                              source_object);
+}
+
+static void device_pair_callback(GObject *source_object,
+                                 GAsyncResult *res,
+                                 gpointer user_data)
+{
+    GError *error = NULL;
+
+    if (!bluez_device1_call_pair_finish(BLUEZ_DEVICE1(source_object), res, &error)) {
+        g_warning("Failed to pair bluetooth device: %s", error->message);
+        g_error_free(error);
+        BtInstance.ConnectBusy = FALSE;
+        BtInstance.Fail = TRUE;
+        return;
+    }
+
+    BtInstance.paired_list = g_list_append(BtInstance.paired_list, source_object);
+    BtInstance.unpaired_list = g_list_remove(BtInstance.unpaired_list, source_object);
+
+    bluez_device1_call_connect_profile(BLUEZ_DEVICE1(source_object), SPP_UUID,
+                                       NULL, device_connect_callback, NULL);
+}
+
+/**
+ * @brief               Connect to bluetooth device.
+ *
+ * This will return FAIL if a connection is already in progress or the device
+ * is not found.
+ *
+ * @param pName         The name of the device.
+ *
+ * @return              OK on success, otherwise FAIL.
+ */
+RESULT cBtConnect(const char *pName)
+{
+    GList *device;
+
+    BtInstance.Fail = FALSE;
+
+    if (BtInstance.ConnectBusy) {
+        BtInstance.Fail = TRUE;
+        return FAIL;
+    }
+
+    device = g_list_find_custom(BtInstance.unpaired_list, pName,
+                                (GCompareFunc)compare_bluez_device1_name);
+
+    if (device) {
+        // First have to pair the device. The callback will then chain up to
+        // bluez_device1_call_connect().
+        bluez_device1_call_pair(BLUEZ_DEVICE1(device->data), NULL,
+                                device_pair_callback, NULL);
+        BtInstance.ConnectBusy = TRUE;
+
+        return OK;
+    }
+
+    // device has not been paired yet
+    device = g_list_find_custom(BtInstance.paired_list, pName,
+                                (GCompareFunc)compare_bluez_device1_name);
+    if (!device) {
+        g_warning("Could not find bluetooth device '%s' for connecting", pName);
+        BtInstance.Fail = TRUE;
+        return FAIL;
+    }
+
+    bluez_device1_call_connect_profile(BLUEZ_DEVICE1(device->data), SPP_UUID,
+                                       NULL, device_connect_callback, NULL);
+    BtInstance.ConnectBusy = TRUE;
+
+    return OK;
+}
+
+UBYTE cBtDiscChNo(UBYTE ChNo)
+{
+  UBYTE   RtnVal;
+  // UBYTE   TmpCnt;
+
+  RtnVal = FALSE;
+  // for(TmpCnt = 0; TmpCnt < MAX_DEV_TABLE_ENTRIES; TmpCnt++)
+  // {
+  //   if ((TRUE == BtInstance.NonVol.DevList[TmpCnt].Connected) && (ChNo == BtInstance.NonVol.DevList[TmpCnt].ChNo))
+  //   {
+  //     cBtDiscDevIndex(TmpCnt);
+  //     TmpCnt = MAX_DEV_TABLE_ENTRIES;
+  //     RtnVal = TRUE;
+  //   }
+  // }
+  return(RtnVal);
+}
+
+static void device_disconnect_callback(GObject *source_object,
+                                       GAsyncResult *res,
+                                       gpointer user_data)
+{
+    GError *error = NULL;
+
+    BtInstance.DisconnectBusy = FALSE;
+
+    if (!bluez_device1_call_disconnect_finish(BLUEZ_DEVICE1(source_object), res, &error)) {
+        g_warning("Failed to disconnect bluetooth device: %s", error->message);
+        g_error_free(error);
+        BtInstance.Fail = TRUE;
+        return;
+    }
+
+    BtInstance.connected_list = g_list_remove(BtInstance.connected_list, source_object);
+}
+
+/**
+ * @brief               Disconnect a bluetooth device.
+ *
+ * @param pName         The name of the device to disconnect.
+ *
+ * @result              OK on success, otherwise FAIL.
+ */
+RESULT cBtDisconnect(const char *pName)
+{
+    GList *device;
+
+    BtInstance.Fail = FALSE;
+
+    device = g_list_find_custom(BtInstance.paired_list, pName,
+                                (GCompareFunc)compare_bluez_device1_name);
+    if (!device) {
+        device = g_list_find_custom(BtInstance.unpaired_list, pName,
+                                    (GCompareFunc)compare_bluez_device1_name);
+    }
+    if (!device) {
+        g_warning("Could not find bluetooth device '%s' for disconnecting", pName);
+        BtInstance.Fail = TRUE;
+        return FAIL;
+    }
+
+    bluez_device1_call_disconnect(BLUEZ_DEVICE1(device->data), NULL,
+                                  device_disconnect_callback, NULL);
+
+    return OK;
+}
 
 UBYTE     cBtI2cBufReady(void)
 {
@@ -2485,1573 +1182,1034 @@ UWORD cBtDevWriteBuf7(UBYTE *pBuf, UWORD Size)
     return cBtDevWriteBuf(7, pBuf, Size);
 }
 
-static UBYTE cBtFindSearchAdr(bdaddr_t *pAdr, UBYTE *pIndex)
+/**
+ * @brief               Gets the bluetooth instance state.
+ *
+ * @return              OK if bluetooth is idle, BUSY if connect/disconnect
+ *                      is in progress or FAIL if there was an error.
+ */
+RESULT cBtGetHciBusyFlag(void)
 {
-  UBYTE   Cnt;
-  UBYTE   RtnVal;
-
-  RtnVal = FAIL;
-  for (Cnt = 0; ((Cnt < MAX_DEV_TABLE_ENTRIES) && (FAIL == RtnVal)); Cnt++)
-  {
-    if (0 == bacmp(pAdr, &(BtInstance.SearchList[Cnt].Adr)))
-    {
-      *pIndex = Cnt;
-      RtnVal  = OK;
+    if (BtInstance.Fail) {
+        return FAIL;
     }
-  }
-  return(RtnVal);
-}
 
-static UBYTE cBtFindDevAdr(bdaddr_t *pAdr, UBYTE *pIndex)
-{
-  UBYTE   Cnt;
-  UBYTE   RtnVal;
-
-  RtnVal = FAIL;
-  for (Cnt = 0; ((Cnt < MAX_DEV_TABLE_ENTRIES) && (FAIL == RtnVal)); Cnt++)
-  {
-    if ((DEV_EMPTY != BtInstance.NonVol.DevList[Cnt].Status) &&
-        (0 == bacmp(pAdr, &(BtInstance.NonVol.DevList[Cnt].Adr))))
-    {
-      *pIndex = Cnt;
-      RtnVal  = OK;
+    if (BtInstance.ConnectBusy || BtInstance.DisconnectBusy) {
+        return BUSY;
     }
-  }
-  return(RtnVal);
+
+    return OK;
 }
 
-static UBYTE cBtFindDevConnHandle(UBYTE ConnHandle, UBYTE *pIndex)
+/**
+ * @brief           Convert bluetooth class to LMS icons.
+ *
+ * @param icon      The suggested icon name or NULL.
+ * @param class     The bluetooth class of device.
+ *
+ * @return          The icon type.
+ */
+static BTTYPE cBtGetBtType(const gchar *icon, guint class)
 {
-  UBYTE   Cnt;
-  UBYTE   RtnVal;
-
-  RtnVal = FAIL;
-  for (Cnt = 0; ((Cnt < MAX_DEV_TABLE_ENTRIES) && (FAIL == RtnVal)); Cnt++)
-  {
-    if ((DEV_EMPTY != BtInstance.NonVol.DevList[Cnt].Status) &&
-        (ConnHandle == BtInstance.NonVol.DevList[Cnt].ConnHandle) &&
-        (TRUE == BtInstance.NonVol.DevList[Cnt].Connected))
-    {
-      *pIndex = Cnt;
-      RtnVal  = OK;
+    // Try the icon name first
+    if (g_strcmp0(icon, "computer") == 0) {
+        return BTTYPE_PC;
     }
-  }
-  return(RtnVal);
-}
-
-static UBYTE cBtFindDevChNo(UBYTE ChNo, UBYTE *pIndex)
-{
-  UBYTE   Cnt;
-  UBYTE   RtnVal;
-
-  RtnVal = FAIL;
-  for (Cnt = 0; ((Cnt < MAX_DEV_TABLE_ENTRIES) && (FAIL == RtnVal)); Cnt++)
-  {
-    if ((DEV_EMPTY != BtInstance.NonVol.DevList[Cnt].Status)    &&
-        (ChNo      == BtInstance.NonVol.DevList[Cnt].ChNo)      &&
-        (CH_FREE   != BtInstance.BtCh[ChNo].Status))
-    {
-      *pIndex = Cnt;
-      RtnVal  = OK;
+    if (g_strcmp0(icon, "phone") == 0) {
+        return BTTYPE_PHONE;
     }
-  }
-  return(RtnVal);
-}
 
-static UBYTE cBtInsertInDeviceList(bdaddr_t *pBtAdr, UBYTE *pIndex)
-{
-  UBYTE   Cnt;
-  UBYTE   Exit;
-  UBYTE   RtnVal;
-
-  RtnVal = OK;
-
-  //Check if already present
-  Exit = FALSE;
-  for (Cnt = 0; ((Cnt < MAX_DEV_TABLE_ENTRIES) && (FALSE == Exit)); Cnt++)
-  {
-    if (DEV_EMPTY != BtInstance.NonVol.DevList[Cnt].Status)
-    {
-      if (0 == bacmp(&(BtInstance.NonVol.DevList[Cnt].Adr), pBtAdr))
-      {
-        *pIndex = Cnt;
-        Exit    = TRUE;
-      }
-    }
-  }
-
-  if (FALSE == Exit)
-  {
-    // Device not already present -> Create one
-    for (Cnt = 0; ((Cnt < MAX_DEV_TABLE_ENTRIES) && (FALSE == Exit)); Cnt++)
-    {
-      if (DEV_EMPTY == BtInstance.NonVol.DevList[Cnt].Status)
-      {
-        BtInstance.NonVol.DevListEntries++;
-        BtInstance.NonVol.DevList[Cnt].Name[0]    =  0;
-        BtInstance.NonVol.DevList[Cnt].Status     =  DEV_KNOWN;
-        bacpy(&(BtInstance.NonVol.DevList[Cnt].Adr), pBtAdr);
-        *pIndex = Cnt;
-        Exit    = TRUE;
-      }
-    }
-  }
-
-  if (FALSE == Exit)
-  {
-    RtnVal = FAIL;
-  }
-  return(RtnVal);
-}
-
-static void cBtSetDevConnectedStatus(UBYTE Index)
-{
-  BtInstance.NonVol.DevList[Index].Connected  = TRUE;
-  BtInstance.NoOfConnDevs++;
-}
-
-static void cBtCloseDevConnection(UBYTE Index)
-{
-  BtInstance.NonVol.DevList[Index].Connected  = FALSE;
-
-  // BtInstance.NoOfConnDevs is updated in BtCloseCh function
-  BtCloseCh(BtInstance.NonVol.DevList[Index].ChNo);
-  BtInstance.NonVol.DevList[Index].ChNo  =  NO_OF_BT_CHS;
-}
-
-static void cBtSetSearchConnectedStatus(UBYTE Index)
-{
-  BtInstance.SearchList[Index].Connected  = TRUE;
-  BtInstance.SearchList[Index].Paired     = TRUE;
-}
-
-static void cBtClearSearchConnectedStatus(UBYTE Index)
-{
-  BtInstance.SearchList[Index].Connected  = FALSE;
-}
-
-static void cBtInsertDevConnHandle(UBYTE Index, UWORD ConnHandle)
-{
-  BtInstance.NonVol.DevList[Index].ConnHandle =  ConnHandle;
-}
-
-static UWORD cBtHandleHCI(void)
-{
-  UWORD           RtnVal;
-  int             len;
-  int             results;
-  unsigned char   buf[HCI_MAX_EVENT_SIZE];
-  unsigned char   *ptr;
-  hci_event_hdr   *hdr;
-
-  RtnVal = TRUE;
-
-  // Poll the HCI socket for pin key request
-  BtInstance.HciSocket.p.revents = 0;
-
-  if (poll(&(BtInstance.HciSocket.p), 1, 0) > 0)
-  {
-    len = read(BtInstance.HciSocket.Socket, buf, sizeof(buf));
-
-    if (len > 0)
-    {
-
-      hdr = (void *) (buf + 1);
-      ptr = buf + (1 + HCI_EVENT_HDR_SIZE);
-      results = ptr[0];
-
-      switch (hdr->evt)
-      {
-
-        case EVT_PIN_CODE_REQ:
-        {
-          remote_name_req_cp  cp;
-
-          memset(&cp, 0, sizeof(cp));
-          bacpy(&cp.bdaddr, &((evt_pin_code_req*)ptr)->bdaddr);
-          cp.pscan_rep_mode = 0x02;
-          hci_send_cmd(BtInstance.HciSocket.Socket, OGF_LINK_CTL,
-              OCF_REMOTE_NAME_REQ, REMOTE_NAME_REQ_CP_SIZE, &cp);
-          NameReqDueToPin = TRUE;
-
-
-          if (0 == bacmp(&(BtInstance.TrustedDev.Adr),  &((evt_pin_code_req*)ptr)->bdaddr))
-          {
-            // If pincode request is from a trusted dev. then signal to the DBUS handle
-            // that it is trusted
-            BtInstance.TrustedDev.Status = TRUE;
-            bacpy(&(BtInstance.TrustedDev.Adr), BDADDR_ANY); //Address can only be used once
-          }
-        }
-        break;
-
-        case EVT_CONN_REQUEST:
-        {
-          if (I_AM_IN_IDLE == BtInstance.State)
-          {
-            // Connection from the outside - coming from the listen socket
-            // Need to add it to the dev list and search list if possible
-            #ifdef DEBUG
-              printf("EVT_CONN_REQUEST from outside this is slave.....\n");
-            #endif
-
-            // Save information regarding incoming connection
-            bacpy(&(BtInstance.Incoming.Adr), &((evt_conn_request*)ptr)->bdaddr);
-            memcpy(&(BtInstance.Incoming.DevClass[0]), &(((evt_conn_request*)ptr)->dev_class[0]), 3);
-            BtInstance.Incoming.Name[0] = 0; //Clear name, it is not available yet
-          }
-        }
-        break;
-
-        case EVT_CONN_COMPLETE:
-        {
-          UBYTE DevIndex;
-          UBYTE SearchIndex;
-
-          if (0 != ((evt_conn_complete*)ptr)->status)
-          {
-            if (I_AM_MASTER == BtInstance.State)
-            {
-              if (OK == cBtFindDevAdr(&((evt_conn_complete*)ptr)->bdaddr, &DevIndex))
-              {
-                //Need to insert the correct channel number to close it
-                BtInstance.NonVol.DevList[DevIndex].ChNo = BtInstance.OutGoing.ChNo;
-                cBtCloseDevConnection(DevIndex);
-              }
-            }
-
-            #ifdef DEBUG
-              printf("EVT_CONN_COMPLETE - FAIL !!!!! Status = %d\n",((evt_conn_complete*)ptr)->status);
-            #endif
-            BtInstance.HciSocket.Busy &= ~HCI_CONNECT;
-          }
-          else
-          {
-            // Now connected to one device -> Disable incoming connect requests
-            // This command repeated for each connected device in master mode
-            BtInstance.PageState = 0;
-            BtIssueHciVisible(BtInstance.NonVol.Visible, BtInstance.PageState);
-            BtInstance.HciSocket.Busy  |=  HCI_VISIBLE;
-
-            if (FAIL != cBtFindDevAdr(&((evt_conn_complete*)ptr)->bdaddr, &DevIndex))
-            {
-              cBtInsertDevConnHandle(DevIndex, ((evt_conn_complete*)ptr)->handle);
-
-              if (I_AM_MASTER == BtInstance.State)
-              {
-                BtInstance.NonVol.DevList[DevIndex].ChNo = BtInstance.OutGoing.ChNo;
-
-                if (OK == cBtFindSearchAdr(&((evt_conn_complete*)ptr)->bdaddr, &SearchIndex))
-                {
-                  // Insert COD from search list
-                  memcpy(&(BtInstance.NonVol.DevList[DevIndex].DevClass[0]),&(BtInstance.SearchList[SearchIndex].DevClass[0]),3);
-                }
-              }
-              else
-              {
-                // Connections from the outside (I am a slave) always uses ch 0
-                BtInstance.NonVol.DevList[DevIndex].ChNo = 0;
-                memcpy(&(BtInstance.NonVol.DevList[DevIndex].DevClass[0]),&(BtInstance.Incoming.DevClass[0]),3);
-              }
-            }
-            BtInstance.Incoming.ConnHandle = ((evt_conn_complete*)ptr)->handle;
-          }
-        }
-        break;
-
-        case EVT_INQUIRY_RESULT_WITH_RSSI:
-        {
-          int                     i;
-          inquiry_info_with_rssi  *info_rssi;
-          UBYTE                   DevStatus;
-          UBYTE                   Tmp;
-
-          for (i = 0; i < results; i++)
-          {
-            info_rssi = (void *)ptr + (sizeof(*info_rssi) * i) + 1;
-
-            bacpy(&(BtInstance.SearchList[BtInstance.SearchIndex].Adr), &(info_rssi->bdaddr));
-            memcpy(&(BtInstance.SearchList[BtInstance.SearchIndex].DevClass[0]), &(info_rssi->dev_class[0]), 3);
-
-            DevStatus = FALSE;
-            for (Tmp = 0; ((Tmp < MAX_DEV_TABLE_ENTRIES) && (DevStatus == FALSE)); Tmp++)
-            {
-
-              if (DEV_EMPTY != BtInstance.NonVol.DevList[Tmp].Status)
-              {
-
-                if (0 == bacmp(&(BtInstance.NonVol.DevList[Tmp].Adr), &(info_rssi->bdaddr)))
-                {
-                  // The device was in the dev list -> it is paired -> Check for connected...
-                  BtInstance.SearchList[BtInstance.SearchIndex].Paired    = TRUE;
-                  BtInstance.SearchList[BtInstance.SearchIndex].Connected = BtInstance.NonVol.DevList[Tmp].Connected;
-
-                  // Update Class of Device
-                  memcpy(&(BtInstance.NonVol.DevList[Tmp].DevClass[0]), &(info_rssi->dev_class[0]), 3);
-
-                  DevStatus  =  TRUE;
-                }
-              }
-            }
-
-            if (FALSE == DevStatus)
-            {
-              BtInstance.SearchList[BtInstance.SearchIndex].Paired    = FALSE;
-              BtInstance.SearchList[BtInstance.SearchIndex].Connected = FALSE;
-            }
-
-            (BtInstance.SearchIndex)++;
-          }
-        }
-        break;
-
-        case EVT_INQUIRY_COMPLETE:
-        {
-          BtInstance.NoOfFoundDev  =  BtInstance.SearchIndex;
-          BtInstance.SearchIndex   =  0;
-
-          if (0 == BtInstance.NoOfFoundDev)
-          {
-            if (SCAN_INQ_STATE == BtInstance.ScanState)
-            {
-              // No devices found
-              #ifdef DEBUG
-                printf("inquiry done - no devices found.... exiting\n");
-              #endif
-
-              STOPScanning;
-            }
-          }
-          else
-          {
-            if (SCAN_INQ_STATE == BtInstance.ScanState)
-            {
-              BtInstance.ScanState = SCAN_NAME_STATE;
-              BtRequestName();
-              #ifdef DEBUG
-                printf("inquiry done - requesting names ... exiting\n");
-              #endif
-            }
-            else
-            {
-              // Scan has been terminated
-              STOPScanning;
-            }
-          }
-        }
-        break;
-
-        case EVT_REMOTE_NAME_REQ_COMPLETE:
-        {
-          // Remote name complete will occur during connect!!
-          evt_remote_name_req_complete  *rn;
-          UBYTE                         Cnt;
-          UBYTE                         Exit;
-
-          #ifdef DEBUG
-            printf("EVT_REMOTE_NAME_REQ_COMPLETE\n");
-            char    TmpAddr[16];
-          #endif
-
-          rn = (void *)ptr;
-          if (I_AM_SCANNING == BtInstance.State)
-          {
-            if(rn->status)
-            {
-              strcpy(BtInstance.SearchList[BtInstance.SearchIndex].Name, "????");
-            }
-            else
-            {
-              strcpy(BtInstance.SearchList[BtInstance.SearchIndex].Name, (char*)rn->name);
-
-              // Update favourite list with the name received
-              for (Cnt = 0, Exit = FALSE; ((Cnt < MAX_DEV_TABLE_ENTRIES) && (FALSE == Exit)); Cnt++)
-              {
-                if (DEV_EMPTY != BtInstance.NonVol.DevList[Cnt].Status)
-                {
-                  if (0 == bacmp(&(BtInstance.NonVol.DevList[Cnt].Adr), (bdaddr_t*)&(rn->bdaddr)))
-                  {
-
-                    #ifdef DEBUG
-                      printf("\nUpdated name in favourite list\n");
-                    #endif
-
-                    strcpy(BtInstance.NonVol.DevList[Cnt].Name, (char*)rn->name);
-
-                    Exit  =  TRUE;
-                  }
-                }
-              }
-            }
-
-            #ifdef DEBUG
-              ba2str((const bdaddr_t *)(&BtInstance.SearchList[BtInstance.SearchIndex].Adr), TmpAddr);
-              printf("Dev Table[%d]: Addr = %s, Name = %s\n", BtInstance.SearchIndex, TmpAddr, BtInstance.SearchList[BtInstance.SearchIndex].Name);
-            #endif
-
-            if (BtInstance.SearchIndex >= (BtInstance.NoOfFoundDev - 1))
-            {
-              // All devices found
-              #ifdef DEBUG
-                printf("inquiry done.... exiting\n");
-              #endif
-
-              STOPScanning;
-            }
-            else
-            {
-
-              if (SCAN_NAME_STATE == BtInstance.ScanState)
-              {
-                BtInstance.SearchIndex++;
-                BtRequestName();
-              }
-              else
-              {
-                STOPScanning;
-              }
-            }
-            BtInstance.NoOfFoundNames++;
-          }
-          else
-          {
-            // In all other cases that scanning -> try to update the favourite list with the name
-            if(!(rn->status))
-            {
-              for (Cnt = 0, Exit = FALSE; ((Cnt < MAX_DEV_TABLE_ENTRIES) && (FALSE == Exit)); Cnt++)
-              {
-                if (DEV_EMPTY != BtInstance.NonVol.DevList[Cnt].Status)
-                {
-                  if (0 == bacmp(&(BtInstance.NonVol.DevList[Cnt].Adr), (bdaddr_t*)&(rn->bdaddr)))
-                  {
-
-                    #ifdef DEBUG
-                      printf("\nUpdated name in favourite list\n");
-                    #endif
-                    strcpy(BtInstance.NonVol.DevList[Cnt].Name, (char*)rn->name);
-
-                    Exit  =  TRUE;
-                  }
-                }
-              }
-
-              // Update incoming data if it matches
-              if (0 == bacmp(&(BtInstance.Incoming.Adr), (bdaddr_t*)&(rn->bdaddr)))
-              {
-
-                #ifdef DEBUG
-                  printf("\nUpdated name in favourite list\n");
-                #endif
-                strcpy(BtInstance.Incoming.Name, (char*)rn->name);
-              }
-            }
-
-            for (Cnt = 0, Exit = FALSE; ((Cnt < MAX_DEV_TABLE_ENTRIES) && (FALSE == Exit)); Cnt++)
-            {
-              if (0 == bacmp(&(BtInstance.SearchList[Cnt].Adr), (bdaddr_t*)&(rn->bdaddr)))
-              {
-                strcpy(BtInstance.SearchList[Cnt].Name, (char*)rn->name);
-                Exit = TRUE;
-              }
-            }
-
-            if (TRUE == NameReqDueToPin)
-            {
-              BtInstance.Events  =  1;
-              NameReqDueToPin    =  FALSE;
-            }
-          }
-        }
-        break;
-
-        case EVT_DISCONN_COMPLETE:
-        {
-          UWORD   ConnHandle;
-          UBYTE   Index;
-
-          if (0 == ((evt_disconn_complete*)ptr)->status)
-          {
-            ConnHandle = ((evt_disconn_complete*)ptr)->handle;
-
-            if (OK == cBtFindDevConnHandle(ConnHandle, &Index))
-            {
-              cBtCloseDevConnection(Index);
-              if (OK == cBtFindSearchAdr(&(BtInstance.NonVol.DevList[Index].Adr), &Index))
-              {
-                cBtClearSearchConnectedStatus(Index);
-              }
-            }
-            else
-            {
-              if (0 == BtInstance.NoOfConnDevs)
-              {
-                // Ensure going back to idle if only pairing (no application running on remote device)
-                // Socket is not going to be established.
-                BtInstance.PageState = SCAN_PAGE;
-                BtIssueHciVisible(BtInstance.NonVol.Visible, BtInstance.PageState);
-                BtInstance.HciSocket.Busy  |=  HCI_VISIBLE;
-              }
-            }
-            BtInstance.HciSocket.Busy  &= ~HCI_DISCONNECT;
-          }
-        }
-        break;
-
-        case EVT_LINK_KEY_NOTIFY:
-        {
-          UBYTE DevIndex;
-          UBYTE SearchIndex;
-
-          if ((0 == ((evt_link_key_notify*)ptr)->key_type) || (5 == ((evt_link_key_notify*)ptr)->key_type))
-          {
-            //Only authenticated link keys will result in device table update
-            if (OK == cBtInsertInDeviceList(&((evt_link_key_notify*)ptr)->bdaddr, &DevIndex))
-            {
-              if (I_AM_MASTER == BtInstance.State)
-              {
-                #ifdef DEBUG
-                  printf("\nEVT_CONN_COMPLETE in master mode: DevIndex = %d, ChNo = %d\n",DevIndex, BtInstance.OutGoing.ChNo);
-                #endif
-
-                BtInstance.NonVol.DevList[DevIndex].ChNo = BtInstance.OutGoing.ChNo;
-
-                if (OK == cBtFindSearchAdr(&((evt_link_key_notify*)ptr)->bdaddr, &SearchIndex))
-                {
-                  // Insert COD from search list
-                  memcpy(&(BtInstance.NonVol.DevList[DevIndex].DevClass[0]),&(BtInstance.SearchList[SearchIndex].DevClass[0]),3);
-                  strcpy(&(BtInstance.NonVol.DevList[DevIndex].Name[0]),&(BtInstance.SearchList[SearchIndex].Name[0]));
-                }
-              }
-              else
-              {
-                // This is I_AM_IN_IDLE
-                // Connections from the outside (I am a slave) always uses ch 0
-                BtInstance.NonVol.DevList[DevIndex].ChNo = 0;
-                memcpy(&(BtInstance.NonVol.DevList[DevIndex].DevClass[0]),&(BtInstance.Incoming.DevClass[0]),3);
-                strcpy(&(BtInstance.NonVol.DevList[DevIndex].Name[0]),&(BtInstance.Incoming.Name[0]));
-              }
-              BtInstance.NonVol.DevList[DevIndex].ConnHandle = BtInstance.Incoming.ConnHandle;
-            }
-          }
-        }
-        break;
-
-        case EVT_CMD_COMPLETE:
-        {
-          switch(((evt_cmd_complete*)ptr)->opcode)
-          {
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_WRITE_SCAN_ENABLE):
-            {
-              // This is the complete event for visible setting
-              BtInstance.HciSocket.WaitForEvent  =  FALSE;
-              BtInstance.HciSocket.Busy         &= ~HCI_VISIBLE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_WRITE_CLASS_OF_DEV):
-            {
-              // This is the complete event for changing class of device
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_DELETE_STORED_LINK_KEY):
-            {
-              // This is the complete event for deleting link keys
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_LINK_CTL, OCF_INQUIRY_CANCEL):
-            {
-              // Inquiry has been cancelled
-              STOPScanning;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_CHANGE_LOCAL_NAME):
-            {
-              BtInstance.HciSocket.WaitForEvent  =  FALSE;
-              BtInstance.HciSocket.Busy         &= ~HCI_NAME;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_WRITE_AUTH_ENABLE):
-            {
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_INFO_PARAM, OCF_READ_BD_ADDR):
-            {
-              // Copy own bluetooth address in place.
-              // Removed - address now set in init
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OCF_WRITE_SIMPLE_PAIRING_MODE, WRITE_SIMPLE_PAIRING_MODE_CP_SIZE):
-            {
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_READ_SIMPLE_PAIRING_MODE):
-            {
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_RESET):
-            {
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_SET_EVENT_MASK):
-            {
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_WRITE_LE_HOST_SUPPORTED):
-            {
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_READ_EXT_INQUIRY_RESPONSE):
-            {
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_HOST_CTL, OCF_WRITE_EXT_INQUIRY_RESPONSE):
-            {
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            case cmd_opcode_pack(OGF_VENDOR_CMD, 0xFF26):
-            {
-              BtInstance.HciSocket.WaitForEvent = FALSE;
-            }
-            break;
-
-            default:
-            {
-              // Looking for other cmd complete events
-            }
-          }
-        }
-        break;
-
-        case EVT_ENCRYPT_CHANGE:
-        {
-        }
-        break;
-
-        case EVT_CMD_STATUS:
-        {
-          switch(((evt_cmd_status*)ptr)->opcode)
-          {
-            case cmd_opcode_pack(OGF_LINK_CTL, OCF_REMOTE_NAME_REQ):
-            {
-              if (0 != ((evt_cmd_status*)ptr)->status)
-              {
-                // Error has occured on the remote name request
-                if (I_AM_SCANNING == BtInstance.State)
-                {
-                  STOPScanning;
-                }
-              }
-            }
-            break;
-          }
-          break;
-
-        }
-        break;
-
+    // Then fall back to device class
+    switch (class & 0xFFFF) {
+    case 0x0804:
+        // Toy Robot
+        return BTTYPE_BRICK;
+    default:
+        switch ((class >> 8) & 0xFF) {
+        case 0x01:
+            // Computer
+            return BTTYPE_PC;
+        case 0x02:
+            // Phone
+            return BTTYPE_PHONE;
         default:
-        {
-          // If we must look for other events....
+            return BTTYPE_UNKNOWN;
         }
-        break;
-      }
     }
-  }
-  return(RtnVal);
 }
 
-
-UBYTE     cBtGetHciBusyFlag(void)
+/**
+ * @brief               Gets the number of connected devices.
+ *
+ * @return              The number of devices.
+ */
+UBYTE cBtGetNoOfConnListEntries(void)
 {
-  UBYTE   RtnVal;
+    return g_list_length(BtInstance.connected_list);
+}
 
-  if (HCI_IDLE == BtInstance.HciSocket.Busy)
-  {
-    RtnVal = OK;
-  }
-  else
-  {
-    if (HCI_FAIL & BtInstance.HciSocket.Busy)
-    {
-      RtnVal = FAIL;
+/**
+ * @brief           Gets an entry from the list of connected devices
+ *
+ * @param Item      The index of the item in the list.
+ * @param pName     Preallocated char array to hold the name of the device.
+ * @param Length    The length of pName
+ * @param pType     Pointer to hold the type of device (icon index)
+ *
+ * @return          OK on success, otherwise FAIL.
+ */
+RESULT cBtGetConnListEntry(UBYTE Item, char *pName, SBYTE Length, UBYTE *pType)
+{
+    BluezDevice1 *device;
+
+    device = g_list_nth_data(BtInstance.connected_list, Item);
+    if (!device) {
+        return FAIL;
     }
-    else
-    {
-      RtnVal = BUSY;
+
+    snprintf(pName, Length, "%s", bluez_device1_get_name(device));
+    *pType = cBtGetBtType(bluez_device1_get_icon(device),
+                          bluez_device1_get_class(device));
+
+    return OK;
+}
+
+/**
+ * @brief               Get the length of the list of paired devices.
+ *
+ * @return              The list length.
+ */
+UBYTE cBtGetNoOfDevListEntries(void)
+{
+    return g_list_length(BtInstance.paired_list);
+}
+
+/**
+ * @brief               Get info about a paired bluetooth device.
+ *
+ * @param Item          Index of the item in the paired device list.
+ * @param pConnected    Pointer to hold the connected state.
+ * @param pType         Pointer to hold the device type (icon).
+ * @param pName         Preallocated char array to hold the name of the device.
+ * @param Length        The length of pName.
+ *
+ * @return              OK on success, otherwise FAIL (index out of range).
+ */
+RESULT cBtGetDevListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType,
+                          char *pName, SBYTE Length)
+{
+    BluezDevice1 *device;
+
+    device = g_list_nth_data(BtInstance.paired_list, Item);
+    if (!device) {
+        return FAIL;
     }
-  }
-  return(RtnVal);
+
+    snprintf(pName, Length, "%s", bluez_device1_get_name(device));
+    *pConnected = bluez_device1_get_connected(device);
+    *pType = cBtGetBtType(bluez_device1_get_icon(device),
+                          bluez_device1_get_class(device));
+
+    return OK;
 }
 
-static UBYTE cBtGetBtType(UBYTE *pCod)
+/**
+ * @brief           Get the length of the search device list.
+ *
+ * @return          The length.
+ */
+UBYTE cBtGetNoOfSearchListEntries(void)
 {
-  UBYTE   Type;
+    return g_list_length(BtInstance.unpaired_list);
+}
 
-  Type = BTTYPE_UNKNOWN;
-  if ((0x08 == pCod[1]) && (0x04 == pCod[0]))
-  {
-    Type = BTTYPE_BRICK;
-  }
-  else
-  {
-    if (0x01 == pCod[1])
-    {
-      Type = BTTYPE_PC;
+/**
+ * @brief               Get information from an item in a search list entry.
+ *
+ * @param Item          The index of the item in the list.
+ * @param pConnected    Pointer to hold the connected state.
+ * @param pType         Pointer to hold the device type (icon)
+ * @param pPaired       Pointer to hold the paired state.
+ * @param pName         Preallocated char array to hold the name.
+ * @param Length        The length of pName
+ *
+ * @ return             OK on success, otherwise FAIL (index out of range).
+ */
+RESULT cBtGetSearchListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType,
+                             SBYTE *pPaired, char *pName, SBYTE Length)
+{
+    BluezDevice1 *device = g_list_nth_data(BtInstance.unpaired_list, Item);
+
+    if (!device) {
+        return FAIL;
     }
-    else
-    {
-      if (0x02 == pCod[1])
-      {
-        Type = BTTYPE_PHONE;
-      }
+
+    snprintf((char*)pName, Length, "%s", bluez_device1_get_name(device));
+    *pConnected = bluez_device1_get_connected(device);
+    *pPaired = bluez_device1_get_paired(device);
+    *pType = cBtGetBtType(bluez_device1_get_icon(device),
+                          bluez_device1_get_class(device));
+
+    return OK;
+}
+
+/**
+ * @brief               Remove a bluetooth device.
+ *
+ * @param pName         The name of the device to remove.
+ *
+ * @return              OK on success, otherwise FAIL.
+ */
+RESULT cBtRemoveItem(const char *pName)
+{
+    GList *item;
+    BluezDevice1 *device;
+    GError *error = NULL;
+
+    BtInstance.Fail = FALSE;
+
+    if (!BtInstance.adapter) {
+        BtInstance.Fail = TRUE;
+        return FAIL;
     }
-  }
-  return(Type);
-}
 
-
-UBYTE     cBtGetNoOfConnListEntries(void)
-{
-  return(BtInstance.NoOfConnDevs);
-}
-
-
-UBYTE     cBtGetConnListEntry(UBYTE Item, UBYTE *pName, SBYTE Length, UBYTE *pType)
-{
-  UBYTE   ConnCnt = 0;
-  UBYTE   TmpCnt;
-  UBYTE   RtnVal;
-
-  RtnVal = TRUE;
-  for(TmpCnt = 0; TmpCnt < MAX_DEV_TABLE_ENTRIES; TmpCnt++)
-  {
-    if (TRUE == BtInstance.NonVol.DevList[TmpCnt].Connected)
-    {
-      if (ConnCnt == Item)
-      {
-        snprintf((char*)pName, Length, "%s", (char *)&(BtInstance.NonVol.DevList[TmpCnt].Name[0]));
-
-        *pType = cBtGetBtType(&(BtInstance.NonVol.DevList[TmpCnt].DevClass[0]));
-        TmpCnt = MAX_DEV_TABLE_ENTRIES;
-      }
-      else
-      {
-        ConnCnt++;
-      }
+    item = g_list_find_custom(BtInstance.paired_list, pName,
+                              (GCompareFunc)compare_bluez_device1_name);
+    if (!item) {
+        item = g_list_find_custom(BtInstance.unpaired_list, pName,
+                                  (GCompareFunc)compare_bluez_device1_name);
     }
-  }
-  return(RtnVal);
-}
 
+    if (!item) {
+        BtInstance.Fail = TRUE;
+        return FAIL;
+    }
 
-UBYTE     cBtGetNoOfDevListEntries(void)
-{
-  return(BtInstance.NonVol.DevListEntries);
-}
-
-
-UBYTE     cBtGetDevListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, UBYTE *pName, SBYTE Length)
-{
-  UBYTE   RtnVal;
-
-  snprintf((char*)pName,Length, "%s", (char *)&(BtInstance.NonVol.DevList[Item].Name[0]));
-  *pConnected  =  BtInstance.NonVol.DevList[Item].Connected;
-  *pType       =  cBtGetBtType(&(BtInstance.NonVol.DevList[Item].DevClass[0]));
-
-  RtnVal = TRUE;
-  return(RtnVal);
-}
-
-
-UBYTE     cBtGetNoOfSearchListEntries(void)
-{
-  return(BtInstance.NoOfFoundNames);
-}
-
-
-UBYTE     cBtGetSearchListEntry(UBYTE Item, SBYTE *pConnected, SBYTE *pType, SBYTE *pPaired, UBYTE *pName, SBYTE Length)
-{
-  UBYTE   RtnVal;
-
-  snprintf((char*)pName,Length, "%s", (char *)&(BtInstance.SearchList[Item].Name[0]));
-  *pConnected  =  BtInstance.SearchList[Item].Connected;
-  *pPaired     =  BtInstance.SearchList[Item].Paired;
-  *pType       =  cBtGetBtType(&(BtInstance.SearchList[Item].DevClass[0]));
-
-  RtnVal = TRUE;
-  return(RtnVal);
-}
-
-
-UBYTE     cBtDeleteFavourItem(UBYTE *pName)
-{
-  UBYTE   RtnVal;
-  UBYTE   Cnt, Item;
-  char    Addr[20];
-
-  RtnVal = FAIL;
-  if (((HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy)) && (BLUETOOTH_OFF != BtInstance.State))
-  {
-    // Check device list
-    if (TRUE == cBtFindDevName(&Item, pName, 0))
+    device = item->data;
+    if (!bluez_adapter1_call_remove_device_sync(BtInstance.adapter,
+        g_dbus_proxy_get_object_path (G_DBUS_PROXY(device)),
+        NULL, &error))
     {
-      if (DEV_EMPTY != BtInstance.NonVol.DevList[Item].Status)
-      {
-        //If item is connected then disconnect it
-        if(TRUE == BtInstance.NonVol.DevList[Item].Connected)
-        {
-          BtInstance.NonVol.DevList[Item].Connected   =  FALSE;
-          BtCloseCh(BtInstance.NonVol.DevList[Item].ChNo);
+        g_warning("Failed to remove bluetooth device: %s", error->message);
+        g_error_free(error);
+        BtInstance.Fail = TRUE;
+        return FAIL;
+    }
+
+    // this will trigger object-removed signals that will actually remove
+    // the device from the various lists.
+
+    return OK;
+}
+
+/**
+ * @brief               Gets the status of the bluetooth adapter.
+ *
+ * Used for the indicator icon. See TopLineBtIconMap in c_ui.c.
+ *
+ * @return              Flags indicating the status.
+ */
+UBYTE cBtGetStatus(void)
+{
+    UBYTE status = 0;
+
+    if (BtInstance.adapter) {
+        if (bluez_adapter1_get_powered(BtInstance.adapter)) {
+            status |= 0x01;
         }
-
-        ba2str((bdaddr_t *)(&(BtInstance.NonVol.DevList[Item].Adr.b[0])), Addr);
-        RemoveDevice(conn, Addr);
-
-        for(Cnt = Item; Cnt < BtInstance.NonVol.DevListEntries; Cnt++)
-        {
-          memcpy(&(BtInstance.NonVol.DevList[Cnt].Name[0]), &(BtInstance.NonVol.DevList[Cnt + 1].Name[0]), sizeof(DEVICELIST));
+        if (bluez_adapter1_get_discoverable(BtInstance.adapter)) {
+            status |= 0x02;
         }
-        if (BtInstance.NonVol.DevListEntries)
-        {
-          BtInstance.NonVol.DevListEntries--;
+        if (BtInstance.NoOfConnDevs > 0) {
+            status |= 0x04;
         }
-        BtInstance.NonVol.DevList[Cnt].Status     =  DEV_EMPTY;
-        BtInstance.NonVol.DevList[Cnt].Name[0]    =  0;
-        BtInstance.NonVol.DevList[Cnt].Connected  =  FALSE;
-        BtInstance.HciSocket.Busy                 =  HCI_IDLE;
-        RtnVal = TRUE;
-      }
-      else
-      {
-        // Device list empty
-        BtInstance.HciSocket.Busy =  HCI_FAIL;
-      }
-      RtnVal = OK;
     }
 
-    // Check search list
-    if (TRUE == cBtFindSearchName(&Item, pName))
-    {
-      for(Cnt = Item; Cnt < BtInstance.NoOfFoundNames; Cnt++)
-      {
-        memcpy(&(BtInstance.SearchList[Cnt].Name[0]), &(BtInstance.SearchList[Cnt + 1].Name[0]), sizeof(SEARCHLIST));
-      }
-      if (BtInstance.NoOfFoundNames)
-      {
-        BtInstance.NoOfFoundNames--;
-      }
-      BtClearSearchListEntry(Cnt);
-      RtnVal = OK;
-    }
-  }
-  return(RtnVal);
+    return status;
 }
-
-
-UBYTE     cBtGetStatus(void)
-{
-  UBYTE   RtnVal;
-
-  RtnVal = 0;
-  if (BtInstance.NonVol.On)
-  {
-    RtnVal = 0x01;
-
-    if (BtInstance.NonVol.Visible)
-    {
-      RtnVal |= 0x02;
-    }
-
-    if (0 < BtInstance.NoOfConnDevs)
-    {
-      RtnVal |= 0x04;
-    }
-  }
-
-  return(RtnVal);
-}
-
 
 void      cBtGetId(UBYTE *pId, UBYTE Length)
 {
   strncpy((char*)pId, &(BtInstance.Adr[0]), Length);
 }
 
-
-UBYTE     cBtSetName(UBYTE *pName, UBYTE Length)
+/**
+ * @brief               Set the name of the brick
+ *
+ * @param pName         The new name
+ * @param Length        The length of pName
+ *
+ * @return              OK on success, otherwise FAIL
+ */
+RESULT cBtSetName(const char *pName, UBYTE Length)
 {
-  UBYTE   RtnVal = OK;
-  change_local_name_cp  cp;
+    // TODO: set hostname and then send SIGHUP to bluetoothd to reload
 
-  if (BLUETOOTH_OFF != BtInstance.State)
-  {
-    if ((HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy))
-    {
-      snprintf((char *)&(BtInstance.BtName[0]), Length, "%s", (char *)pName);
-
-      snprintf((char *)&(cp.name[0]), Length, "%s", (char *)pName);
-      hci_send_cmd(BtInstance.HciSocket.Socket, OGF_HOST_CTL, OCF_CHANGE_LOCAL_NAME, CHANGE_LOCAL_NAME_CP_SIZE, &cp);
-      BtInstance.HciSocket.Busy = HCI_NAME;
-    }
-    else
-    {
-      RtnVal = FAIL;
-    }
-  }
-  else
-  {
-    BtInstance.HciSocket.Busy = HCI_IDLE;
-    snprintf((char *)&(BtInstance.BtName[0]), Length, "%s", (char *)pName);
-  }
-  return(RtnVal);
+    return FAIL;
 }
 
-
-UBYTE     cBtGetChNo(UBYTE *pName, UBYTE *pChNos)
+UBYTE cBtGetChNo(UBYTE *pName, UBYTE *pChNos)
 {
-  UBYTE   RtnVal = 0;
-  UBYTE   Index;
-  UBYTE   Cnt;
+    // TODO: implement more channels
 
-  pChNos[RtnVal] = 0;
-  for(Cnt = 0; Cnt < MAX_DEV_TABLE_ENTRIES; Cnt++)
-  {
-    if (cBtFindDevName(&Index, pName, Cnt))
-    {
-      if (TRUE == BtInstance.NonVol.DevList[Index].Connected)
-      {
-        pChNos[RtnVal] = BtInstance.NonVol.DevList[Index].ChNo;
-        RtnVal++;
-        pChNos[RtnVal] = 0;
-      }
-      Cnt = Index;
-    }
-    else
-    {
-      Cnt = MAX_DEV_TABLE_ENTRIES;
-    }
-  }
-  return(RtnVal);
+    return 0;
 }
 
-
-static char *get_adapter_path(DBusConnection *conn, const char *adapter)
+/**
+ * @brief               Gets any pending requests.
+ *
+ * @return              EVENT_BT_PIN or EVENT_BT_REQ_CONF or EVENT_NONE.
+ */
+COM_EVENT cBtGetEvent(void)
 {
-  DBusMessage *msg, *reply;
-  DBusError err;
-  const char *reply_path;
-  char *path;
+    COM_EVENT Evt;
 
-  if (!adapter)
-    return get_default_adapter_path(conn);
+    Evt = BtInstance.Events;
+    BtInstance.Events = EVENT_NONE;
 
-  msg = dbus_message_new_method_call("org.bluez", "/",
-          "org.bluez.Manager", "FindAdapter");
-
-  if (!msg)
-  {
-    fprintf(stderr, "Can't allocate new method call\n");
-    return NULL;
-  }
-
-  dbus_message_append_args(msg, DBUS_TYPE_STRING, &adapter,
-          DBUS_TYPE_INVALID);
-
-  dbus_error_init(&err);
-
-  // Next dbus message is blocking
-  reply = dbus_connection_send_with_reply_and_block(conn, msg, -1, &err);
-
-  dbus_message_unref(msg);
-
-  if (!reply)
-  {
-    fprintf(stderr, "Can't find adapter %s\n", adapter);
-    if (dbus_error_is_set(&err))
-    {
-      fprintf(stderr, "%s\n", err.message);
-      dbus_error_free(&err);
-    }
-    return NULL;
-  }
-
-  if (!dbus_message_get_args(reply, &err, DBUS_TYPE_OBJECT_PATH, &reply_path, DBUS_TYPE_INVALID))
-  {
-    fprintf(stderr, "Can't get reply arguments\n");
-    if (dbus_error_is_set(&err))
-    {
-      fprintf(stderr, "%s\n", err.message);
-      dbus_error_free(&err);
-    }
-    return NULL;
-  }
-
-  path = strdup(reply_path);
-
-  dbus_message_unref(reply);
-
-  dbus_connection_flush(conn);
-
-  return path;
+    return Evt;
 }
 
-
-static DBusHandlerResult request_confirmation_message(DBusConnection *L_conn, DBusMessage *msg, void *data)
+/**
+ * @brief               Get info about an incoming bluetooth connection request.
+ *
+ * @param pName         Preallocated char array to hold the name.
+ * @param pType         Pointer to hold the device type (icon).
+ * @param Length        Length of pName.
+ */
+void cBtGetIncoming(char *pName, UBYTE *pType, UBYTE Length)
 {
-  const char   *path;
-
-  conn = L_conn;
-
-  if (!dbus_message_get_args(msg, NULL, DBUS_TYPE_OBJECT_PATH, &path,
-       DBUS_TYPE_UINT32, &(BtInstance.Incoming.Passkey), DBUS_TYPE_INVALID))
-  {
-    fprintf(stderr, "Invalid arguments for RequestPasskey method");
-    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-  }
-
-  // Create both positive and negative reply - user decides later what to use
-  RejectReply = dbus_message_new_error(msg, "org.bluez.Error.Rejected", "");
-  reply       = dbus_message_new_method_return(msg);
-  if (!reply)
-  {
-    fprintf(stderr, "Can't create reply message\n");
-    return DBUS_HANDLER_RESULT_NEED_MEMORY;
-  }
-
-  BtInstance.Events  =  0x02;
-
-  return DBUS_HANDLER_RESULT_HANDLED;
+    if (BtInstance.incoming_device) {
+        snprintf(pName, Length, "%s", bluez_device1_get_name(BtInstance.incoming_device));
+        *pType = cBtGetBtType(bluez_device1_get_icon(BtInstance.incoming_device),
+                              bluez_device1_get_class(BtInstance.incoming_device));
+    }
 }
 
-
-static DBusHandlerResult agent_message(DBusConnection *L_conn, DBusMessage *msg, void *data)
+/**
+ * @brief               Complete a pin code agent request.
+ *
+ * @param pPin          The pin code.
+ *
+ * @return              FAIL if there was not a pending request, otherwise OK.
+ */
+RESULT cBtSetPin(const char *pPin)
 {
-  if (dbus_message_is_method_call(msg, "org.bluez.Agent", "RequestPinCode"))
-  {
-    BtInstance.SspPairingMethod = FALSE;
-    return request_pincode_message(L_conn, msg, data);
-  }
+    if (!BtInstance.request_pin_invocation) {
+        // there is not a pending request
+        return FAIL;
+    }
 
-  if (dbus_message_is_method_call(msg, "org.bluez.Agent", "RequestPasskey"))
-  {
-   // return request_passkey_message(conn, msg, data);
-  }
+    bluez_agent1_complete_request_pin_code(BtInstance.agent,
+        BtInstance.request_pin_invocation, pPin);
 
-  if (dbus_message_is_method_call(msg, "org.bluez.Agent", "RequestConfirmation"))
-  {
-    BtInstance.SspPairingMethod = TRUE;
-    return request_confirmation_message(L_conn, msg, data);
-  }
+    BtInstance.request_pin_invocation = NULL;
 
-  if (dbus_message_is_method_call(msg, "org.bluez.Agent", "Authorize"))
-  {
-  // return authorize_message(conn, msg, data);
-  }
-
-  if (dbus_message_is_method_call(msg, "org.bluez.Agent", "Cancel"))
-  {
-//    return cancel_message(conn, msg, data);
-  }
-
-  if (dbus_message_is_method_call(msg, "org.bluez.Agent", "Release"))
-  {
-//    return release_message(conn, msg, data);
-  }
-
-  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+    return OK;
 }
 
-
-static int register_agent(DBusConnection *conn, const char *adapter_path, const char *agent_path, const char *capabilities)
+/**
+ * @brief               Complete a request to confirm a passkey
+ *
+ * @param Accept        TRUE to accept, FALSE to reject
+ *
+ * @return              FAIL if there was not a pending request, otherwise OK.
+ */
+RESULT cBtSetPasskey(UBYTE Accept)
 {
-  DBusMessage *msg, *reply;
-  DBusError    err;
-  int          RtnVal;
-
-  RtnVal = 0;
-
-  msg = dbus_message_new_method_call("org.bluez", adapter_path, "org.bluez.Adapter", "RegisterAgent");
-  if (!msg)
-  {
-    #ifdef DEBUG
-      fprintf(stderr, "Can't allocate new method call\n");
-    #endif
-    RtnVal = -1;
-  }
-  else
-  {
-    dbus_message_append_args(msg, DBUS_TYPE_OBJECT_PATH, &agent_path, DBUS_TYPE_STRING, &capabilities, DBUS_TYPE_INVALID);
-    dbus_error_init(&err);
-
-    // Next dbus message is blocking
-    reply = dbus_connection_send_with_reply_and_block(conn, msg, -1, &err);
-    dbus_message_unref(msg);
-
-    if (!reply)
-    {
-      #ifdef DEBUG
-        fprintf(stderr, "Can't register agent\n");
-      #endif
-      if (dbus_error_is_set(&err))
-      {
-        fprintf(stderr, "%s\n", err.message);
-        dbus_error_free(&err);
-      }
-      RtnVal = -1;
+    if (!BtInstance.request_confirmation_invocation) {
+        // there is not a pending request
+        return FAIL;
     }
-    else
-    {
-      dbus_message_unref(reply);
-      dbus_connection_flush(conn);
+
+    if (Accept) {
+        bluez_agent1_complete_request_confirmation(BtInstance.agent,
+            BtInstance.request_confirmation_invocation);
+    } else {
+        g_dbus_method_invocation_return_dbus_error(
+            BtInstance.request_confirmation_invocation,
+            "org.bluez.Error.Rejected",
+            "User rejected passkey");
     }
-  }
-  return(RtnVal);
-}
 
+    BtInstance.request_confirmation_invocation = NULL;
 
-static DBusHandlerResult agent_filter(DBusConnection *conn, DBusMessage *msg, void *data)
-{
-  const char *name, *old, *new;
-
-  if (!dbus_message_is_signal(msg, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
-  {
-    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-  }
-
-  if (!dbus_message_get_args(msg, NULL,
-          DBUS_TYPE_STRING, &name,
-          DBUS_TYPE_STRING, &old,
-          DBUS_TYPE_STRING, &new,
-          DBUS_TYPE_INVALID))
-  {
-    fprintf(stderr, "Invalid arguments for NameOwnerChanged signal");
-    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-  }
-
-  if (!strcmp(name, "org.bluez") && *new == '\0')
-  {
-    fprintf(stderr, "Agent has been terminated\n");
-    __io_terminated = 1;
-  }
-
-  return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-}
-
-
-static DBusHandlerResult request_pincode_message(DBusConnection *conn, DBusMessage *msg, void *data)
-{
-  const char         *path;
-  DBusHandlerResult   Result;
-  UBYTE               *pPin;
-
-  if (!dbus_message_get_args(msg, NULL, DBUS_TYPE_OBJECT_PATH, &path, DBUS_TYPE_INVALID))
-  {
-    #ifdef DEBUG
-      fprintf(stderr, "Invalid arguments for RequestPinCode method");
-    #endif
-    Result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-  }
-  else
-  {
-    reply = dbus_message_new_method_return(msg);
-    RejectReply = dbus_message_new_error(msg, "org.bluez.Error.Rejected", "");
-    if (!reply)
-    {
-      #ifdef DEBUG
-        fprintf(stderr, "Can't create reply message\n");
-      #endif
-      Result = DBUS_HANDLER_RESULT_NEED_MEMORY;
-    }
-    else
-    {
-
-      // If remote device is trusted then automatically
-      // add the pin code
-      if (TRUE == BtInstance.TrustedDev.Status)
-      {
-        // This request is the trusted one - evaluated by the hci pin request event
-        pPin = BtInstance.TrustedDev.Pin;
-
-        dbus_message_append_args(reply, DBUS_TYPE_STRING,  &pPin, DBUS_TYPE_INVALID);
-        dbus_connection_send(conn, reply, NULL);
-        dbus_connection_flush(conn);
-        dbus_message_unref(reply);
-
-        BtInstance.TrustedDev.Status = FALSE;  //Only one trusted pin per pin event
-
-        // TODO: not sure if this is the correct DBusHandlerResult value
-        Result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-      }
-      else
-      {
-        Result  =  DBUS_HANDLER_RESULT_HANDLED;
-      }
-    }
-  }
-  return(Result);
-}
-
-
-static char *get_default_adapter_path(DBusConnection *conn)
-{
-  DBusMessage *msg, *reply;
-  DBusError err;
-  const char *reply_path;
-  char *path;
-
-  msg = dbus_message_new_method_call("org.bluez", "/", "org.bluez.Manager", "DefaultAdapter");
-
-  if (!msg)
-  {
-    fprintf(stderr, "Can't allocate new method call\n");
-    return NULL;
-  }
-
-  dbus_error_init(&err);
-
-  reply = dbus_connection_send_with_reply_and_block(conn, msg, -1, &err);
-
-  dbus_message_unref(msg);
-
-  if (!reply)
-  {
-    fprintf(stderr, "Can't get default adapter\n");
-    if (dbus_error_is_set(&err))
-    {
-      fprintf(stderr, "%s\n", err.message);
-      dbus_error_free(&err);
-    }
-    return NULL;
-  }
-
-  if (!dbus_message_get_args(reply, &err, DBUS_TYPE_OBJECT_PATH, &reply_path, DBUS_TYPE_INVALID))
-  {
-    fprintf(stderr, "Can't get reply arguments\n");
-    if (dbus_error_is_set(&err))
-    {
-      fprintf(stderr, "%s\n", err.message);
-      dbus_error_free(&err);
-    }
-    return NULL;
-  }
-
-  path = strdup(reply_path);
-
-  dbus_message_unref(reply);
-
-  dbus_connection_flush(conn);
-
-  return path;
-}
-
-
-static int RemoveDevice(DBusConnection *conn, char *Device)
-{
-  DBusMessage *msg, *reply;
-  DBusError    err;
-  char        *Path;
-  const char  *reply_path;
-  int         RtnVal;
-
-  RtnVal = 0;
-
-  msg = dbus_message_new_method_call("org.bluez", adapter_path, "org.bluez.Adapter", "FindDevice");
-  if (!msg)
-  {
-    fprintf(stderr, "Can't allocate new method call\n");
-    RtnVal = -1;
-  }
-  else
-  {
-
-    dbus_message_append_args(msg, DBUS_TYPE_STRING, &Device, DBUS_TYPE_INVALID);
-    dbus_error_init(&err);
-
-    // Next dbus message is a blocking call
-    reply = dbus_connection_send_with_reply_and_block(conn, msg, -1, &err);
-    dbus_message_unref(msg);
-
-    if (!reply)
-    {
-      #ifdef DEBUG
-        fprintf(stderr, "Can't register agent\n");
-      #endif
-      if (dbus_error_is_set(&err))
-      {
-        #ifdef DEBUG
-          fprintf(stderr, "%s\n", err.message);
-        #endif
-        dbus_error_free(&err);
-      }
-      RtnVal = -1;
-    }
-    else
-    {
-
-      if (!dbus_message_get_args(reply, &err, DBUS_TYPE_OBJECT_PATH, &reply_path, DBUS_TYPE_INVALID))
-      {
-        #ifdef DEBUG
-          fprintf(stderr, "Can't get reply arguments\n");
-        #endif
-
-        if (dbus_error_is_set(&err))
-        {
-          #ifdef DEBUG
-            fprintf(stderr, "%s\n", err.message);
-          #endif
-
-          dbus_error_free(&err);
-        }
-        RtnVal = -1;
-      }
-      else
-      {
-        dbus_connection_flush(conn);
-
-        Path = strdup(reply_path);
-        dbus_message_unref(reply);
-
-        msg = dbus_message_new_method_call("org.bluez", adapter_path, "org.bluez.Adapter", "RemoveDevice");
-        if (!msg)
-        {
-          #ifdef DEBUG
-            fprintf(stderr, "Can't allocate new method call\n");
-          #endif
-          RtnVal =  -1;
-        }
-        else
-        {
-
-          dbus_message_append_args(msg, DBUS_TYPE_OBJECT_PATH, &Path, DBUS_TYPE_INVALID);
-          dbus_error_init(&err);
-
-          // Next dbus message is blocking
-          reply = dbus_connection_send_with_reply_and_block(conn, msg, -1, &err);
-          dbus_message_unref(msg);
-
-          if (!reply)
-          {
-            #ifdef DEBUG
-              fprintf(stderr, "Can't register agent\n");
-            #endif
-            if (dbus_error_is_set(&err))
-            {
-              #ifdef DEBUG
-                fprintf(stderr, "%s\n", err.message);
-              #endif
-              dbus_error_free(&err);
-            }
-            RtnVal = -1;
-          }
-          else
-          {
-            dbus_message_unref(reply);
-            dbus_connection_flush(conn);
-          }
-        }
-        free(Path);
-      }
-    }
-  }
-
-  return(RtnVal);
-}
-
-
-static void sig_term(int sig)
-{
-  __io_canceled = 1;
-}
-
-
-static int unregister_agent(DBusConnection *conn, const char *adapter_path, const char *agent_path)
-{
-  DBusMessage *msg, *reply;
-  DBusError    err;
-
-  msg = dbus_message_new_method_call("org.bluez", adapter_path, "org.bluez.Adapter", "UnregisterAgent");
-  if (!msg)
-  {
-    #ifdef DEBUG
-      fprintf(stderr, "Can't allocate new method call\n");
-    #endif
-    return -1;
-  }
-
-  dbus_message_append_args(msg, DBUS_TYPE_OBJECT_PATH, &agent_path, DBUS_TYPE_INVALID);
-  dbus_error_init(&err);
-  reply = dbus_connection_send_with_reply_and_block(conn, msg, -1, &err);
-  dbus_message_unref(msg);
-
-  if (!reply)
-  {
-    #ifdef DEBUG
-      fprintf(stderr, "Can't unregister agent\n");
-    #endif
-    if (dbus_error_is_set(&err))
-    {
-      fprintf(stderr, "%s\n", err.message);
-      dbus_error_free(&err);
-    }
-    return -1;
-  }
-
-  dbus_message_unref(reply);
-  dbus_connection_flush(conn);
-  dbus_connection_unregister_object_path(conn, agent_path);
-
-  return 0;
-}
-
-
-UBYTE     cBtGetEvent(void)
-{
-  UBYTE   Evt;
-
-  Evt = BtInstance.Events;
-  BtInstance.Events = 0;
-  return(Evt);
-}
-
-
-void      cBtGetIncoming(UBYTE *pName, UBYTE *pCod, UBYTE Len)
-{
-  snprintf((char*)pName, Len, "%s", &(BtInstance.Incoming.Name[0]));
-  *pCod  =  cBtGetBtType(&(BtInstance.Incoming.DevClass[0]));
-}
-
-
-UBYTE     cBtSetPin(UBYTE *pPin)
-{
-  UBYTE   RtnVal = OK;
-
-  // Pin can be set both when connecting as master or slave
-  if (((HCI_CONNECT == BtInstance.HciSocket.Busy) || (HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy)) &&
-       (BLUETOOTH_OFF != BtInstance.State))
-  {
-    if (0 != pPin[0])
-    {
-      dbus_message_append_args(reply, DBUS_TYPE_STRING, &pPin, DBUS_TYPE_INVALID);
-      dbus_connection_send(conn, reply, NULL);
-      dbus_connection_flush(conn);
-      dbus_message_unref(reply);
-    }
-    else
-    {
-      dbus_connection_send(conn, RejectReply, NULL);
-      dbus_connection_flush(conn);
-      dbus_message_unref(RejectReply);
-    }
-  }
-  else
-  {
-    RtnVal = FAIL;
-  }
-  return(RtnVal);
-}
-
-
-UBYTE   cBtSetPasskey(UBYTE Accept)
-{
-  UBYTE   RtnVal = OK;
-
-  // Pin can be set both when connecting as master or slave
-  if (((HCI_CONNECT == BtInstance.HciSocket.Busy) || (HCI_IDLE == BtInstance.HciSocket.Busy) || (HCI_FAIL == BtInstance.HciSocket.Busy)) &&
-       (BLUETOOTH_OFF != BtInstance.State))
-  {
-    if (Accept)
-    {
-      dbus_connection_send(conn, reply, NULL);
-      dbus_connection_flush(conn);
-      dbus_message_unref(reply);
-    }
-    else
-    {
-      dbus_connection_send(conn, RejectReply, NULL);
-      dbus_connection_flush(conn);
-      dbus_message_unref(RejectReply);
-    }
-  }
-  else
-  {
-    RtnVal = FAIL;
-  }
-  return(RtnVal);
+    return OK;
 }
 
 void    cBtSetTrustedDev(UBYTE *pBtAddr, UBYTE *pPin, UBYTE PinSize)
 {
-
-  BtInstance.TrustedDev.PinLen = PinSize;
-  snprintf((char*)&(BtInstance.TrustedDev.Pin[0]), 7, "%s", pPin);
-  cBtStrNoColonToBa(pBtAddr, &(BtInstance.TrustedDev.Adr));
+  // BtInstance.TrustedDev.PinLen = PinSize;
+  // snprintf((BtInstance.TrustedDev.Pin), 7, "%s", pPin);
+  // cBtStrNoColonToBa(pBtAddr, &(BtInstance.TrustedDev.Adr));
 }
 
-
-static void cBtStrNoColonToBa(UBYTE *pBtStrAddr, bdaddr_t *pAddr)
+/**
+ * @brief           Sets the bundle id.
+ *
+ * @param pId       The new id.
+ *
+ * @return          TRUE on success, otherwise FALSE (id was too long).
+ */
+gboolean cBtSetBundleId(const gchar *pId)
 {
-  ULONG   Ba[6];
+    if (MAX_BUNDLE_ID_SIZE > strlen(pId)) {
+        snprintf(BtInstance.NonVol.BundleID, MAX_BUNDLE_ID_SIZE, "%s", pId);
+        return TRUE;
+    }
 
-  sscanf((char *)pBtStrAddr,"%2X%2X%2X%2X%2X%2X", &(Ba[5]), &(Ba[4]), &(Ba[3]), &(Ba[2]), &(Ba[1]), &(Ba[0]));
-
-  // To avoid alignment faults casting to lower size is necessary
-  pAddr->b[5] = (uint8_t)Ba[5];
-  pAddr->b[4] = (uint8_t)Ba[4];
-  pAddr->b[3] = (uint8_t)Ba[3];
-  pAddr->b[2] = (uint8_t)Ba[2];
-  pAddr->b[1] = (uint8_t)Ba[1];
-  pAddr->b[0] = (uint8_t)Ba[0];
+    return FALSE;
 }
 
-
-UWORD     cBtSetBundleId(UBYTE *pId)
+/**
+ * @brief           Sets the seed id.
+ *
+ * @param pSeedId   The new id.
+ *
+ * @return          TRUE on success, otherwise FALSE (id was too long).
+ */
+gboolean cBtSetBundleSeedId(const gchar *pSeedId)
 {
-  UWORD   RtnVal;
+    if (MAX_BUNDLE_SEED_ID_SIZE > strlen(pSeedId)) {
+        snprintf(BtInstance.NonVol.BundleSeedID, MAX_BUNDLE_SEED_ID_SIZE,
+                 "%s", pSeedId);
+        return TRUE;
+    }
 
-  RtnVal = FALSE;
-  if (MAX_BUNDLE_ID_SIZE > strlen((char*)pId))
-  {
-    snprintf((char*)&BtInstance.NonVol.BundleID[0], MAX_BUNDLE_ID_SIZE, "%s", (char*)pId);
-    RtnVal = TRUE;
-  }
-
-  return(RtnVal);
+    return FALSE;
 }
 
-UWORD     cBtSetBundleSeedId(UBYTE *pSeedId)
+static gint compare_proxy_object_path(GDBusProxy *proxy, gchar *path)
 {
-  UWORD   RtnVal;
+    return g_strcmp0(g_dbus_proxy_get_object_path(proxy), path);
+}
 
-  RtnVal = FALSE;
-  if (MAX_BUNDLE_SEED_ID_SIZE > strlen((char*)pSeedId))
-  {
-    snprintf((char*)&BtInstance.NonVol.BundleSeedID[0], MAX_BUNDLE_SEED_ID_SIZE, "%s", (char*)pSeedId);
-    RtnVal = TRUE;
-  }
+static gboolean handle_request_pin_code(BluezAgent1 *object,
+                                        GDBusMethodInvocation *invocation,
+                                        const gchar *arg_device)
+{
+    GList *device;
 
-  return(RtnVal);
+    BtInstance.Events = EVENT_BT_PIN;
+    BtInstance.request_pin_invocation = g_object_ref(invocation);
+
+    device = g_list_find_custom(BtInstance.unpaired_list, arg_device,
+                                (GCompareFunc)compare_proxy_object_path);
+    BtInstance.incoming_device = device ? device->data : NULL;
+
+    return TRUE;
+}
+
+static gboolean handle_display_pin_code(BluezAgent1 *object,
+                                        GDBusMethodInvocation *invocation,
+                                        const gchar *arg_device,
+                                        const gchar *arg_pin_code)
+{
+    g_warning("Unhanded bluetooth agent request: handle_display_pin_code");
+
+    return FALSE;
+}
+
+static gboolean handle_request_passkey(BluezAgent1 *object,
+                                       GDBusMethodInvocation *invocation,
+                                       const gchar *arg_device)
+{
+    g_warning("Unhanded bluetooth agent request: handle_request_passkey");
+
+    return FALSE;
+}
+
+static gboolean handle_display_passkey(BluezAgent1 *object,
+                                       GDBusMethodInvocation *invocation,
+                                       const gchar *arg_device,
+                                       guint arg_passkey,
+                                       guint16 arg_entered)
+{
+    g_warning("Unhanded bluetooth agent request: handle_display_passkey");
+
+    return FALSE;
+}
+
+static gboolean handle_request_confirmation(BluezAgent1 *object,
+                                            GDBusMethodInvocation *invocation,
+                                            const gchar *arg_device,
+                                            guint arg_passkey)
+{
+    GList *device;
+
+    BtInstance.Events = EVENT_BT_REQ_CONF;
+    BtInstance.request_confirmation_invocation = g_object_ref(invocation);
+
+    device = g_list_find_custom(BtInstance.unpaired_list, arg_device,
+                                (GCompareFunc)compare_proxy_object_path);
+    BtInstance.incoming_device = device ? device->data : NULL;
+
+    return TRUE;
+}
+
+static gboolean handle_cancel(BluezAgent1 *object,
+                              GDBusMethodInvocation *invocation)
+{
+    if (BtInstance.request_pin_invocation) {
+        g_dbus_method_invocation_return_dbus_error(
+            BtInstance.request_pin_invocation,
+            "org.bluez.Error.Canceled",
+            "Canceled by remote device");
+        BtInstance.request_pin_invocation = NULL;
+    }
+    if (BtInstance.request_confirmation_invocation) {
+        g_dbus_method_invocation_return_dbus_error(
+            BtInstance.request_confirmation_invocation,
+            "org.bluez.Error.Canceled",
+            "Canceled by remote device");
+        BtInstance.request_confirmation_invocation = NULL;
+    }
+
+    bluez_agent1_complete_cancel(object, invocation);
+
+    return TRUE;
+}
+
+static gboolean handle_release(BluezAgent1 *object,
+                               GDBusMethodInvocation *invocation)
+{
+    if (BtInstance.request_pin_invocation) {
+        g_object_unref(BtInstance.request_pin_invocation);
+        BtInstance.request_pin_invocation = NULL;
+    }
+    if (BtInstance.request_confirmation_invocation) {
+        g_object_unref(BtInstance.request_confirmation_invocation);
+        BtInstance.request_confirmation_invocation = NULL;
+    }
+
+    bluez_agent1_complete_release(object, invocation);
+
+    return TRUE;
+}
+
+static void request_default_agent_callback(GObject *source_object,
+                                           GAsyncResult *res,
+                                           gpointer user_data)
+{
+    BluezAgentManager1 *agent_manager = BLUEZ_AGENT_MANAGER1(source_object);
+    GError *error = NULL;
+
+    if (!bluez_agent_manager1_call_request_default_agent_finish(agent_manager,
+                                                                res,
+                                                                &error))
+    {
+        g_warning("Failed to request default agent: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+}
+
+static void register_agent_callback(GObject *source_object,
+                                    GAsyncResult *res,
+                                    gpointer user_data)
+{
+    BluezAgentManager1 *agent_manager = BLUEZ_AGENT_MANAGER1(source_object);
+    const char *agent_path = user_data;
+    GError *error = NULL;
+
+    if (!bluez_agent_manager1_call_register_agent_finish(agent_manager,
+                                                         res,
+                                                         &error))
+    {
+        g_warning("Failed to register bluetooth agent: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    bluez_agent_manager1_call_request_default_agent(agent_manager,
+                                                    agent_path,
+                                                    NULL,
+                                                    request_default_agent_callback,
+                                                    NULL);
+}
+
+static void unregister_agent_callback(GObject *source_object,
+                                      GAsyncResult *res,
+                                      gpointer user_data)
+{
+    BluezAgentManager1 *agent_manager = BLUEZ_AGENT_MANAGER1(source_object);
+    GError *error = NULL;
+
+    if (!bluez_agent_manager1_call_unregister_agent_finish(agent_manager,
+                                                           res,
+                                                           &error))
+    {
+        g_warning("Failed to unregister bluetooth agent: %s", error->message);
+        g_error_free(error);
+    }
+}
+
+static void regitser_profile_callback(GObject *source_object,
+                                      GAsyncResult *res,
+                                      gpointer user_data)
+{
+    GError *error = NULL;
+
+    if (!bluez_profile_manager1_call_register_profile_finish(
+                    BLUEZ_PROFILE_MANAGER1(source_object), res, &error))
+    {
+        g_warning("Failed to register SPP profile: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+}
+
+static void on_device_paired(BluezDevice1 *device)
+{
+    // if pairing was successful, we trust the device
+    bluez_device1_set_trusted(device, TRUE);
+}
+
+static void on_interface_added(GDBusObjectManager *manager,
+                               GDBusObject *object,
+                               GDBusInterface *interface,
+                               gpointer user_data)
+{
+    if (BLUEZ_IS_ADAPTER1_PROXY(interface)) {
+        if (BtInstance.adapter) {
+            g_warning("Multiple bluetooth adapters are not supported.");
+        } else {
+            BtInstance.adapter = BLUEZ_ADAPTER1(g_object_ref(interface));
+            // only discoverable when bluetooth UI is shown
+            bluez_adapter1_set_discoverable(BtInstance.adapter, FALSE);
+        }
+    }
+    else if (BLUEZ_IS_AGENT_MANAGER1_PROXY(interface)) {
+        BtInstance.agent_manager = BLUEZ_AGENT_MANAGER1(g_object_ref(interface));
+        bluez_agent_manager1_call_register_agent(BtInstance.agent_manager,
+                                                 C_BT_AGENT_PATH,
+                                                 "KeyboardDisplay",
+                                                 NULL,
+                                                 register_agent_callback,
+                                                 C_BT_AGENT_PATH);
+    }
+    else if (BLUEZ_IS_DEVICE1(interface)) {
+        BluezDevice1 *device = BLUEZ_DEVICE1(interface);
+
+        if (bluez_device1_get_paired(device)) {
+            g_signal_connect(device, "notify::paired",
+                             G_CALLBACK(on_device_paired), NULL);
+            on_device_paired(device);
+            BtInstance.paired_list =
+                g_list_append(BtInstance.paired_list, g_object_ref(interface));
+            if (bluez_device1_get_connected(device)) {
+                BtInstance.connected_list =
+                    g_list_append(BtInstance.connected_list, interface);
+            }
+        } else {
+            BtInstance.unpaired_list =
+                g_list_append(BtInstance.unpaired_list, g_object_ref(interface));
+        }
+
+    }
+    else if (BLUEZ_IS_PROFILE_MANAGER1_PROXY(interface)) {
+        GVariantDict options;
+
+        g_variant_dict_init(&options, NULL);
+        g_variant_dict_insert(&options, "Name", "s", "Wireless EV3");
+        g_variant_dict_insert(&options, "Role", "s", "server");
+        g_variant_dict_insert(&options, "Channel", "q", "1");
+        g_variant_dict_insert(&options, "RequireAuthentication", "b", TRUE);
+        g_variant_dict_insert(&options, "RequireAuthorization", "b", TRUE);
+
+        BtInstance.profile_manager = BLUEZ_PROFILE_MANAGER1(g_object_ref(interface));
+        bluez_profile_manager1_call_register_profile(BtInstance.profile_manager,
+            g_dbus_interface_skeleton_get_object_path(
+                        G_DBUS_INTERFACE_SKELETON(BtInstance.spp_profile)),
+            SPP_UUID, g_variant_dict_end(&options), NULL,
+            regitser_profile_callback, NULL);
+    }
+}
+
+static void on_interface_removed(GDBusObjectManager *manager,
+                                 GDBusObject *object,
+                                 GDBusInterface *interface,
+                                 gpointer user_data)
+{
+    if (G_DBUS_INTERFACE(BtInstance.adapter) == interface) {
+        BtInstance.adapter = NULL;
+        g_object_unref(interface);
+    }
+    else if (G_DBUS_INTERFACE(BtInstance.agent_manager) == interface) {
+        BtInstance.agent_manager = NULL;
+        g_object_unref(interface);
+    }
+    else if (BLUEZ_IS_DEVICE1(interface)) {
+        BtInstance.unpaired_list = g_list_remove(BtInstance.unpaired_list, interface);
+        BtInstance.paired_list = g_list_remove(BtInstance.paired_list, interface);
+        BtInstance.connected_list = g_list_remove(BtInstance.connected_list, interface);
+        g_object_unref(interface);
+    }
+    else if (G_DBUS_INTERFACE(BtInstance.profile_manager) == interface) {
+        BtInstance.profile_manager = NULL;
+        g_object_unref(interface);
+    }
+}
+
+static void on_object_added(GDBusObjectManager *manager,
+                            GDBusObject *object,
+                            gpointer user_data)
+{
+    GList *ifaces, *iface;
+
+    ifaces = g_dbus_object_get_interfaces(object);
+    for (iface = ifaces; iface != NULL; iface = g_list_next(iface)) {
+        on_interface_added(manager, object, G_DBUS_INTERFACE(iface->data), NULL);
+    }
+    g_list_free_full(ifaces, g_object_unref);
+}
+
+static void on_object_removed(GDBusObjectManager *manager,
+                              GDBusObject *object,
+                              gpointer user_data)
+{
+    GList *ifaces, *iface;
+
+    ifaces = g_dbus_object_get_interfaces(object);
+    for (iface = ifaces; iface != NULL; iface = g_list_next(iface)) {
+        on_interface_removed(manager, object, G_DBUS_INTERFACE(iface->data), NULL);
+    }
+    g_list_free_full(ifaces, g_object_unref);
+}
+
+static GType get_proxy_type(GDBusObjectManagerClient *manager,
+                            const gchar *object_path,
+                            const gchar *interface_name,
+                            gpointer user_data)
+{
+    if (!interface_name) {
+        return G_TYPE_DBUS_OBJECT_PROXY;
+    }
+    if (g_strcmp0(interface_name, "org.bluez.Adapter1") == 0) {
+        return BLUEZ_TYPE_ADAPTER1_PROXY;
+    }
+    if (g_strcmp0(interface_name, "org.bluez.AgentManager1") == 0) {
+        return BLUEZ_TYPE_AGENT_MANAGER1_PROXY;
+    }
+    if (g_strcmp0(interface_name, "org.bluez.Device1") == 0) {
+        return BLUEZ_TYPE_DEVICE1_PROXY;
+    }
+    if (g_strcmp0(interface_name, "org.bluez.ProfileManager1") == 0) {
+        return BLUEZ_TYPE_PROFILE_MANAGER1_PROXY;
+    }
+
+    return G_TYPE_DBUS_PROXY;
+}
+
+static void object_manager_new_callback(GObject *source_object,
+                                        GAsyncResult *res,
+                                        gpointer user_data)
+{
+    GError *error = NULL;
+    GList *objects, *obj;
+
+    BtInstance.object_manager =
+        g_dbus_object_manager_client_new_for_bus_finish(res, &error);
+    if (!BtInstance.object_manager) {
+        g_warning("Failed to create object manager: %s", error->message);
+        g_clear_error(&error);
+        return;
+    }
+
+    g_signal_connect(BtInstance.object_manager, "interface-added",
+                     G_CALLBACK(on_interface_added), NULL);
+    g_signal_connect(BtInstance.object_manager, "interface-removed",
+                     G_CALLBACK(on_interface_removed), NULL);
+    g_signal_connect(BtInstance.object_manager, "object-added",
+                     G_CALLBACK(on_object_added), NULL);
+    g_signal_connect(BtInstance.object_manager, "object-removed",
+                     G_CALLBACK(on_object_removed), NULL);
+
+    objects = g_dbus_object_manager_get_objects(BtInstance.object_manager);
+    for (obj = objects; obj != NULL; obj = g_list_next(obj)) {
+        on_object_added(BtInstance.object_manager, G_DBUS_OBJECT(obj->data), NULL);
+    }
+    g_list_free_full(objects, g_object_unref);
+}
+
+static void cBtAgentInit(void)
+{
+    GDBusConnection *connection;
+    GError *error = NULL;
+
+    BtInstance.agent = bluez_agent1_skeleton_new();
+    g_signal_connect(BtInstance.agent, "handle-request-pin-code",
+                     G_CALLBACK(handle_request_pin_code), NULL);
+    g_signal_connect(BtInstance.agent, "handle-display-pin-code",
+                     G_CALLBACK(handle_display_pin_code), NULL);
+    g_signal_connect(BtInstance.agent, "handle-request-passkey",
+                     G_CALLBACK(handle_request_passkey), NULL);
+    g_signal_connect(BtInstance.agent, "handle-display-passkey",
+                     G_CALLBACK(handle_display_passkey), NULL);
+    g_signal_connect(BtInstance.agent, "handle-request-confirmation",
+                     G_CALLBACK(handle_request_confirmation), NULL);
+    g_signal_connect(BtInstance.agent, "handle-cancel",
+                     G_CALLBACK(handle_cancel), NULL);
+    g_signal_connect(BtInstance.agent, "handle-release",
+                     G_CALLBACK(handle_release), NULL);
+
+    connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
+    if (!connection) {
+        g_warning("Failed to get system bus: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    if (!g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(BtInstance.agent),
+                                          connection,
+                                          C_BT_AGENT_PATH,
+                                          &error))
+    {
+        g_warning("Failed export bluetooth agent: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    g_object_unref(connection);
+}
+
+static void cBtAgentExit(void)
+{
+    g_dbus_interface_skeleton_unexport(G_DBUS_INTERFACE_SKELETON(BtInstance.agent));
+    g_object_unref(BtInstance.agent);
+    BtInstance.agent = NULL;
+}
+
+static gboolean handle_spp_in(GIOChannel *source,
+                              GIOCondition condition,
+                              gpointer data)
+{
+    READBUF *pReadBuf;
+    guint BytesRead;
+
+    if (BtInstance.NonVol.DecodeMode == MODE1) {
+        // BtCh = 0 is the slave port
+        pReadBuf = &BtInstance.BtCh[0].ReadBuf;
+    } else {
+        // dedicated buffer used for Mode2
+        pReadBuf = &BtInstance.Mode2Buf;
+    }
+
+    // Check if it is possible to read more byte from the BT stream
+    if (READ_BUF_EMPTY  ==  pReadBuf->Status) {
+        g_io_channel_read_chars(BtInstance.channel0, (gchar *)pReadBuf->Buf,
+                                sizeof(pReadBuf->Buf), &BytesRead, NULL);
+        if (BytesRead > 0) {
+#ifdef DEBUG
+            int Cnt;
+            printf("\nData received on BT in Slave mode");
+            for (Cnt = 0; Cnt < BytesRead; Cnt++) {
+                printf("\n Rx byte nr %02d = %02X",Cnt,pReadBuf->Buf[Cnt]);
+            }
+            printf("\n");
+#endif
+            pReadBuf->OutPtr = 0;
+            pReadBuf->InPtr  = BytesRead;
+            pReadBuf->Status = READ_BUF_FULL;
+
+            DecodeBtStream(0);
+        }
+    } else {
+        DecodeBtStream(0);
+    }
+
+    return G_SOURCE_CONTINUE;
+}
+
+static gboolean on_spp_new_connection(BluezProfile1 *object,
+                                      GDBusMethodInvocation *invocation,
+                                      GUnixFDList *fd_list,
+                                      const gchar *arg_device,
+                                      GVariant *arg_fd,
+                                      GVariant *arg_fd_properties)
+{
+    if (BtInstance.channel0) {
+        g_dbus_method_invocation_return_dbus_error(invocation,
+                                                   "org.bluez.Error.Rejected",
+                                                   "Only one connection allowed");
+    } else {
+        GIOFlags flags;
+        gint real_fd;
+
+        // Thanks: http://www.spinics.net/lists/linux-bluetooth/msg64681.html
+        real_fd = g_unix_fd_list_get(fd_list, g_variant_get_handle(arg_fd), NULL);
+
+        BtInstance.channel0 = g_io_channel_unix_new(real_fd);
+        // remove encoding - this is binary data
+        g_io_channel_set_encoding(BtInstance.channel0, NULL, NULL);
+        g_io_channel_set_close_on_unref(BtInstance.channel0, TRUE);
+        flags = g_io_channel_get_flags(BtInstance.channel0);
+        g_io_channel_set_flags(BtInstance.channel0, flags | G_IO_FLAG_NONBLOCK, NULL);
+        BtInstance.channel0_source_id = g_io_add_watch(BtInstance.channel0,
+                                                       G_IO_IN | G_IO_PRI,
+                                                       handle_spp_in,
+                                                       NULL);
+    }
+
+    bluez_profile1_complete_new_connection(object, invocation, fd_list);
+
+    return TRUE;
+}
+
+static gboolean on_spp_request_disconnection(BluezProfile1 *object,
+                                             GDBusMethodInvocation *invocation,
+                                             const gchar *arg_device)
+{
+    if (BtInstance.channel0) {
+        g_source_remove(BtInstance.channel0_source_id);
+        g_io_channel_unref(BtInstance.channel0);
+        BtInstance.channel0 = NULL;
+    }
+
+    bluez_profile1_complete_request_disconnection(object, invocation);
+
+    return TRUE;
+}
+
+static gboolean on_spp_release(BluezProfile1 *object,
+                               GDBusMethodInvocation *invocation)
+{
+    if (BtInstance.channel0) {
+        g_source_remove(BtInstance.channel0_source_id);
+        g_io_channel_unref(BtInstance.channel0);
+        BtInstance.channel0 = NULL;
+    }
+
+    bluez_profile1_complete_release(object, invocation);
+
+    return TRUE;
+}
+
+static void cBtSppProfileInit(void)
+{
+    GDBusConnection *connection;
+    GError *error = NULL;
+
+    BtInstance.spp_profile = bluez_profile1_skeleton_new();
+    g_signal_connect(BtInstance.spp_profile, "handle-new-connection",
+                     G_CALLBACK(on_spp_new_connection), NULL);
+    g_signal_connect(BtInstance.spp_profile, "handle-request-disconnection",
+                     G_CALLBACK(on_spp_request_disconnection), NULL);
+    g_signal_connect(BtInstance.spp_profile, "handle-release",
+                     G_CALLBACK(on_spp_release), NULL);
+
+    connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
+    if (!connection) {
+        g_warning("Failed to get system bus: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    if (!g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(BtInstance.spp_profile),
+                                          connection,
+                                          C_BT_SPP_PROFILE_PATH,
+                                          &error))
+    {
+        g_warning("Failed export bluetooth SPP profile: %s", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    g_object_unref(connection);
+}
+
+static void cBtSppProfileExit(void)
+{
+    g_dbus_interface_skeleton_unexport(G_DBUS_INTERFACE_SKELETON(BtInstance.spp_profile));
+    g_object_unref(BtInstance.spp_profile);
+    BtInstance.spp_profile = NULL;
+}
+
+void BtInit(const char* pName)
+{
+    int     File;
+    FILE   *FSer;
+
+    // BtInstance.OnOffSeqCnt = 0;
+
+    // Load all persistent variables
+    FSer = fopen("./settings/BTser","r");
+    if (FSer != NULL) {
+        fgets(BtInstance.Adr, 13, FSer);
+        fclose (FSer);
+    } else {
+        //Error - Fill with zeros
+        strcpy(BtInstance.Adr, "000000000000");
+    }
+
+    File = open(NONVOL_BT_DATA,O_RDONLY);
+    if (File >= MIN_HANDLE) {
+        // Reads both Visible and ON/OFF status
+        if (read(File,(UBYTE*)&BtInstance.NonVol, sizeof(BtInstance.NonVol)) != sizeof(BtInstance.NonVol)) {
+            // TODO: handle error
+        }
+        close (File);
+    } else {
+        // Default settings
+        BtInstance.NonVol.DecodeMode = MODE1;
+
+        snprintf(BtInstance.NonVol.BundleID, MAX_BUNDLE_ID_SIZE, "%s", LEGO_BUNDLE_ID);
+        snprintf(BtInstance.NonVol.BundleSeedID, MAX_BUNDLE_SEED_ID_SIZE, "%s", LEGO_BUNDLE_SEED_ID);
+    }
+
+    BtInstance.Events = EVENT_NONE;
+    // BtInstance.TrustedDev.Status  =  FALSE;
+
+    BtInstance.BtName[0] = 0;
+    snprintf(BtInstance.BtName, vmBRICKNAMESIZE, "%s", pName);
+    // bacpy(&(BtInstance.TrustedDev.Adr), BDADDR_ANY);   // BDADDR_ANY = all zeros!
+
+    I2cInit(&BtInstance.BtCh[0].ReadBuf, &BtInstance.Mode2WriteBuf,
+            BtInstance.NonVol.BundleID, BtInstance.NonVol.BundleSeedID);
+
+    cBtAgentInit();
+    cBtSppProfileInit();
+
+    g_dbus_object_manager_client_new_for_bus(G_BUS_TYPE_SYSTEM,
+                                             G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_NONE,
+                                             "org.bluez", "/",
+                                             get_proxy_type, NULL, NULL,
+                                             NULL, /* cancellable */
+                                             object_manager_new_callback, NULL);
+}
+
+void BtExit(void)
+{
+    int File;
+
+    if (BtInstance.object_manager) {
+        GList *objects, *obj;
+
+        if (BtInstance.agent_manager) {
+            bluez_agent_manager1_call_unregister_agent(BtInstance.agent_manager,
+                g_dbus_interface_skeleton_get_object_path(
+                    G_DBUS_INTERFACE_SKELETON(BtInstance.agent)),
+                NULL, unregister_agent_callback, NULL);
+        }
+
+        objects = g_dbus_object_manager_get_objects(BtInstance.object_manager);
+        for (obj = objects; obj != NULL; obj = g_list_next(obj)) {
+            on_object_removed(BtInstance.object_manager,
+                              G_DBUS_OBJECT(obj->data), NULL);
+        }
+        g_list_free_full(objects, g_object_unref);
+        g_object_unref(BtInstance.object_manager);
+        BtInstance.object_manager = NULL;
+    }
+
+    cBtSppProfileExit();
+    cBtAgentExit();
+    I2cExit();
+    BtClose();
+
+    File = open(NONVOL_BT_DATA, O_CREAT | O_WRONLY | O_TRUNC, SYSPERMISSIONS);
+    if (File >= MIN_HANDLE) {
+        write(File,(UBYTE*)&BtInstance.NonVol, sizeof(BtInstance.NonVol));
+        close (File);
+    }
 }

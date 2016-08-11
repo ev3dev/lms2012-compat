@@ -53,7 +53,11 @@
 
 #define   CHAIN_DEPT                    vmCHAIN_DEPT                  //!< Number of bricks in the USB daisy chain (master + slaves)
 
-#define   EVENT_BT_PIN                  vmEVENT_BT_PIN
+typedef enum {
+    EVENT_NONE          = vmEVENT_NONE,
+    EVENT_BT_PIN        = vmEVENT_BT_PIN,
+    EVENT_BT_REQ_CONF   = vmEVENT_BT_REQ_CONF,
+} COM_EVENT;
 
 // Folders
 

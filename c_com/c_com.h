@@ -1344,7 +1344,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   BundleId[];
+  char    BundleId[];
 }BUNDLE_ID;
 #define   SIZEOF_BUNDLEID               6
 
@@ -1364,7 +1364,7 @@ typedef   struct
   MSGCNT  MsgCount;
   UBYTE   CmdType;
   UBYTE   Cmd;
-  UBYTE   BundleSeedId[];
+  char    BundleSeedId[];
 }BUNDLE_SEED_ID;
 #define   SIZEOF_BUNDLESEEDID           6
 
@@ -1451,7 +1451,7 @@ void      cComCloseMailBox(void);
 void      cComMailBoxSize(void);
 
 void      cComGetBrickName(DATA8 Length, DATA8 *pBrickName);
-DATA8     cComGetEvent(void);
+COM_EVENT cComGetEvent(void);
 
 // DAISY chain
 // Write type data to chain

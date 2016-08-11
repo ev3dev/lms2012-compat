@@ -112,6 +112,7 @@
             <arg name="device" type="o" direction="in"/>
             <arg name="fd" type="h" direction="in"/>
             <arg name="fd_properties" type="a{sv}" direction="in"/>
+            <annotation name="org.gtk.GDBus.C.UnixFD" value="1"/>
         </method>
         <method name="RequestDisconnection">
             <arg name="device" type="o" direction="in"/>

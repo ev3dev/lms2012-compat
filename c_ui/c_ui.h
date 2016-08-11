@@ -420,7 +420,7 @@ typedef   struct
   DATAF     BattShutdownHigh;
   DATAF     BattShutdownLow;
 
-  DATA8     Event;
+  COM_EVENT Event;
 
   DATA8     Click;
 
