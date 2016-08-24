@@ -3559,7 +3559,7 @@ RESULT    cInputInit(void)
 
   if (InputInstance.IicFile >= MIN_HANDLE)
   {
-    pIicTmp  =  (IIC*)mmap(0, sizeof(UART), PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, InputInstance.IicFile, 0);
+    pIicTmp  =  (IIC*)mmap(0, sizeof(IIC), PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, InputInstance.IicFile, 0);
 
     if (pIicTmp == MAP_FAILED)
     {
