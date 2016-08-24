@@ -148,8 +148,8 @@ static void cComUsbHidServiceInit(void)
         return;
     }
 
-    g_snprintf(ComInstance.usb_hid_service_name, 50,
-               "lms2012-compat-hid@%s.service",
+    g_snprintf(ComInstance.usb_hid_service_name, USB_HID_SERVICE_NAME_SIZE,
+               "lms2012-compat-usb-hid-gadget@%s.service",
                udev_device_get_sysname(udc_device));
     udev_device_unref(udc_device);
 

@@ -1555,7 +1555,8 @@ typedef struct
   USB_SPEED udc_speed;
 
   SystemdManager *systemd_manager;
-  char usb_hid_service_name[50];
+#define USB_HID_SERVICE_NAME_SIZE 100
+  char usb_hid_service_name[USB_HID_SERVICE_NAME_SIZE];
 } COM_GLOBALS;
 
 extern COM_GLOBALS ComInstance;
