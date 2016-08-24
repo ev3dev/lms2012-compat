@@ -192,7 +192,7 @@ RESULT    cComInit(void)
   UWORD   TmpFileHandle;
   UBYTE   Cnt;
   FILE    *File;
-  int timeout = 10;
+  int timeout = 50;
 
   ComInstance.udc_syspath = cComGetUdcDevice();
 
