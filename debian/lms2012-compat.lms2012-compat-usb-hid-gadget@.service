@@ -8,5 +8,5 @@ BindsTo=sys-subsystem-udc-devices-%i.device
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/share/lms2012-compat/usb-hid-gadget.sh start %i
-ExecStop=/usr/share/lms2012-compat/usb-hid-gadget.sh stop %i
+ExecStart=/usr/share/lms2012-compat/scripts/usb-hid-gadget.sh start %i
+ExecStop=/usr/share/lms2012-compat/scripts/usb-hid-gadget.sh stop %i
