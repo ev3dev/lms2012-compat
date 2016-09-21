@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include <asoundlib.h>
 #include <linux/input.h>
@@ -65,6 +66,7 @@ typedef enum {
 } SOUND_STATES;
 
 typedef struct {
+    bool no_sound;
     int hSoundFile;
     int event_fd;
     snd_pcm_t *pcm;
@@ -186,6 +188,19 @@ static void cSoundGetMixer()
     snd_mixer_elem_t *element;
     const char *name;
     int err;
+    int card = -1;
+
+    err = snd_card_next(&card);
+    if (err < 0) {
+        fprintf(stderr, "Failed to get sound card: %s\n", snd_strerror(err));
+        return;
+    }
+
+    if (card == -1) {
+        fprintf(stderr, "No sound card available\n");
+        SoundInstance.no_sound = TRUE;
+        return;
+    }
 
     err = snd_mixer_open(&mixer, 0);
     if (err <  0) {
@@ -245,6 +260,10 @@ static snd_pcm_t *cSoundGetPcm(void)
     snd_pcm_t *pcm;
     snd_pcm_format_t format;
     int err;
+
+    if (SoundInstance.no_sound) {
+        return NULL;
+    }
 
     err = snd_pcm_open(&pcm, DEFAULT_SOUND_CARD, SND_PCM_STREAM_PLAYBACK, 0);
     if (err < 0) {
