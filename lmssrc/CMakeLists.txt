@@ -1,9 +1,8 @@
 
-find_program (JAVA java)
+find_program (LMSASM lmsasm)
 find_program (IMAGEMAGICK_CONVERT convert)
 find_program (SOUND_EXCHANGE sox)
 
-set (LMSASM_DIR ${CMAKE_SOURCE_DIR}/lmssrc/adk/lmsasm)
 set (RAW2RSF ${CMAKE_SOURCE_DIR}/lmssrc/raw2rsf.sh)
 
 macro (add_lms_app TARGET)
@@ -21,28 +20,17 @@ macro (add_lms_app TARGET)
         set (icon_SOURCE ${LMSSRC_ICON})
     endif ()
 
-    configure_file (${CMAKE_SOURCE_DIR}/lms2012/bytecodes.h
-        ${LMSASM_DIR}/bytecodes.h COPYONLY)
-    configure_file (${CMAKE_SOURCE_DIR}/lms2012/bytecodes.c
-        ${LMSASM_DIR}/bytecodes.c COPYONLY)
-
     foreach (program ${LMSSRC_PROGRAMS})
         set (lms ${CMAKE_CURRENT_SOURCE_DIR}/${program}.lms)
         set (rbf ${CMAKE_CURRENT_BINARY_DIR}/${program}.rbf)
 
         add_custom_command (OUTPUT ${rbf}
-            COMMAND ${JAVA}
-                -jar ${LMSASM_DIR}/assembler.jar
-                ${CMAKE_CURRENT_SOURCE_DIR}/${program}
-            COMMAND mv
-                ${CMAKE_CURRENT_SOURCE_DIR}/${program}.rbf
-                ${rbf}
+            COMMAND ${LMSASM}
+                --support compat
+                --output ${rbf}
+                ${lms}
             DEPENDS
                 ${lms}
-                ${LMSASM_DIR}/bytecodes.c
-                ${LMSASM_DIR}/bytecodes.h
-            WORKING_DIRECTORY
-                ${LMSASM_DIR}
         )
         list (APPEND LMSSRC_RBF_LIST ${rbf})
     endforeach ()
