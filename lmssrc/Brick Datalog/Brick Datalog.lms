@@ -65,9 +65,6 @@ DATA16    hOffsets                                                    //
 DATA16    hSpans                                                      //
 DATA16    hFigures                                                    //
 DATA16    hDecimals                                                   //
-                                                                      //
-DATA16    hTypes                                                      //
-                                                                      //
 DATA16    hInits                                                      //                                                                      
 DATA16    hTypes                                                      //
 DATA16    hModes                                                      //
@@ -208,7 +205,7 @@ Logging:                                                              //        
   UI_BUTTON(SHORTPRESS,DOWN_BUTTON,State)                             //          UI_BUTTON(SHORTPRESS,DOWN_BUTTON,State)
   UI_BUTTON(SHORTPRESS,UP_BUTTON,State)                               //          UI_BUTTON(SHORTPRESS,UP_BUTTON,State)
   JR_FALSE(State,NotUpLogging2)                                       //          if (State && !HighSpeedLogging)
-  JR_TRUE(HighSpeedLogging,NotUpLogging2                              //          {
+  JR_TRUE(HighSpeedLogging,NotUpLogging2)                             //          {
   MOVE8_8(IDLE,WantedMode)                                            //            WantedMode  =  IDLE
   MOVE8_8(1,Update)                                                   //            Update      =  1
 NotUpLogging2:                                                        //          }
@@ -1797,21 +1794,5 @@ NotSuggested:                                                         //      }
 NoName:                                                               //    }
   FILE(REMOVE,TMPLOGFILE)                                             //    FILE(REMOVE,TMPLOGFILE)
 }                                                                     //  }
-                                                                      //
-                                                                      //
-// Convert *********************************************************************************************
-                                                                      //
-                                                                      //
-subcall   Convert                                                     //  Convert(Port)
-{                                                                     //  {
-  IO_8    Port                                                        //
-                                                                      //
-  JR_LT8(Port,INPUTS,Input)                                           //    if (Port >= INPUTS)
-                                                                      //    {
-  ADD8(Port,OUTPUT_OFFSET,Port)                                       //      Port +=  OUTPUT_OFFSET
-  SUB8(Port,INPUTS,Port)                                              //      Port -=  INPUTS
-Input:                                                                //    }
-}                                                                     //  }
-                                                                      //
                                                                       //
 //! \endverbatim

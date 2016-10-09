@@ -369,7 +369,6 @@ subcall   InsertBlockInStream                                         //  Insert
   DATA16  Pointer                                                     //
   DATA32  Index1                                                      //
   DATA32  Index2                                                      //
-  DATA16  Pointer                                                     //
   DATA16  Block                                                       //
   DATA16  Tmp                                                         //
   DATA16  Par1                                                        //
@@ -1050,11 +1049,6 @@ NotDelayBlock:                                                        //    }
                                                                       //
 // SaveFilename ****************************************************************************************
                                                                       //
-define    FILEBLOCK_WIDTH           62                                //
-define    FILEBLOCK_PAR1_MIN        1                                 //
-define    FILEBLOCK_PAR1_DEFAULT    2                                 //
-define    FILEBLOCK_PAR1_MAX        2                                 //
-                                                                      //
 subcall   SaveFilename                                                //  SaveFilename
 {                                                                     //  {
   DATAF   Tmp                                                         //
@@ -1310,8 +1304,6 @@ NotRefresh:                                                           //    }
                                                                       //
                                                                       //
 // TrashBin ********************************************************************************************
-                                                                      //
-define    STARTBLOCK_WIDTH      24                                    //
                                                                       //
 subcall   TrashBin                                                    //  TrashBin
 {                                                                     //  {

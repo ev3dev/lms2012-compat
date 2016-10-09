@@ -381,7 +381,7 @@ Invalid:                                                              //        
   MOVE8_F(0,Data)                                                     //          Data  =  0
 EndValid:                                                             //        }
                                                                       //
-  // Data = ((Data - Min) * (100)) / (Span);                          //
+  // Data = ((Data - Min) * (100)) / (Span)                           //
   SUBF(Max,Min,Span)                                                  //        Span  =  Max - Min          
   SUBF(Data,Min,Data)                                                 //        Data -=  Min
   MULF(Data,100.0F,Data)                                              //        Data *=  100
