@@ -11,6 +11,7 @@ with `lms2012-compat`. At a low level, it has been modified to run on top of
 
 [ev3dev]: http://www.ev3dev.org
 
+
 Status
 ------
 
@@ -19,3 +20,10 @@ is being developed. As it stands, [ev3dev lacks some key features for motors
 and sensors][issue28] that are needed for general use.
 
 [issue28]: https://github.com/ev3dev/lms2012-compat/issues/28
+
+
+Hacking
+-------
+
+There is information on how to build the source code in the [docker](docker/)
+folder.
