@@ -2,8 +2,7 @@ Using Docker to Cross-Compile lms2012-compat
 --------------------------------------------
 
 This assumes that you have already cloned the git repository and the current
-working directory is the source code directory and that you have docker >= 1.12
-installed.
+working directory is the source code directory.
 
 1. Create the docker image.
 
