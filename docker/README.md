@@ -1,8 +1,9 @@
 Using Docker to Cross-Compile lms2012-compat
 --------------------------------------------
 
-This assumes that you have already cloned the git repository and the current
-working directory is the `lms2012-compat` source code directory.
+This assumes that you have already `docker` installed and that you have cloned
+the git repository and that the current working directory is the `lms2012-compat`
+source code directory.
 
 1. Create the docker image.
 
@@ -20,6 +21,7 @@ working directory is the `lms2012-compat` source code directory.
         -w /build \
         --name lms2012_armhf \
         -e "TERM=$TERM" \
+        -e "DESTDIR=/build/dist"
         -td lms2012-armhf tail
 
     Some notes:
@@ -27,6 +29,8 @@ working directory is the `lms2012-compat` source code directory.
     *   If you are using something other than `$HOME/lms2012-armhf`, be sure to
         use the absolute path.
     *   `-e "TERM=$TERM"` is used so we can get ansi color output later.
+    *   `-e "DESTDIR=/build/dist" is the staging directory where `make install`
+        will install the program.
     *   `-td` and `tail` are a trick to keep the container running. `-t` causes
         `docker` to use a tty to provide STDIN and `tail` waits for input from
         STDIN. `-d` causes the container to detach from our terminal so we can
@@ -40,6 +44,7 @@ working directory is the `lms2012-compat` source code directory.
 5.  Then actually build the code.
 
         docker exec -t lms2012_armhf make
+        docker exec -t lms2012_armhf make install
 
 6.  When you are done building, you can stop the container.
 
