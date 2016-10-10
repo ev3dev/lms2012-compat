@@ -1,3 +1,16 @@
+lms2012-compat (1.99.1) stable; urgency=medium
+
+  * c_com: Fix usb hid gadget service name
+  * Fix path to usb-hid-gadget.sh in systemd service
+  * c_com: wait a bit longer for /dev/hidg0 to come up
+  * c_input: fix Iic mmap size
+  * Remove debian/modprobe
+  * Add check for no sound cards present.
+  * Use new lmsasm program
+  * Fix syntax errors and duplicate declrarations in lms files
+
+ -- David Lechner <david@lechnology.com>  Sun, 09 Oct 2016 21:31:04 -0500
+
 lms2012-compat (1.99.0) stable; urgency=medium
 
   * First pre-release of lms2012-compat.
