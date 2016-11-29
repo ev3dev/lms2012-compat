@@ -21,7 +21,7 @@ source code directory.
         -w /build \
         --name lms2012_armhf \
         -e "TERM=$TERM" \
-        -e "DESTDIR=/build/dist"
+        -e "DESTDIR=/build/dist" \
         -td lms2012-armhf tail
 
     Some notes:
