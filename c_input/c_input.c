@@ -41,7 +41,6 @@
  *
  */
 
-
 /*! \page InputLibraryDeviceSetup Device Setup
  *
  *  <hr size="1"/>
@@ -64,7 +63,6 @@
  *  If the VM reads a device with a different type than the detected one - the device "TypeIndex" will be changed accordingly.
  *
  */
-
 
 /*! \page InputLibraryDeviceTypes Device Types
  *
@@ -93,12 +91,6 @@
     An additional MODE is used to change function on sensors that supports more than one function.
  \endverbatim
   \ref types
- *
- *
- *
- *
- *
- *
  *
  */
 
@@ -137,11 +129,10 @@ static  DATA8  MoreLayers = 0;
 INPUT_GLOBALS InputInstance;
 
 #ifndef DISABLE_DAISYCHAIN
-RESULT    cInputComSetDeviceType(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mode);
+static RESULT cInputComSetDeviceType(DATA8 Layer, DATA8 Port, DATA8 Type, DATA8 Mode);
 #endif
 
-TYPES     TypeDefault[] =
-{
+static const TYPES const TypeDefault[] = {
 //   Name                    Type                   Connection     Mode  DataSets  Format  Figures  Decimals  Views   RawMin  RawMax  PctMin  PctMax  SiMin   SiMax   Time   IdValue  Pins Symbol
   { "PORT ERROR"           , TYPE_ERROR           , CONN_ERROR   , 0   , 0       , 0     , 4    ,   0     ,   1   ,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0,     0,      'f', ""     },
   { "NONE"                 , TYPE_NONE            , CONN_NONE    , 0   , 0       , 0     , 4    ,   0     ,   1   ,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0,     0,      'f', ""     },
@@ -149,173 +140,7 @@ TYPES     TypeDefault[] =
   { "\0" }
 };
 
-#ifdef DEBUG
-#define   LINESIZE    255
-
-void      cInputPrintLine(char *pBuffer)
-{
-  printf("%s",pBuffer);
-}
-
-void      cInputShowTypeData(void)
-{
-  char    Buffer[LINESIZE];
-  UBYTE   Index;
-  DATA8   Type;
-  DATA8   Mode;
-  DATA8   Connection;
-  DATA8   LastType;
-  int     Pos;
-
-
-  snprintf(Buffer,LINESIZE,"//! \\page types Known Device Types\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//!\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//! <hr size=\"1\"/>\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//! Following devices are supported (except devices starting with //)\\n\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//! Devices marked with * means that the data is supplied by the device itself\\n\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//! Devices marked with # is not supported in View and Datalog apps\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//!\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//! \\verbatim\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//  Type  Mode  Name      DataSets  Format  Figures  Decimals  Views  Conn. Pins  RawMin   RawMax   PctMin  PctMax  SiMin    SiMax    Time  IdValue  Symbol\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//  ----  ----  --------  --------  ------  -------  --------  -----  ----- ----  -------  -------  ------  ------  -------  -------  ----  -------  --------\n");
-  cInputPrintLine(Buffer);
-
-  LastType  =  TYPE_ERROR;
-  Index = 0;
-
-
-  while ((Index < InputInstance.MaxDeviceTypes) && (InputInstance.TypeData[Index].Name[0] != 0))
-  {
-    Type  = InputInstance.TypeData[Index].Type;
-
-    if (Type <= MAX_VALID_TYPE)
-    {
-      Mode  = InputInstance.TypeData[Index].Mode;
-      Connection  =  InputInstance.TypeData[Index].Connection;
-
-      if (Type != LastType)
-      {
-        snprintf(Buffer,LINESIZE,"\n");
-        cInputPrintLine(Buffer);
-
-        LastType  =  Type;
-      }
-
-      Pos   =  0;
-
-      if (Connection == CONN_INPUT_UART)
-      {
-        if (Mode < InputInstance.TypeData[Index].Views)
-        {
-          Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"*   ");
-        }
-        else
-        {
-          Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"* # ");
-        }
-      }
-      else
-      {
-        Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"    ");
-      }
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%-4u",Type);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"  ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%-4u",Mode);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"  ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%-*.*s",12,12,InputInstance.TypeData[Index].Name);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"  ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%u",InputInstance.TypeData[Index].DataSets);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"       ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%u",InputInstance.TypeData[Index].Format);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"     ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%u",InputInstance.TypeData[Index].Figures);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"        ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%u",InputInstance.TypeData[Index].Decimals);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"         ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%u",InputInstance.TypeData[Index].Views);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"      ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%3u",Connection);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"   ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"0x%02X",InputInstance.TypeData[Index].Pins);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos," ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%8.1f",InputInstance.TypeData[Index].RawMin);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos," ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%8.1f",InputInstance.TypeData[Index].RawMax);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"    ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%4.0f",InputInstance.TypeData[Index].PctMin);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"    ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%4.0f",InputInstance.TypeData[Index].PctMax);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos," ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%8.1f",InputInstance.TypeData[Index].SiMin);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos," ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%8.1f",InputInstance.TypeData[Index].SiMax);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"  ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%4u",InputInstance.TypeData[Index].InvalidTime);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"    ");
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%5u",InputInstance.TypeData[Index].IdValue);
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"  ");
-
-      if (InputInstance.TypeData[Index].Symbol[0])
-      {
-        Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"%s",InputInstance.TypeData[Index].Symbol);
-      }
-      else
-      {
-        Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"_");
-      }
-
-      Pos  +=  snprintf(&Buffer[Pos],LINESIZE - Pos,"\n");
-      cInputPrintLine(Buffer);
-    }
-    Index++;
-  }
-  snprintf(Buffer,LINESIZE,"\n");
-  cInputPrintLine(Buffer);
-
-  snprintf(Buffer,LINESIZE,"//!  \\endverbatim\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//!  See connection types \\ref connectiontypes \"Conn.\"\n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//!  \n");
-  cInputPrintLine(Buffer);
-  snprintf(Buffer,LINESIZE,"//!  \\n\n");
-  cInputPrintLine(Buffer);
-
-}
-#endif
-
-
-void      Memcpy(void *pDest,const void *pSrc,size_t No)
+static void Memcpy(void *pDest, const void *pSrc, size_t No)
 {
 #ifndef DISABLE_AD_WORD_PROTECT
   UWORD   *pWDest;
@@ -359,31 +184,55 @@ void      Memcpy(void *pDest,const void *pSrc,size_t No)
 #endif
 }
 
+static IMGDATA CLR_LAYER_CLR_CHANGES[] = {
+    opINPUT_DEVICE, CLR_CHANGES, 0, 0,
+    opINPUT_DEVICE, CLR_CHANGES, 0, 1,
+    opINPUT_DEVICE, CLR_CHANGES, 0, 2,
+    opINPUT_DEVICE, CLR_CHANGES, 0, 3,
+    opOBJECT_END
+};
 
-IMGDATA CLR_LAYER_CLR_CHANGES[]       = { opINPUT_DEVICE,CLR_CHANGES,0,0,opINPUT_DEVICE,CLR_CHANGES,0,1,opINPUT_DEVICE,CLR_CHANGES,0,2,opINPUT_DEVICE,CLR_CHANGES,0,3,opOBJECT_END };
-IMGDATA CLR_LAYER_CLR_BUMPED[]        = { opUI_BUTTON,FLUSH,opOBJECT_END };
-IMGDATA CLR_LAYER_OUTPUT_RESET[]      = { opOUTPUT_RESET,0,15,opOBJECT_END };
-IMGDATA CLR_LAYER_OUTPUT_CLR_COUNT[]  = { opOUTPUT_CLR_COUNT,0,15,opOBJECT_END };
-IMGDATA CLR_LAYER_INPUT_WRITE[]       = { opINPUT_WRITE,0,0,1,DEVCMD_RESET,opINPUT_WRITE,0,1,1,DEVCMD_RESET,opINPUT_WRITE,0,2,1,DEVCMD_RESET,opINPUT_WRITE,0,3,1,DEVCMD_RESET,opOBJECT_END };
+static IMGDATA CLR_LAYER_CLR_BUMPED[] = {
+    opUI_BUTTON, FLUSH,
+    opOBJECT_END
+};
 
+static IMGDATA CLR_LAYER_OUTPUT_RESET[] = {
+    opOUTPUT_RESET, 0, 15,
+    opOBJECT_END
+};
 
-void      ClrLayer(void)
+static IMGDATA CLR_LAYER_OUTPUT_CLR_COUNT[] = {
+    opOUTPUT_CLR_COUNT, 0, 15,
+    opOBJECT_END
+};
+
+static IMGDATA CLR_LAYER_INPUT_WRITE[] = {
+    opINPUT_WRITE, 0, 0, 1, DEVCMD_RESET,
+    opINPUT_WRITE, 0, 1, 1, DEVCMD_RESET,
+    opINPUT_WRITE, 0, 2, 1, DEVCMD_RESET,
+    opINPUT_WRITE, 0, 3, 1, DEVCMD_RESET,
+    opOBJECT_END
+};
+
+static void ClrLayer(void)
 {
-  ExecuteByteCode(CLR_LAYER_CLR_CHANGES,NULL,NULL);
-  ExecuteByteCode(CLR_LAYER_CLR_BUMPED,NULL,NULL);
-  ExecuteByteCode(CLR_LAYER_OUTPUT_RESET,NULL,NULL);
-  ExecuteByteCode(CLR_LAYER_OUTPUT_CLR_COUNT,NULL,NULL);
-  ExecuteByteCode(CLR_LAYER_INPUT_WRITE,NULL,NULL);
+    ExecuteByteCode(CLR_LAYER_CLR_CHANGES, NULL, NULL);
+    ExecuteByteCode(CLR_LAYER_CLR_BUMPED, NULL, NULL);
+    ExecuteByteCode(CLR_LAYER_OUTPUT_RESET, NULL, NULL);
+    ExecuteByteCode(CLR_LAYER_OUTPUT_CLR_COUNT, NULL, NULL);
+    ExecuteByteCode(CLR_LAYER_INPUT_WRITE, NULL, NULL);
 }
 
+static IMGDATA STOP_LAYER[] = {
+    opOUTPUT_PRG_STOP,
+    opOBJECT_END
+};
 
-IMGDATA STOP_LAYER[]   =  { opOUTPUT_PRG_STOP, opOBJECT_END };
-
-void      StopLayer(void)
+static void StopLayer(void)
 {
-  ExecuteByteCode(STOP_LAYER,NULL,NULL);
+    ExecuteByteCode(STOP_LAYER, NULL, NULL);
 }
-
 
 //                DEVICE MAPPING
 //
@@ -394,7 +243,7 @@ void      StopLayer(void)
 // Port (OUTPUT)  -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   0   1   2   3   0   1   2   3   0   1   2   3   0   1   2   3
 // Output         0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1
 
-RESULT    cInputExpandDevice(DATA8 Device,DATA8 *pLayer,DATA8 *pPort,DATA8 *pOutput)
+static RESULT cInputExpandDevice(DATA8 Device, DATA8 *pLayer, DATA8 *pPort, DATA8 *pOutput)
 { // pPort: pOutput=0 -> 0..3 , pOutput=1 -> 0..3
 
   RESULT  Result = FAIL;
@@ -424,8 +273,7 @@ RESULT    cInputExpandDevice(DATA8 Device,DATA8 *pLayer,DATA8 *pPort,DATA8 *pOut
   return (Result);
 }
 
-
-RESULT    cInputCompressDevice(DATA8 *pDevice,UBYTE Layer,UBYTE Port)
+static RESULT cInputCompressDevice(DATA8 *pDevice, UBYTE Layer, UBYTE Port)
 { // Port: Input 0..3 , Output 16..19
 
   RESULT  Result = FAIL;
@@ -453,7 +301,10 @@ RESULT    cInputCompressDevice(DATA8 *pDevice,UBYTE Layer,UBYTE Port)
 }
 
 
-RESULT    cInputInsertNewIicString(DATA8 Type,DATA8 Mode,DATA8 *pManufacturer,DATA8 *pSensorType,DATA8 SetupLng,ULONG SetupString,DATA8 PollLng,ULONG PollString,DATA8 ReadLng)
+static RESULT cInputInsertNewIicString(DATA8 Type, DATA8 Mode, DATA8 *pManufacturer,
+                                       DATA8 *pSensorType, DATA8 SetupLng,
+                                       ULONG SetupString, DATA8 PollLng,
+                                       ULONG PollString, DATA8 ReadLng)
 {
   RESULT  Result    = FAIL;  // FAIL=full, OK=new, BUSY=found
   IICSTR  *pTmp;
@@ -515,8 +366,7 @@ RESULT    cInputInsertNewIicString(DATA8 Type,DATA8 Mode,DATA8 *pManufacturer,DA
   return (Result);
 }
 
-
-RESULT    cInputGetIicString(DATA8 Type,DATA8 Mode,IICSTR *IicStr)
+static RESULT cInputGetIicString(DATA8 Type, DATA8 Mode, IICSTR *IicStr)
 {
   RESULT  Result    = FAIL;  // FAIL=full, OK=new, BUSY=found
   UWORD   Index     = 0;
@@ -557,8 +407,7 @@ RESULT    cInputGetIicString(DATA8 Type,DATA8 Mode,IICSTR *IicStr)
   return (Result);
 }
 
-
-RESULT    cInputChangeTypeData(DATA8 Type,DATA8 Mode,DATA8 NewType,DATA8 NewMode)
+static RESULT cInputChangeTypeData(DATA8 Type, DATA8 Mode, DATA8 NewType, DATA8 NewMode)
 {
   RESULT  Result    = FAIL;  // FAIL=Not found, OK=changed
   UWORD   Index     = 0;
@@ -588,8 +437,8 @@ RESULT    cInputChangeTypeData(DATA8 Type,DATA8 Mode,DATA8 NewType,DATA8 NewMode
   return (Result);
 }
 
-
-RESULT    cInputGetNewTypeDataPointer(SBYTE *pName,DATA8 Type,DATA8 Mode,DATA8 Connection,TYPES **ppPlace)
+static RESULT cInputGetNewTypeDataPointer(SBYTE *pName, DATA8 Type, DATA8 Mode,
+                                          DATA8 Connection, TYPES **ppPlace)
 {
   RESULT  Result    = FAIL;  // FAIL=full, OK=new, BUSY=found
   UWORD   Index     = 0;
@@ -643,8 +492,7 @@ RESULT    cInputGetNewTypeDataPointer(SBYTE *pName,DATA8 Type,DATA8 Mode,DATA8 C
   return (Result);
 }
 
-
-RESULT    cInputInsertTypeData(char *pTypeDataString,DATA8 Force)
+static RESULT cInputInsertTypeData(char *pTypeDataString, DATA8 Force)
 {
   RESULT  Result = FAIL;
   char    Name[256];
@@ -747,8 +595,7 @@ RESULT    cInputInsertTypeData(char *pTypeDataString,DATA8 Force)
   return (Result);
 }
 
-
-RESULT    cInputInsertTypeDataFile(char *pFilename)
+static RESULT cInputInsertTypeDataFile(char *pFilename)
 {
   RESULT  Result = FAIL;
   LFILE   *pFile;
@@ -779,8 +626,7 @@ RESULT    cInputInsertTypeDataFile(char *pFilename)
   return (Result);
 }
 
-
-void      cInputTypeDataInit(void)
+static void cInputTypeDataInit(void)
 {
   char    PrgNameBuf[255];
   UWORD   Index   = 0;
@@ -838,8 +684,8 @@ void      cInputTypeDataInit(void)
   }
 }
 
-
-RESULT    cInputSetupDevice(DATA8 Device,DATA8 Repeat,DATA16 Time,DATA8 WrLng,DATA8 *pWrData,DATA8 RdLng,DATA8 *pRdData,RESULT *pResult)
+static RESULT cInputSetupDevice(DATA8 Device, DATA8 Repeat, DATA16 Time, DATA8 WrLng,
+                                DATA8 *pWrData, DATA8 RdLng, DATA8 *pRdData, RESULT *pResult)
 {
   DATA8    Tmp;
 
@@ -932,10 +778,11 @@ RESULT    cInputGetDeviceData(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pType,D
 */
 #endif
 
-RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 Length,DATA8 *pType,DATA8 *pMode,DATA8 *pData);
+static RESULT cInputGetData(DATA8 Layer, DATA8 Port, DATA16 Time, DATA16 *pInit,
+                            DATA8 Length, DATA8 *pType, DATA8 *pMode, DATA8 *pData);
 
-
-RESULT    cInputFindDumbInputDevice(DATA8 Device,DATA8 Type,DATA8 Mode,UWORD *pTypeIndex)
+static RESULT cInputFindDumbInputDevice(DATA8 Device, DATA8 Type, DATA8 Mode,
+                                        UWORD *pTypeIndex)
 {
   RESULT  Result = FAIL;
   UWORD   IdValue = 0;
@@ -990,8 +837,8 @@ RESULT    cInputFindDumbInputDevice(DATA8 Device,DATA8 Type,DATA8 Mode,UWORD *pT
   return (Result);
 }
 
-
-RESULT    cInputFindDumbOutputDevice(DATA8 Device,DATA8 Type,DATA8 Mode,UWORD *pTypeIndex)
+static RESULT cInputFindDumbOutputDevice(DATA8 Device, DATA8 Type, DATA8 Mode,
+                                         UWORD *pTypeIndex)
 {
   RESULT  Result = FAIL;
   UWORD   IdValue = 0;
@@ -1033,8 +880,7 @@ RESULT    cInputFindDumbOutputDevice(DATA8 Device,DATA8 Type,DATA8 Mode,UWORD *p
   return (Result);
 }
 
-
-RESULT    cInputFindDevice(DATA8 Type,DATA8 Mode,UWORD *pTypeIndex)
+static RESULT cInputFindDevice(DATA8 Type, DATA8 Mode, UWORD *pTypeIndex)
 {
   RESULT  Result = FAIL;
   UWORD   Index = 0;
@@ -1062,8 +908,7 @@ RESULT    cInputFindDevice(DATA8 Type,DATA8 Mode,UWORD *pTypeIndex)
   return (Result);
 }
 
-
-void      cInputResetDevice(DATA8 Device,UWORD TypeIndex)
+static void cInputResetDevice(DATA8 Device, UWORD TypeIndex)
 {
   PRGID   TmpPrgId;
 
@@ -1086,8 +931,7 @@ void      cInputResetDevice(DATA8 Device,UWORD TypeIndex)
   }
 }
 
-
-void      cInputSetDeviceType(DATA8 Device,DATA8 Type, DATA8 Mode,int Line)
+static void cInputSetDeviceType(DATA8 Device, DATA8 Type, DATA8 Mode, int Line)
 {
   UWORD   Index;
   char    Buf[INPUTS * 2 + 1];
@@ -1299,8 +1143,7 @@ void      cInputSetDeviceType(DATA8 Device,DATA8 Type, DATA8 Mode,int Line)
   }
 }
 
-
-void      cInputCalDataInit(void)
+static void cInputCalDataInit(void)
 {
   DATA8   Type;
   DATA8   Mode;
@@ -1333,8 +1176,7 @@ void      cInputCalDataInit(void)
   }
 }
 
-
-void      cInputCalDataExit(void)
+static void cInputCalDataExit(void)
 {
   int     File;
   char    PrgNameBuf[vmFILENAMESIZE];
@@ -1367,7 +1209,8 @@ void      cInputCalDataExit(void)
 #define   COLORSENSORPCTDYN             (UBYTE)(((COLORSENSORMAX - COLORSENSORMIN) * 100L)/AD_MAX)
 #define   COLORSENSORBGPCTDYN           (UBYTE)(((COLORSENSORMAX - COLORSENSORBGMIN) * 100L)/AD_MAX)
 
-void      cInputCalcFullScale(UWORD *pRawVal, UWORD ZeroPointOffset, UBYTE PctFullScale, UBYTE InvStatus)
+static void cInputCalcFullScale(UWORD *pRawVal, UWORD ZeroPointOffset,
+                                UBYTE PctFullScale, UBYTE InvStatus)
 {
   if (*pRawVal >= ZeroPointOffset)
   {
@@ -1389,8 +1232,7 @@ void      cInputCalcFullScale(UWORD *pRawVal, UWORD ZeroPointOffset, UBYTE PctFu
   }
 }
 
-
-void      cInputCalibrateColor(COLORSTRUCT *pC, UWORD *pNewVals)
+static void cInputCalibrateColor(COLORSTRUCT *pC, UWORD *pNewVals)
 {
   UBYTE CalRange;
 
@@ -1433,8 +1275,7 @@ void      cInputCalibrateColor(COLORSTRUCT *pC, UWORD *pNewVals)
   (pNewVals[BLANK]) = (UWORD)(((ULONG)(pNewVals[BLANK]) * (pC->Calibration[CalRange][BLANK])) >> 16);
 }
 
-
-DATAF     cInputCalculateColor(COLORSTRUCT *pC)
+static DATAF cInputCalculateColor(COLORSTRUCT *pC)
 {
   DATAF   Result ;
 
@@ -1583,7 +1424,7 @@ DATAF     cInputCalculateColor(COLORSTRUCT *pC)
 
 #ifndef DISABLE_DAISYCHAIN
 
-RESULT    cInputGetColor(DATA8 Device,DATA8 *pData)
+static RESULT cInputGetColor(DATA8 Device, DATA8 *pData)
 {
   RESULT  Result = FAIL;
 
@@ -1645,7 +1486,7 @@ RESULT    cInputGetColor(DATA8 Device,DATA8 *pData)
 
 #else
 
-DATAF     cInputGetColor(DATA8 Device,DATA8 Index)
+static DATAF cInputGetColor(DATA8 Device, DATA8 Index)
 {
   DATAF   Result ;
 
@@ -1796,9 +1637,7 @@ cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 Length,DATA
 
 */
 
-
-
-RESULT    cInputSetChainedDeviceType(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mode)
+RESULT cInputSetChainedDeviceType(DATA8 Layer, DATA8 Port, DATA8 Type, DATA8 Mode)
 {
   RESULT  Result = FAIL;
   DATA8   Device;
@@ -1829,8 +1668,7 @@ RESULT    cInputSetChainedDeviceType(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mod
   return (Result);
 }
 
-
-RESULT    cInputComSetDeviceInfo(DATA8 Length,UBYTE *pInfo)
+static RESULT cInputComSetDeviceInfo(DATA8 Length, UBYTE *pInfo)
 {
   RESULT  Result = FAIL;
 #ifdef DEBUG_TRACE_DAISYCHAIN
@@ -1875,8 +1713,7 @@ RESULT    cInputComSetDeviceInfo(DATA8 Length,UBYTE *pInfo)
   return (Result);
 }
 
-
-RESULT    cInputComGetDeviceInfo(DATA8 Length,UBYTE *pInfo)
+static RESULT cInputComGetDeviceInfo(DATA8 Length, UBYTE *pInfo)
 {
   RESULT  Result = FAIL;
 #ifdef DEBUG_TRACE_DAISYCHAIN
@@ -1900,8 +1737,7 @@ RESULT    cInputComGetDeviceInfo(DATA8 Length,UBYTE *pInfo)
   return (Result);
 }
 
-
-RESULT    cInputComSetDeviceType(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mode)
+static RESULT cInputComSetDeviceType(DATA8 Layer, DATA8 Port, DATA8 Type, DATA8 Mode)
 {
   RESULT  Result = FAIL;
 
@@ -1932,8 +1768,8 @@ RESULT    cInputComSetDeviceType(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mode)
   return (Result);
 }
 
-
-RESULT    cInputComGetDeviceData(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pType,DATA8 *pMode,DATA8 *pData)
+RESULT cInputComGetDeviceData(DATA8 Layer, DATA8 Port, DATA8 Length,
+                              DATA8 *pType, DATA8 *pMode, DATA8 *pData)
 {
   RESULT  Result = FAIL;
 
@@ -1965,8 +1801,8 @@ RESULT    cInputComGetDeviceData(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pTyp
   return (Result);
 }
 
-
-RESULT    cInputComGetDeviceType(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pType,DATA8 *pMode,DATA8 *pData)
+static RESULT cInputComGetDeviceType(DATA8 Layer, DATA8 Port, DATA8 Length,
+                                     DATA8 *pType, DATA8 *pMode, DATA8 *pData)
 {
   RESULT  Result = FAIL;
 
@@ -1980,8 +1816,8 @@ RESULT    cInputComGetDeviceType(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pTyp
   return (Result);
 }
 
-
-RESULT    cInputGetDeviceData(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pType,DATA8 *pMode,DATA8 *pData)
+RESULT cInputGetDeviceData(DATA8 Layer, DATA8 Port, DATA8 Length, DATA8 *pType,
+                           DATA8 *pMode, DATA8 *pData)
 {
   RESULT  Result;
 
@@ -2009,7 +1845,8 @@ RESULT    cInputGetDeviceData(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pType,D
 }
 
 
-RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 Length,DATA8 *pType,DATA8 *pMode,DATA8 *pData)
+static RESULT cInputGetData(DATA8 Layer, DATA8 Port, DATA16 Time, DATA16 *pInit,
+                            DATA8 Length, DATA8 *pType, DATA8 *pMode, DATA8 *pData)
 {
 #ifdef DEBUG_C_INPUT_FAST_DATALOG
 #ifndef DISABLE_FAST_DATALOG_BUFFER
@@ -2452,8 +2289,7 @@ RESULT    cInputGetData(DATA8 Layer,DATA8 Port,DATA16 Time,DATA16 *pInit,DATA8 L
   return (Result);
 }
 
-
-DATAF     cInputReadDeviceRaw(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit)
+static DATAF cInputReadDeviceRaw(DATA8 Device, DATA8 Index, DATA16 Time, DATA16 *pInit)
 {
   DATAF   Result = (DATAF)0;
   DATA8   Layer;
@@ -2542,13 +2378,13 @@ RESULT cInputSetChainedDeviceType(DATA8 Layer, DATA8 Port, DATA8 Type, DATA8 Mod
   return FAIL;
 }
 
-RESULT cInputGetDeviceData(DATA8 Layer, DATA8 Port, DATA8 Length, DATA8 *pType,
-                           DATA8 *pMode, DATA8 *pData)
+static RESULT cInputGetDeviceData(DATA8 Layer, DATA8 Port, DATA8 Length, DATA8 *pType,
+                                  DATA8 *pMode, DATA8 *pData)
 {
   return FAIL;
 }
 
-DATAF     cInputReadDeviceRaw(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit)
+static DATAF cInputReadDeviceRaw(DATA8 Device, DATA8 Index, DATA16 Time, DATA16 *pInit)
 {
   DATAF   Result;
   DATA8   DataSets;
@@ -2691,8 +2527,7 @@ DATAF     cInputReadDeviceRaw(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit
 }
 #endif
 
-
-void      cInputWriteDeviceRaw(DATA8 Device,DATA8 Connection,DATA8 Type,DATAF DataF)
+static void cInputWriteDeviceRaw(DATA8 Device, DATA8 Connection, DATA8 Type, DATAF DataF)
 {
   UBYTE   Byte;
   UWORD   Word;
@@ -2797,8 +2632,7 @@ void      cInputWriteDeviceRaw(DATA8 Device,DATA8 Connection,DATA8 Type,DATAF Da
   }
 }
 
-
-DATA8     cInputReadDevicePct(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit)
+static DATA8 cInputReadDevicePct(DATA8 Device, DATA8 Index, DATA16 Time, DATA16 *pInit)
 {
   DATA8   Result  =  DATA8_NAN;
   UWORD   TypeIndex;
@@ -2845,8 +2679,7 @@ DATA8     cInputReadDevicePct(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit
   return (Result);
 }
 
-
-DATAF     cInputReadDeviceSi(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit)
+static DATAF cInputReadDeviceSi(DATA8 Device, DATA8 Index, DATA16 Time, DATA16 *pInit)
 {
   UWORD   TypeIndex;
   DATAF   Raw;
@@ -2900,8 +2733,7 @@ DATAF     cInputReadDeviceSi(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit)
   return (Raw);
 }
 
-
-RESULT    cInputCheckUartInfo(UBYTE Port)
+static RESULT cInputCheckUartInfo(UBYTE Port)
 {
   RESULT  Result = BUSY;
   TYPES   *pTmp;
@@ -2980,8 +2812,7 @@ RESULT    cInputCheckUartInfo(UBYTE Port)
   return (Result);
 }
 
-
-RESULT    cInputCheckIicInfo(UBYTE Port)
+static RESULT cInputCheckIicInfo(UBYTE Port)
 {
   RESULT  Result = BUSY;
   DATA8   Type;
@@ -3050,13 +2881,12 @@ RESULT    cInputCheckIicInfo(UBYTE Port)
   return (Result);
 }
 
-
 /*! \brief    Update Device Types
  *
  *            Called when the VM read the device list
  *
  */
-void      cInputDcmUpdate(UWORD Time)
+static void cInputDcmUpdate(UWORD Time)
 {
   RESULT  Result = BUSY;
   DATA8   Device;
@@ -3298,8 +3128,7 @@ void      cInputDcmUpdate(UWORD Time)
 #endif
 }
 
-
-RESULT  cInputStartTypeDataUpload(void)
+RESULT cInputStartTypeDataUpload(void)
 {
   InputInstance.TypeDataIndex  =  0;
   InputInstance.TypeDataTimer  =  DELAY_TO_TYPEDATA;
@@ -3307,112 +3136,7 @@ RESULT  cInputStartTypeDataUpload(void)
   return (OK);
 }
 
-
-#ifdef Linux_X86
-void      cInputSimulate(UWORD Time,DATA8 Device,DATA8 Connection,DATA8 Type)
-{
-  DATAF   Raw;
-  DATAF   Min;
-  DATAF   Max;
-  DATAF   Inc;
-  UWORD   Timeout;
-
-  InputInstance.DeviceData[Device].Timer +=  Time;
-
-  Timeout   =  20;
-  Raw       =  cInputReadDeviceRaw(Device,0,0,NULL);
-  Min       =  InputInstance.TypeData[InputInstance.DeviceData[Device].TypeIndex].RawMin;
-  Max       =  InputInstance.TypeData[InputInstance.DeviceData[Device].TypeIndex].RawMax;
-  Inc       =  (Max - Min) / (DATAF)100;
-  if ((Inc < (DATAF)0) && (Inc > (DATAF)-1))
-  {
-    Inc     = -1;
-    Timeout =  200;
-  }
-  if ((Inc > (DATAF)0) && (Inc < (DATAF)1))
-  {
-    Inc     =  1;
-    Timeout =  200;
-  }
-
-  if (InputInstance.DeviceData[Device].Timer >= Timeout)
-  {
-    InputInstance.DeviceData[Device].Timer  =  0;
-
-    if (isnan(Raw))
-    {
-      Raw  =  (DATAF)0;
-    }
-
-    if (InputInstance.DeviceData[Device].Dir)
-    { // Down
-
-      Raw -=  Inc;
-
-      if (Inc >= (DATAF)0)
-      {
-
-        if (Raw <= Min)
-        {
-          Raw  =  Min;
-          InputInstance.DeviceData[Device].Dir  =  0;
-        }
-        if (Raw >= Max)
-        {
-          Raw  =  Max;
-        }
-      }
-      else
-      {
-        if (Raw >= Min)
-        {
-          Raw  =  Min;
-          InputInstance.DeviceData[Device].Dir  =  0;
-        }
-        if (Raw <= Max)
-        {
-          Raw  =  Max;
-        }
-      }
-    }
-    else
-    { // Up
-
-      Raw +=  Inc;
-
-      if (Inc >= (DATAF)0)
-      {
-        if (Raw <= Min)
-        {
-          Raw  =  Min;
-        }
-        if (Raw >= Max)
-        {
-          Raw  =  Max;
-          InputInstance.DeviceData[Device].Dir  =  1;
-        }
-      }
-      else
-      {
-        if (Raw >= Min)
-        {
-          Raw  =  Min;
-        }
-        if (Raw <= Max)
-        {
-          Raw  =  Max;
-          InputInstance.DeviceData[Device].Dir  =  1;
-        }
-      }
-    }
-
-    cInputWriteDeviceRaw(Device,Connection,Type,Raw);
-  }
-}
-#endif
-
-
-void      cInputUpdate(UWORD Time)
+void cInputUpdate(UWORD Time)
 {
 #ifndef DISABLE_BUMPED
   DATA8   Device;
@@ -3458,20 +3182,9 @@ void      cInputUpdate(UWORD Time)
     }
   }
 #endif
-#ifdef Linux_X86
-  cInputSimulate(Time,0,CONN_UNKNOWN,2);
-  cInputSimulate(Time,1,CONN_UNKNOWN,3);
-  cInputSimulate(Time,2,CONN_UNKNOWN,1);
-  cInputSimulate(Time,3,CONN_UNKNOWN,4);
-  cInputSimulate(Time,16,CONN_UNKNOWN,7);
-  cInputSimulate(Time,17,CONN_UNKNOWN,7);
-  cInputSimulate(Time,18,CONN_UNKNOWN,8);
-  cInputSimulate(Time,19,CONN_UNKNOWN,8);
-#endif
 }
 
-
-RESULT    cInputInit(void)
+RESULT cInputInit(void)
 {
   RESULT  Result = OK;
   ANALOG  *pAdcTmp;
@@ -3619,8 +3332,7 @@ RESULT    cInputInit(void)
   return (Result);
 }
 
-
-RESULT    cInputOpen(void)
+RESULT cInputOpen(void)
 {
   RESULT  Result = FAIL;
 
@@ -3629,8 +3341,7 @@ RESULT    cInputOpen(void)
   return (Result);
 }
 
-
-RESULT    cInputClose(void)
+RESULT cInputClose(void)
 {
   RESULT  Result = FAIL;
 
@@ -3639,8 +3350,7 @@ RESULT    cInputClose(void)
   return (Result);
 }
 
-
-RESULT    cInputExit(void)
+RESULT cInputExit(void)
 {
   RESULT  Result = FAIL;
 
@@ -3683,8 +3393,7 @@ RESULT    cInputExit(void)
   return (Result);
 }
 
-
-DATA8     cInputGetDevice(void)
+DATA8 cInputGetDevice(void)
 {
   DATA8   Layer;
   DATA8   No;
@@ -3695,8 +3404,7 @@ DATA8     cInputGetDevice(void)
   return (No + (Layer * INPUT_PORTS));
 }
 
-
-void      cInputSetType(DATA8 Device,DATA8 Type,DATA8 Mode,int Line)
+static void cInputSetType(DATA8 Device, DATA8 Type, DATA8 Mode, int Line)
 {
   if (InputInstance.DeviceData[Device].DevStatus == OK)
   {
@@ -3716,9 +3424,7 @@ void      cInputSetType(DATA8 Device,DATA8 Type,DATA8 Mode,int Line)
   }
 }
 
-
 //******* BYTE CODE SNIPPETS **************************************************
-
 
 /*! \page cInput Input
  *  <hr size="1"/>
@@ -3734,7 +3440,7 @@ void      cInputSetType(DATA8 Device,DATA8 Type,DATA8 Mode,int Line)
 /*! \brief  opINPUT_DEVICE_LIST byte code
  *
  */
-void      cInputDeviceList(void)
+void cInputDeviceList(void)
 {
   PRGID   TmpPrgId;
   DATA8   Length;
@@ -3761,7 +3467,6 @@ void      cInputDeviceList(void)
     pDevices[Count]  =  0;
   }
 }
-
 
 /*! \page cInput
  *  <hr size="1"/>
@@ -3982,7 +3687,7 @@ void      cInputDeviceList(void)
 /*! \brief  opINPUT_DEVICE byte code
  *
  */
-void      cInputDevice(void)
+void cInputDevice(void)
 {
   IP      TmpIp;
   DATA8   Cmd;
@@ -4857,7 +4562,6 @@ void      cInputDevice(void)
   }
 }
 
-
 /*! \page cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_READ (LAYER, NO, TYPE, MODE, PCT)  </b>
@@ -4874,7 +4578,7 @@ void      cInputDevice(void)
 /*! \brief  opINPUT_READ byte code
  *
  */
-void      cInputRead(void)
+void cInputRead(void)
 {
   DATA8   Type;
   DATA8   Mode;
@@ -4890,7 +4594,6 @@ void      cInputRead(void)
   }
   *(DATA8*)PrimParPointer()  =  cInputReadDevicePct(Device,0,0,NULL);
 }
-
 
 /*! \page cInput
  *  <hr size="1"/>
@@ -4908,7 +4611,7 @@ void      cInputRead(void)
 /*! \brief  opINPUT_READSI byte code
  *
  */
-void      cInputReadSi(void)
+void cInputReadSi(void)
 {
   DATA8   Type;
   DATA8   Mode;
@@ -4928,7 +4631,6 @@ void      cInputReadSi(void)
   *(DATAF*)PrimParPointer()  =  cInputReadDeviceSi(Device,0,0,NULL);
 }
 
-
 /*! \page   cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_TEST (LAYER, NO, BUSY) </b>
@@ -4944,7 +4646,7 @@ void      cInputReadSi(void)
 /*! \brief  opINPUT_TEST byte code
  *
  */
-void      cInputTest(void)
+void cInputTest(void)
 {
   DATA8   Busy = 1;
   DATA8   Device;
@@ -4964,8 +4666,6 @@ void      cInputTest(void)
   *(DATA8*)PrimParPointer()  =  Busy;
 }
 
-
-
 /*! \page   cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_READY (LAYER, NO) </b>
@@ -4979,7 +4679,7 @@ void      cInputTest(void)
 /*! \brief  opINPUT_READY byte code
  *
  */
-void      cInputReady(void)
+void cInputReady(void)
 {
   IP      TmpIp;
   DATA8   Device;
@@ -4997,7 +4697,6 @@ void      cInputReady(void)
   }
 }
 
-
 /*! \page cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_WRITE (LAYER, NO, BYTES, DATA)  </b>
@@ -5013,7 +4712,7 @@ void      cInputReady(void)
 /*! \brief  opINPUT_WRITE byte code
  *
  */
-void      cInputWrite(void)
+void cInputWrite(void)
 {
   DATA8   Bytes;
   DATA8   *Data;
@@ -5083,7 +4782,6 @@ void      cInputWrite(void)
   SetDispatchStatus(DspStat);
 }
 
-
 /*! \page cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_READEXT (LAYER, NO, TYPE, MODE, FORMAT, VALUES, VALUE1)  </b>
@@ -5104,7 +4802,7 @@ void      cInputWrite(void)
 /*! \brief  opINPUT_READEXT byte code
  *
  */
-void      cInputReadExt(void)
+void cInputReadExt(void)
 {
   DATAF   Raw;
   DATA8   Type;
@@ -5198,7 +4896,6 @@ void      cInputReadExt(void)
   }
 }
 
-
 /*! \page cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_SAMPLE (TIME, SAMPLES, INIT, DEVICES, TYPES, MODES, DATASETS, VALUES)  </b>
@@ -5219,7 +4916,7 @@ void      cInputReadExt(void)
 /*! \brief  opINPUT_SAMPLE byte code
  *
  */
-void      cInputSample(void)
+void cInputSample(void)
 {
   DATA32  SampleTime;
   DATA32  Data32;
@@ -5279,7 +4976,6 @@ void      cInputSample(void)
   }
 }
 
-
 /*! \page cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_SET_AUTOID (LAYER, NO, ENABLE)  </b>
@@ -5294,7 +4990,7 @@ void      cInputSample(void)
 /*! \brief  opINPUT_SET_AUTOID byte code
  *
  */
-void      cInputAutoID(void)
+void cInputAutoID(void)
 {
 	int Index;
 	char Buf[6];
@@ -5326,8 +5022,6 @@ void      cInputAutoID(void)
 	write(InputInstance.AdcFile, Buf, 6);
 }
 
-
-
 /*! \page cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_SET_CONN (LAYER, NO, CONN)  </b>
@@ -5343,7 +5037,7 @@ void      cInputAutoID(void)
 /*! \brief  opINPUT_SETCONN byte code
  *
  */
-void      cInputSetConn(void)
+void cInputSetConn(void)
 {
 	int Index;
 	char Buf[6];
@@ -5389,7 +5083,6 @@ void      cInputSetConn(void)
 	write(InputInstance.AdcFile, Buf, 6);
 }
 
-
 /*! \page cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_IIC_READ (LAYER, NO, RDLNG, RDDATA, RESULT)  </b>
@@ -5406,7 +5099,7 @@ void      cInputSetConn(void)
 /*! \brief  opINPUT_IIC_READ byte code
  *
  */
-void    cInputIICRead(void)
+void cInputIICRead(void)
 {
 	DATA8 Device = cInputGetDevice();
   DATA8 *RdLng    =	(DATA8*)PrimParPointer();
@@ -5440,7 +5133,6 @@ void    cInputIICRead(void)
 	}
 }
 
-
 /*! \page cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_IIC_WRITE (LAYER, NO, WRLNG, WRDATA, RDLNG, RESULT)  </b>
@@ -5458,7 +5150,7 @@ void    cInputIICRead(void)
 /*! \brief  opINPUT_IIC_WRITE byte code
  *
  */
-void    cInputIICWrite(void)
+void cInputIICWrite(void)
 {
 	DATA8 Device = cInputGetDevice();
   DATA8 WrLng     = *(DATA8*)PrimParPointer();
@@ -5494,7 +5186,6 @@ void    cInputIICWrite(void)
   *pResult  =  InputInstance.IicDat.Result;
 }
 
-
 /*! \page cInput
  *  <hr size="1"/>
  *  <b>     opINPUT_IIC_STATUS (LAYER, NO, RESULT)  </b>
@@ -5509,7 +5200,7 @@ void    cInputIICWrite(void)
 /*! \brief  opINPUT_IIC_STATUS byte code
  *
  */
-void    cInputIICStatus(void)
+void cInputIICStatus(void)
 {
 	DATA8 Device = cInputGetDevice();
   DATA8 *pResult  = (DATA8*)PrimParPointer();
@@ -5526,6 +5217,3 @@ void    cInputIICStatus(void)
 
   *pResult  =  InputInstance.IicDat.Result;
 }
-
-
-//*****************************************************************************

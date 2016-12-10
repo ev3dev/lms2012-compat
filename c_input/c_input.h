@@ -37,67 +37,29 @@
 #define   INPUT_BUFFER_SIZE             (INPUT_VALUES * INPUT_VALUE_SIZE)
 #define   INPUT_SIZE                    (INPUT_VALUES * 2)
 
-void      cInputSetType(DATA8 Device,DATA8 Type,DATA8 Mode,int Line);
-DATA8     cInputReadDevicePct(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit);
-DATAF     cInputReadDeviceRaw(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit);
-DATAF     cInputReadDeviceSi(DATA8 Device,DATA8 Index,DATA16 Time,DATA16 *pInit);
-void      cInputWriteDeviceRaw(DATA8 Device,DATA8 Connection,DATA8 Type,DATAF DataF);
-RESULT    cInputSetupDevice(DATA8 Device,DATA8 Repeat,DATA16 Time,DATA8 WrLng,DATA8 *pWrData,DATA8 RdLng,DATA8 *pRdData,RESULT *pResult);
-
 RESULT    cInputInit(void);
-
 RESULT    cInputOpen(void);
-
 RESULT    cInputClose(void);
-
 RESULT    cInputExit(void);
-
-void      cInputChar(DATA8 Char);
-
 void      cInputUpdate(UWORD Time);
-
-RESULT    cInputCompressDevice(DATA8 *pDevice,UBYTE Layer,UBYTE Port);
-
 RESULT    cInputGetDeviceData(DATA8 Layer,DATA8 Port,DATA8 Length,DATA8 *pType,DATA8 *pMode,DATA8 *pData);
-
 RESULT    cInputSetChainedDeviceType(DATA8 Layer,DATA8 Port,DATA8 Type,DATA8 Mode);
-
 void      cInputDeviceList(void);
+RESULT    cInputStartTypeDataUpload(void);
 
-RESULT	  cInputStartTypeDataUpload(void);
-
-#define   INPUT_DEVICE_LIST   OC(opINPUT_DEVICE_LIST,&cInputDeviceList,7,0 )
-
-
-void      cInputDevice(void);
-
-void      cInputRead(void);
-
-void      cInputReadSi(void);
-
-void      cInputReadExt(void);
-
-void      cInputTest(void);
-
-void      cInputReady(void);
-
-void      cInputWrite(void);
-
-void      cInputSample(void);
-
-void      cInputSetConn(void);
-
-void    cInputIICRead(void);
-
-void    cInputIICWrite(void);
-
-void    cInputIICStatus(void);
-
-void    cInputAutoID(void);
-
-void    cInputSetConn(void);
-
-
+void cInputDevice(void);
+void cInputRead(void);
+void cInputReadSi(void);
+void cInputReadExt(void);
+void cInputTest(void);
+void cInputReady(void);
+void cInputWrite(void);
+void cInputSample(void);
+void cInputSetConn(void);
+void cInputIICRead(void);
+void cInputIICWrite(void);
+void cInputIICStatus(void);
+void cInputAutoID(void);
 
 typedef   struct
 {
@@ -113,10 +75,6 @@ typedef   struct
   DATAF   OldRaw;
   DATA32  Changes;
   DATA32  Bumps;
-#endif
-#ifdef Linux_X86
-  UWORD   Timer;
-  UBYTE   Dir;
 #endif
 }
 DEVICE;
