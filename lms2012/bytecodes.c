@@ -81,17 +81,6 @@ SUBCODE;
 #define   PARS                (PAR + DATA_S)    //!< DATAS  parameter
 #define   PARV                (PAR + DATA_V)    //!< Parameter type variable
 
-static  const char *ParTypeNames[] =
-{
-  [DATA_8]   = "DATA8",
-  [DATA_16]  = "DATA16",
-  [DATA_32]  = "DATA32",
-  [DATA_F]   = "DATAF",
-  [DATA_S]   = "STRING",
-  [DATA_V]   = "UNKNOWN",
-};
-
-
 static  const DATA32 ParMin[] =
 {
   [DATA_8]   = DATA8_MIN,

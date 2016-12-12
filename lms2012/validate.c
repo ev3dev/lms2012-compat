@@ -28,9 +28,28 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+//*****************************************************************************
+// Validate Global variables
+//*****************************************************************************
+
+typedef struct {
+    int       Row;
+    IMINDEX   ValidateErrorIndex;
+} VALIDATE_GLOBALS;
+
 VALIDATE_GLOBALS ValidateInstance;
 
-void      ShowOpcode(UBYTE OpCode,char *Buf,int Lng)
+#ifdef DEBUG
+static const char * const ParTypeNames[] = {
+    [DATA_8]   = "DATA8",
+    [DATA_16]  = "DATA16",
+    [DATA_32]  = "DATA32",
+    [DATA_F]   = "DATAF",
+    [DATA_S]   = "STRING",
+    [DATA_V]   = "UNKNOWN",
+};
+
+static void ShowOpcode(UBYTE OpCode, char *Buf, int Lng)
 {
   ULONG   Pars;
   DATA8   Sub;
@@ -138,9 +157,9 @@ void      ShowOpcode(UBYTE OpCode,char *Buf,int Lng)
     Size +=  snprintf(&Buf[Size],Lng - Size,"\n");
   }
 }
+#endif
 
-
-RESULT    cValidateInit(void)
+RESULT cValidateInit(void)
 {
   RESULT  Result = FAIL;
 #ifdef DEBUG
@@ -197,8 +216,7 @@ RESULT    cValidateInit(void)
   return (Result);
 }
 
-
-RESULT    cValidateExit(void)
+RESULT cValidateExit(void)
 {
   RESULT  Result = FAIL;
 
@@ -207,8 +225,7 @@ RESULT    cValidateExit(void)
   return (Result);
 }
 
-
-void      cValidateSetErrorIndex(IMINDEX Index)
+static void cValidateSetErrorIndex(IMINDEX Index)
 {
   if (Index  ==  0)
   {
@@ -220,14 +237,12 @@ void      cValidateSetErrorIndex(IMINDEX Index)
   }
 }
 
-
-IMINDEX   cValidateGetErrorIndex(void)
+static IMINDEX cValidateGetErrorIndex(void)
 {
   return (ValidateInstance.ValidateErrorIndex);
 }
 
-
-RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
+RESULT cValidateDisassemble(IP pI, IMINDEX *pIndex, LABEL *pLabel)
 {
   RESULT  Result = FAIL;  // Current status
   IMINDEX OpCode;         // Current opcode
@@ -891,8 +906,7 @@ RESULT    cValidateDisassemble(IP pI,IMINDEX *pIndex,LABEL *pLabel)
   return (Result);
 }
 
-
-RESULT    cValidateDisassembleProgram(PRGID PrgId,IP pI,LABEL *pLabel)
+static RESULT cValidateDisassembleProgram(PRGID PrgId, IP pI, LABEL *pLabel)
 {
   RESULT  Result = OK;
   IMINDEX Size;
@@ -1085,8 +1099,7 @@ RESULT    cValidateDisassembleProgram(PRGID PrgId,IP pI,LABEL *pLabel)
   return (Result);
 }
 
-
-RESULT    cValidateCheckAlignment(ULONG Value,DATA8 Type)
+static RESULT cValidateCheckAlignment(ULONG Value, DATA8 Type)
 {
   RESULT  Result = OK;
 
@@ -1130,8 +1143,7 @@ RESULT    cValidateCheckAlignment(ULONG Value,DATA8 Type)
   return (Result);
 }
 
-
-RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
+static RESULT cValidateBytecode(IP pI, IMINDEX *pIndex, LABEL *pLabel)
 {
   RESULT  Result = FAIL;
   RESULT  Aligned = OK;
@@ -1624,8 +1636,7 @@ RESULT    cValidateBytecode(IP pI,IMINDEX *pIndex,LABEL *pLabel)
   return (Result);
 }
 
-
-RESULT    cValidateProgram(PRGID PrgId,IP pI,LABEL *pLabel,DATA8 Disassemble)
+RESULT cValidateProgram(PRGID PrgId, IP pI, LABEL *pLabel, DATA8 Disassemble)
 {
   RESULT  Result;
   IMGHEAD *pIH;             // Pointer to image header
@@ -1757,4 +1768,3 @@ RESULT    cValidateProgram(PRGID PrgId,IP pI,LABEL *pLabel,DATA8 Disassemble)
 
   return (Result);
 }
-
