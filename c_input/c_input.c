@@ -185,15 +185,15 @@ static void Memcpy(void *pDest, const void *pSrc, size_t No)
 }
 
 static IMGDATA CLR_LAYER_CLR_CHANGES[] = {
-    opINPUT_DEVICE, CLR_CHANGES, 0, 0,
-    opINPUT_DEVICE, CLR_CHANGES, 0, 1,
-    opINPUT_DEVICE, CLR_CHANGES, 0, 2,
-    opINPUT_DEVICE, CLR_CHANGES, 0, 3,
+    opINPUT_DEVICE, scCLR_CHANGES, 0, 0,
+    opINPUT_DEVICE, scCLR_CHANGES, 0, 1,
+    opINPUT_DEVICE, scCLR_CHANGES, 0, 2,
+    opINPUT_DEVICE, scCLR_CHANGES, 0, 3,
     opOBJECT_END
 };
 
 static IMGDATA CLR_LAYER_CLR_BUMPED[] = {
-    opUI_BUTTON, FLUSH,
+    opUI_BUTTON, scFLUSH,
     opOBJECT_END
 };
 
@@ -3731,7 +3731,7 @@ void cInputDevice(void)
 
   TmpIp   =  GetObjectIp();
   Cmd     =  *(DATA8*)PrimParPointer();
-  if ((Cmd != CAL_MINMAX) && (Cmd != CAL_MIN) && (Cmd != CAL_MAX) && (Cmd != CAL_DEFAULT) && (Cmd != INSERT_TYPE) && (Cmd != SET_TYPEMODE) && (Cmd != CLR_ALL) && (Cmd != STOP_ALL))
+  if ((Cmd != scCAL_MINMAX) && (Cmd != scCAL_MIN) && (Cmd != scCAL_MAX) && (Cmd != scCAL_DEFAULT) && (Cmd != scINSERT_TYPE) && (Cmd != scSET_TYPEMODE) && (Cmd != scCLR_ALL) && (Cmd != scSTOP_ALL))
   {
     Device  =  cInputGetDevice();
   }
@@ -3739,7 +3739,7 @@ void cInputDevice(void)
   switch (Cmd)
   { // Function
 
-    case CAL_MINMAX :
+    case scCAL_MINMAX:
     {
       Type    =  *(DATA8*)PrimParPointer();
       Mode    =  *(DATA8*)PrimParPointer();
@@ -3754,7 +3754,7 @@ void cInputDevice(void)
     }
     break;
 
-    case CAL_MIN :
+    case scCAL_MIN:
     {
       Type    =  *(DATA8*)PrimParPointer();
       Mode    =  *(DATA8*)PrimParPointer();
@@ -3779,7 +3779,7 @@ void cInputDevice(void)
     }
     break;
 
-    case CAL_MAX :
+    case scCAL_MAX:
     {
       Type    =  *(DATA8*)PrimParPointer();
       Mode    =  *(DATA8*)PrimParPointer();
@@ -3804,7 +3804,7 @@ void cInputDevice(void)
     }
     break;
 
-    case CAL_DEFAULT :
+    case scCAL_DEFAULT:
     {
       Type    =  *(DATA8*)PrimParPointer();
       Mode    =  *(DATA8*)PrimParPointer();
@@ -3816,7 +3816,7 @@ void cInputDevice(void)
     }
     break;
 
-    case INSERT_TYPE :
+    case scINSERT_TYPE:
     {
       pTypeData  =  (DATA8*)PrimParPointer();
       Force      =  *(DATA8*)PrimParPointer();
@@ -3837,7 +3837,7 @@ void cInputDevice(void)
     }
     break;
 
-    case SET_TYPEMODE :
+    case scSET_TYPEMODE:
     {
       Type      =  *(DATA8*)PrimParPointer();
       Mode      =  *(DATA8*)PrimParPointer();
@@ -3865,7 +3865,7 @@ void cInputDevice(void)
     }
     break;
 
-    case GET_TYPEMODE :
+    case scGET_TYPEMODE:
     {
       Type    =  TYPE_NONE;
       Mode    =  0;
@@ -3880,7 +3880,7 @@ void cInputDevice(void)
     }
     break;
 
-    case GET_CONNECTION :
+    case scGET_CONNECTION:
     {
       Connection  =  CONN_NONE;
 
@@ -3892,7 +3892,7 @@ void cInputDevice(void)
     }
     break;
 
-    case GET_NAME :
+    case scGET_NAME:
     {
       Length        =  *(DATA8*)PrimParPointer();
       pDestination  =  (DATA8*)PrimParPointer();
@@ -3936,7 +3936,7 @@ void cInputDevice(void)
     }
     break;
 
-    case GET_SYMBOL :
+    case scGET_SYMBOL:
     {
       Length        =  *(DATA8*)PrimParPointer();
       pDestination  =  (DATA8*)PrimParPointer();
@@ -3980,7 +3980,7 @@ void cInputDevice(void)
     }
     break;
 
-    case GET_FORMAT :
+    case scGET_FORMAT:
     {
       if (Device < DEVICES)
       {
@@ -3996,7 +3996,7 @@ void cInputDevice(void)
     }
     break;
 
-    case GET_RAW :
+    case scGET_RAW:
     {
       Data32   =  DATA32_NAN;
       if (Device < DEVICES)
@@ -4011,7 +4011,7 @@ void cInputDevice(void)
     }
     break;
 
-    case GET_FIGURES :
+    case scGET_FIGURES:
     {
       if (Device < DEVICES)
       {
@@ -4023,7 +4023,7 @@ void cInputDevice(void)
     }
     break;
 
-    case GET_MINMAX :
+    case scGET_MINMAX:
     {
       if (Device < DEVICES)
       {
@@ -4035,7 +4035,7 @@ void cInputDevice(void)
     }
     break;
 
-    case GET_MODENAME :
+    case scGET_MODENAME:
     {
       Mode          =  *(DATA8*)PrimParPointer();
       Length        =  *(DATA8*)PrimParPointer();
@@ -4098,7 +4098,7 @@ void cInputDevice(void)
     }
     break;
 
-    case SET_RAW :
+    case scSET_RAW:
     {
       Type    =  *(DATA8*)PrimParPointer();
       Data32  =  *(DATA32*)PrimParPointer();
@@ -4108,7 +4108,7 @@ void cInputDevice(void)
     break;
 
 #ifndef DISABLE_BUMPED
-    case GET_CHANGES :
+    case scGET_CHANGES:
     {
       DataF  =  DATAF_NAN;
       DataF  =  (DATAF)0;
@@ -4123,7 +4123,7 @@ void cInputDevice(void)
     }
     break;
 
-    case GET_BUMPS :
+    case scGET_BUMPS:
     {
       DataF  =  DATAF_NAN;
       DataF  =  (DATAF)0;
@@ -4138,7 +4138,7 @@ void cInputDevice(void)
     }
     break;
 
-    case CLR_CHANGES :
+    case scCLR_CHANGES:
     {
       if (Device < DEVICES)
       {
@@ -4149,9 +4149,9 @@ void cInputDevice(void)
     break;
 #endif
 
-    case READY_PCT : // Fall through
-    case READY_RAW : // Fall through
-    case READY_SI :
+    case scREADY_PCT:
+    case scREADY_RAW:
+    case scREADY_SI:
     {
       Type        =  *(DATA8*)PrimParPointer();
       Mode        =  *(DATA8*)PrimParPointer();
@@ -4251,13 +4251,13 @@ void cInputDevice(void)
               {
                 switch (Cmd)
                 {
-                  case READY_PCT :
+                  case scREADY_PCT:
                   {
                     *(DATA8*)PrimParPointer()     =  (DATA8)cInputReadDevicePct(Device,Value,0,NULL);
                   }
                   break;
 
-                  case READY_RAW :
+                  case scREADY_RAW:
                   {
                     DataF  =  cInputReadDeviceRaw(Device,Value,0,NULL);
                     if (isnan(DataF))
@@ -4271,7 +4271,7 @@ void cInputDevice(void)
                   }
                   break;
 
-                  case READY_SI :
+                  case scREADY_SI:
                   {
                     DataF                       =  (DATAF)cInputReadDeviceSi(Device,Value,0,NULL);
                     *(DATAF*)PrimParPointer()   =  DataF;
@@ -4325,19 +4325,19 @@ void cInputDevice(void)
         {
           switch (Cmd)
           {
-            case READY_PCT :
+            case scREADY_PCT:
             {
               *(DATA8*)PrimParPointer()   =  DATA8_NAN;
             }
             break;
 
-            case READY_RAW :
+            case scREADY_RAW:
             {
               *(DATA32*)PrimParPointer()  =  DATA32_NAN;
             }
             break;
 
-            case READY_SI :
+            case scREADY_SI:
             {
               *(DATAF*)PrimParPointer()   =  DATAF_NAN;
             }
@@ -4350,7 +4350,7 @@ void cInputDevice(void)
     }
     break;
 
-    case READY_IIC :
+    case scREADY_IIC:
     { // INPUT_DEVICE(READY_IIC,LAYER,NO,WRLNG,WRDATA,RDLNG,RDDATA,RESULT)
 
       WrLng         =  *(DATA8*)PrimParPointer();
@@ -4383,7 +4383,7 @@ void cInputDevice(void)
     }
     break;
 
-    case SETUP :
+    case scSETUP:
     { // INPUT_DEVICE(SETUP,LAYER,NO,REPEAT,TIME,WRLNG,WRDATA,RDLNG,RDDATA)
 
       Repeat        =  *(DATA8*)PrimParPointer();
@@ -4415,7 +4415,7 @@ void cInputDevice(void)
     }
     break;
 
-    case CLR_ALL :
+    case scCLR_ALL:
     {
       Layer   =  *(DATA8*)PrimParPointer();
 
@@ -4448,7 +4448,7 @@ void cInputDevice(void)
             DaisyBuf[0]   =  0;
             DaisyBuf[1]   =  0;
             DaisyBuf[2]   =  opINPUT_DEVICE;
-            DaisyBuf[3]   =  CLR_ALL;
+            DaisyBuf[3]   =  scCLR_ALL;
             DaisyBuf[4]   =  0;
 
             Result        =  cDaisyDownStreamCmd(DaisyBuf, 5, Layer);
@@ -4487,7 +4487,7 @@ void cInputDevice(void)
     }
     break;
 
-    case STOP_ALL :
+    case scSTOP_ALL :
     {
       Layer   =  *(DATA8*)PrimParPointer();
 
@@ -4520,7 +4520,7 @@ void cInputDevice(void)
             DaisyBuf[0]   =  0;
             DaisyBuf[1]   =  0;
             DaisyBuf[2]   =  opINPUT_DEVICE;
-            DaisyBuf[3]   =  STOP_ALL;
+            DaisyBuf[3]   =  scSTOP_ALL;
             DaisyBuf[4]   =  0;
 
             Result        =  cDaisyDownStreamCmd(DaisyBuf, 5, Layer);

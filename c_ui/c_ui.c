@@ -189,8 +189,8 @@ extern char *strptime(const char *s, const char *format, struct tm *tm);
 UI_GLOBALS UiInstance;
 
 static IMGDATA DownloadSuccessSound[] = {
-  opINFO, LC0(GET_VOLUME), LV0(0),
-  opSOUND, LC0(PLAY), LV0(0), LCS, 'u','i','/','D','o','w','n','l','o','a','d','S','u','c','c','e','s','s', 0,
+  opINFO, LC0(scGET_VOLUME), LV0(0),
+  opSOUND, LC0(scPLAY), LV0(0), LCS, 'u','i','/','D','o','w','n','l','o','a','d','S','u','c','c','e','s','s', 0,
   opSOUND_READY,
   opOBJECT_END
 };
@@ -1547,7 +1547,7 @@ void      cUiRead(void)
   switch (Cmd)
   { // Function
 
-    case GET_STRING :
+    case scGET_STRING:
     {
       if (UiInstance.Keys)
       {
@@ -1574,7 +1574,7 @@ void      cUiRead(void)
     }
     break;
 
-    case KEY :
+    case scKEY:
     {
       if (UiInstance.KeyBufIn)
       {
@@ -1596,20 +1596,20 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_SHUTDOWN :
+    case scGET_SHUTDOWN:
     {
       *(DATA8*)PrimParPointer()   =  UiInstance.ShutDown;
       UiInstance.ShutDown         =  0;
     }
     break;
 
-    case GET_WARNING :
+    case scGET_WARNING:
     {
       *(DATA8*)PrimParPointer()   =  UiInstance.Warning;
     }
     break;
 
-    case GET_LBATT :
+    case scGET_LBATT:
     {
       Data16  =  (DATA16)(UiInstance.Vbatt * 1000.0);
       Data16  -=  UiInstance.BattIndicatorLow;
@@ -1626,7 +1626,7 @@ void      cUiRead(void)
     }
     break;
 
-    case ADDRESS :
+    case scADDRESS:
     {
       if (UiInstance.Keys)
       {
@@ -1641,7 +1641,7 @@ void      cUiRead(void)
     }
     break;
 
-    case CODE :
+    case scCODE:
     {
       if (UiInstance.Keys)
       {
@@ -1711,7 +1711,7 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_HW_VERS :
+    case scGET_HW_VERS:
     {
       Lng           = *(DATA8*)PrimParPointer();
       pDestination  =  (DATA8*)PrimParPointer();
@@ -1732,7 +1732,7 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_FW_VERS :
+    case scGET_FW_VERS:
     {
       Lng           = *(DATA8*)PrimParPointer();
       pDestination  =  (DATA8*)PrimParPointer();
@@ -1753,7 +1753,7 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_FW_BUILD :
+    case scGET_FW_BUILD:
     {
       Lng           = *(DATA8*)PrimParPointer();
       pDestination  =  (DATA8*)PrimParPointer();
@@ -1774,7 +1774,7 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_OS_VERS :
+    case scGET_OS_VERS:
     {
       Lng           = *(DATA8*)PrimParPointer();
       pDestination  =  (DATA8*)PrimParPointer();
@@ -1795,7 +1795,7 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_OS_BUILD :
+    case scGET_OS_BUILD:
     {
       Lng           = *(DATA8*)PrimParPointer();
       pDestination  =  (DATA8*)PrimParPointer();
@@ -1816,7 +1816,7 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_VERSION :
+    case scGET_VERSION:
     {
       snprintf((char*)UiInstance.ImageBuffer,IMAGEBUFFER_SIZE,"%s V%4.2f%c(%s %s)",PROJECT,VERS,SPECIALVERS,__DATE__,__TIME__);
       Lng           = *(DATA8*)PrimParPointer();
@@ -1839,7 +1839,7 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_IP :
+    case scGET_IP:
     {
       Lng           = *(DATA8*)PrimParPointer();
       pDestination  =  (DATA8*)PrimParPointer();
@@ -1861,7 +1861,7 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_POWER :
+    case scGET_POWER:
     {
       *(DATAF*)PrimParPointer()  =  UiInstance.Vbatt;
       *(DATAF*)PrimParPointer()  =  UiInstance.Ibatt;
@@ -1870,44 +1870,44 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_VBATT :
+    case scGET_VBATT:
     {
       *(DATAF*)PrimParPointer()  =  UiInstance.Vbatt;
     }
     break;
 
-    case GET_IBATT :
+    case scGET_IBATT:
     {
       *(DATAF*)PrimParPointer()  =  UiInstance.Ibatt;
     }
     break;
 
-    case GET_IINT :
+    case scGET_IINT:
     {
       *(DATAF*)PrimParPointer()  =  UiInstance.Iintegrated;
     }
     break;
 
-    case GET_IMOTOR :
+    case scGET_IMOTOR:
     {
       *(DATAF*)PrimParPointer()  =  UiInstance.Imotor;
     }
     break;
 
-    case GET_EVENT :
+    case scGET_EVENT:
     {
       *(DATA8*)PrimParPointer()  =  UiInstance.Event;
       UiInstance.Event           =  0;
     }
     break;
 
-    case GET_TBATT :
+    case scGET_TBATT:
     {
       *(DATAF*)PrimParPointer()  =  UiInstance.Tbatt;
     }
     break;
 
-    case TEXTBOX_READ :
+    case scTEXTBOX_READ:
     {
       pSource       =  (DATA8*)PrimParPointer();
       Size          = *(DATA32*)PrimParPointer();
@@ -1920,7 +1920,7 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_SDCARD :
+    case scGET_SDCARD:
     {
       *(DATA8*)PrimParPointer()   =  CheckSdcard(&Data8,&Total,&Size,0);
       *(DATA32*)PrimParPointer()  =  Total;
@@ -1928,7 +1928,7 @@ void      cUiRead(void)
     }
     break;
 
-    case GET_USBSTICK :
+    case scGET_USBSTICK:
     {
       *(DATA8*)PrimParPointer()   =  CheckUsbstick(&Data8,&Total,&Size,0);
       *(DATA32*)PrimParPointer()  =  Total;
@@ -2062,14 +2062,14 @@ void      cUiWrite(void)
   switch (Cmd)
   { // Function
 
-    case WRITE_FLUSH :
+    case scWRITE_FLUSH:
     {
       cUiFlush();
       DspStat  =  NOBREAK;
     }
     break;
 
-    case FLOATVALUE :
+    case scFLOATVALUE:
     {
       DataF     =  *(DATAF*)PrimParPointer();
       Figures   =  *(DATA8*)PrimParPointer();
@@ -2082,7 +2082,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case STAMP :
+    case scSTAMP:
     { // write time, prgid, objid, ip
 
       pSource  =  (DATA8*)PrimParPointer();
@@ -2093,7 +2093,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case PUT_STRING :
+    case scPUT_STRING:
     {
       pSource  =  (DATA8*)PrimParPointer();
       cUiWriteString(pSource);
@@ -2101,7 +2101,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case CODE :
+    case scCODE:
     {
       pGlobal  =  *(DATA32*)PrimParPointer();
       Data32   = *(DATA32*)PrimParPointer();
@@ -2127,7 +2127,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case TEXTBOX_APPEND :
+    case scTEXTBOX_APPEND:
     {
       pText     =  (DATA8*)PrimParPointer();
       Data32    =  *(DATA32*)PrimParPointer();
@@ -2140,7 +2140,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case SET_BUSY :
+    case scSET_BUSY:
     {
       Data8     =  *(DATA8*)PrimParPointer();
 
@@ -2157,7 +2157,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case VALUE8 :
+    case scVALUE8:
     {
       Data8  =  *(DATA8*)PrimParPointer();
       if (Data8 != DATA8_NAN)
@@ -2174,7 +2174,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case VALUE16 :
+    case scVALUE16:
     {
       Data16  =  *(DATA16*)PrimParPointer();
       if (Data16 != DATA16_NAN)
@@ -2191,7 +2191,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case VALUE32 :
+    case scVALUE32:
     {
       Data32  =  *(DATA32*)PrimParPointer();
       if (Data32 != DATA32_NAN)
@@ -2209,7 +2209,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case VALUEF :
+    case scVALUEF:
     {
       DataF  =  *(DATAF*)PrimParPointer();
       snprintf((char*)Buffer,24,"%f",DataF);
@@ -2219,7 +2219,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case LED :
+    case scLED:
     {
       Data8     =  *(DATA8*)PrimParPointer();
       if (Data8 < 0)
@@ -2237,7 +2237,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case POWER :
+    case scPOWER:
     {
       Data8  =  *(DATA8*)PrimParPointer();
 
@@ -2249,7 +2249,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case TERMINAL :
+    case scTERMINAL:
     {
       No     =  *(DATA8*)PrimParPointer();
 
@@ -2266,7 +2266,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case SET_TESTPIN :
+    case scSET_TESTPIN:
     {
       Data8   =  *(DATA8*)PrimParPointer();
       cUiTestpin(Data8);
@@ -2274,7 +2274,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case INIT_RUN :
+    case scINIT_RUN:
     {
       UiInstance.RunScreenEnabled  =  3;
 
@@ -2282,20 +2282,20 @@ void      cUiWrite(void)
     }
     break;
 
-    case UPDATE_RUN :
+    case scUPDATE_RUN:
     {
       DspStat  =  NOBREAK;
     }
     break;
 
-    case GRAPH_SAMPLE :
+    case scGRAPH_SAMPLE:
     {
       cUiGraphSample();
       DspStat  =  NOBREAK;
     }
     break;
 
-    case DOWNLOAD_END :
+    case scDOWNLOAD_END:
     {
       UiInstance.UiUpdate  =  1;
       cUiDownloadSuccessSound();
@@ -2303,14 +2303,14 @@ void      cUiWrite(void)
     }
     break;
 
-    case SCREEN_BLOCK :
+    case scSCREEN_BLOCK:
     {
       UiInstance.ScreenBlocked  =  *(DATA8*)PrimParPointer();
       DspStat  =  NOBREAK;
     }
     break;
 
-    case ALLOW_PULSE :
+    case scALLOW_PULSE:
     {
       Data8  =  *(DATA8*)PrimParPointer();
 #ifdef ALLOW_DEBUG_PULSE
@@ -2320,7 +2320,7 @@ void      cUiWrite(void)
     }
     break;
 
-    case SET_PULSE :
+    case scSET_PULSE:
     {
       Data8  =  *(DATA8*)PrimParPointer();
 #ifdef ALLOW_DEBUG_PULSE

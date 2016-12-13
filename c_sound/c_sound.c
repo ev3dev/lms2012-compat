@@ -486,7 +486,7 @@ void cSoundEntry(void)
     Cmd = *(DATA8*)PrimParPointer();
 
     switch(Cmd) {
-    case TONE:
+    case scTONE:
         cSoundClose();
 
         SoundInstance.SoundOwner = CallingObjectId();
@@ -512,15 +512,15 @@ void cSoundEntry(void)
 
         break;
 
-    case BREAK:
+    case scBREAK:
         cSoundClose();
 
         break;
 
-    case REPEAT:
+    case scREPEAT:
         Loop = TRUE;
         // Fall through
-    case PLAY:
+    case scPLAY:
         cSoundClose();
 
         SoundInstance.SoundOwner = CallingObjectId();

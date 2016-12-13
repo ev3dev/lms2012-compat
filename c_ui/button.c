@@ -728,21 +728,21 @@ void      cUiButton(void)
   switch (Cmd)
   { // Function
 
-    case PRESS :
+    case scPRESS:
     {
       Button  =  *(DATA8*)PrimParPointer();
       cUiButtonSetPress(Button,1);
     }
     break;
 
-    case RELEASE :
+    case scRELEASE:
     {
       Button  =  *(DATA8*)PrimParPointer();
       cUiButtonSetPress(Button,0);
     }
     break;
 
-    case SHORTPRESS :
+    case scSHORTPRESS:
     {
       Button  =  *(DATA8*)PrimParPointer();
 
@@ -754,7 +754,7 @@ void      cUiButton(void)
     }
     break;
 
-    case GET_BUMPED :
+    case scGET_BUMPED:
     {
       Button  =  *(DATA8*)PrimParPointer();
 
@@ -766,7 +766,7 @@ void      cUiButton(void)
     }
     break;
 
-    case PRESSED :
+    case scPRESSED:
     {
       Button  =  *(DATA8*)PrimParPointer();
 
@@ -778,7 +778,7 @@ void      cUiButton(void)
     }
     break;
 
-    case LONGPRESS :
+    case scLONGPRESS:
     {
       Button  =  *(DATA8*)PrimParPointer();
 
@@ -790,7 +790,7 @@ void      cUiButton(void)
     }
     break;
 
-    case FLUSH :
+    case scFLUSH:
     {
       if (Blocked == 0)
       {
@@ -799,7 +799,7 @@ void      cUiButton(void)
     }
     break;
 
-    case WAIT_FOR_PRESS :
+    case scWAIT_FOR_PRESS:
     {
       if (Blocked == 0)
       {
@@ -817,7 +817,7 @@ void      cUiButton(void)
     }
     break;
 
-    case GET_HORZ :
+    case scGET_HORZ:
     {
       if (Blocked == 0)
       {
@@ -827,7 +827,7 @@ void      cUiButton(void)
     }
     break;
 
-    case GET_VERT :
+    case scGET_VERT:
     {
       if (Blocked == 0)
       {
@@ -837,19 +837,19 @@ void      cUiButton(void)
     }
     break;
 
-    case SET_BACK_BLOCK :
+    case scSET_BACK_BLOCK:
     {
       UiInstance.BackButtonBlocked  =  *(DATA8*)PrimParPointer();
     }
     break;
 
-    case GET_BACK_BLOCK :
+    case scGET_BACK_BLOCK:
     {
       *(DATA8*)PrimParPointer()  =  UiInstance.BackButtonBlocked;
     }
     break;
 
-    case TESTSHORTPRESS :
+    case scTESTSHORTPRESS:
     {
       Button  =  *(DATA8*)PrimParPointer();
 
@@ -861,7 +861,7 @@ void      cUiButton(void)
     }
     break;
 
-    case TESTLONGPRESS :
+    case scTESTLONGPRESS:
     {
       Button  =  *(DATA8*)PrimParPointer();
 
@@ -873,7 +873,7 @@ void      cUiButton(void)
     }
     break;
 
-    case GET_CLICK :
+    case scGET_CLICK:
     {
       *(DATA8*)PrimParPointer()  =  UiInstance.Click;
       UiInstance.Click           =  0;

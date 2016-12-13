@@ -114,7 +114,7 @@ UBYTE     UiImage[] =
   PROGRAMHeader(0,1,0),                 // VersionInfo,Objects,GlobalBytes
   VMTHREADHeader(0,1),                  // OffsetToInstructions,LocalBytes
 
-  opFILE,LC0(LOAD_IMAGE),LC0(GUI_SLOT),GV0(0),LV0(4),LV0(0),
+  opFILE,LC0(scLOAD_IMAGE),LC0(GUI_SLOT),GV0(0),LV0(4),LV0(0),
   opPROGRAM_START,LC0(GUI_SLOT),LC0(0),LV0(0),LC0(0),
   opOBJECT_END,
 
@@ -3351,7 +3351,7 @@ void      ProgramInfo(void)
 
   switch (Cmd)
   {
-    case OBJ_STOP :
+    case scOBJ_STOP:
     {
       ObjIndex    =  *(OBJID*)PrimParPointer();
       if ((ObjIndex > 0) && (ObjIndex <= VMInstance.Program[PrgId].Objects) && (VMInstance.Program[PrgId].Status != STOPPED))
@@ -3361,7 +3361,7 @@ void      ProgramInfo(void)
     }
     break;
 
-    case OBJ_START :
+    case scOBJ_START:
     {
       ObjIndex    =  *(OBJID*)PrimParPointer();
       if ((ObjIndex > 0) && (ObjIndex <= VMInstance.Program[PrgId].Objects) && (VMInstance.Program[PrgId].Status != STOPPED))
@@ -3378,32 +3378,32 @@ void      ProgramInfo(void)
     }
     break;
 
-    case GET_STATUS :
+    case scGET_STATUS:
     {
       *(DATA8*)PrimParPointer()               =  (DATA8)VMInstance.Program[PrgId].Status;
     }
     break;
 
-    case GET_PRGRESULT :
+    case scGET_PRGRESULT:
     {
       *(DATA8*)PrimParPointer()               =  (DATA8)VMInstance.Program[PrgId].Result;
     }
     break;
 
-    case GET_SPEED :
+    case scGET_SPEED:
     {
       *(DATA32*)PrimParPointer()              =  (DATA32)(((float)VMInstance.Program[PrgId].InstrCnt  * (float)1000000) / (float)VMInstance.Program[PrgId].InstrTime);
     }
     break;
 
-    case SET_INSTR :
+    case scSET_INSTR:
     {
       Instr  =  *(DATA16*)PrimParPointer();
       SetInstructions((ULONG)Instr);
     }
     break;
 
-    case GET_PRGNAME :
+    case scGET_PRGNAME:
     {
       if (VMInstance.Program[PrgId].Status != STOPPED)
       {
@@ -3776,19 +3776,19 @@ void      Info(void)
   switch (Cmd)
   { // Function
 
-    case SET_ERROR :
+    case scSET_ERROR:
     {
       LogErrorNumber(*(DATA8*)PrimParPointer());
     }
     break;
 
-    case GET_ERROR :
+    case scGET_ERROR:
     {
       *(DATA8*)PrimParPointer()  =  LogErrorGet();
     }
     break;
 
-    case ERRORTEXT :
+    case scERRORTEXT:
     {
       Number          =  *(DATA8*)PrimParPointer();
       Length          =  *(DATA8*)PrimParPointer();
@@ -3829,25 +3829,25 @@ void      Info(void)
     }
     break;
 
-    case GET_VOLUME :
+    case scGET_VOLUME:
     {
       *(DATA8*)PrimParPointer()  =  GetVolumePercent();
     }
     break;
 
-    case SET_VOLUME :
+    case scSET_VOLUME:
     {
       SetVolumePercent(*(DATA8*)PrimParPointer());
     }
     break;
 
-    case GET_MINUTES :
+    case scGET_MINUTES:
     {
       *(DATA8*)PrimParPointer()  =  GetSleepMinutes();
     }
     break;
 
-    case SET_MINUTES :
+    case scSET_MINUTES:
     {
       SetSleepMinutes(*(DATA8*)PrimParPointer());
     }
@@ -3968,14 +3968,14 @@ void      Strings(void)
   switch (Cmd)
   { // Function
 
-    case GET_SIZE :
+    case scGET_SIZE:
     {
       pSource1                    =  (DATA8*)PrimParPointer();
       *(DATA16*)PrimParPointer()  =  (DATA16)strlen((char*)pSource1);
     }
     break;
 
-    case ADD :
+    case scADD:
     {
       pSource1                    =  (DATA8*)PrimParPointer();
       pSource2                    =  (DATA8*)PrimParPointer();
@@ -3997,7 +3997,7 @@ void      Strings(void)
     }
     break;
 
-    case COMPARE :
+    case scCOMPARE:
     {
       pSource1                    =  (DATA8*)PrimParPointer();
       pSource2                    =  (DATA8*)PrimParPointer();
@@ -4013,7 +4013,7 @@ void      Strings(void)
     }
     break;
 
-    case DUPLICATE :
+    case scDUPLICATE:
     {
       pSource1                    =  (DATA8*)PrimParPointer();
       pDestination                =  (DATA8*)PrimParPointer();
@@ -4033,7 +4033,7 @@ void      Strings(void)
     }
     break;
 
-    case VALUE_TO_STRING :
+    case scVALUE_TO_STRING:
     {
       DataF         =  *(DATAF*)PrimParPointer();
       Figures       =  *(DATA8*)PrimParPointer();
@@ -4123,7 +4123,7 @@ void      Strings(void)
     }
     break;
 
-    case NUMBER_TO_STRING :
+    case scNUMBER_TO_STRING:
     {
       Data16        =  *(DATA16*)PrimParPointer();
       Figures       =  *(DATA8*)PrimParPointer();
@@ -4144,7 +4144,7 @@ void      Strings(void)
     }
     break;
 
-    case STRING_TO_VALUE :
+    case scSTRING_TO_VALUE:
     {
       pSource1    =  (DATA8*)PrimParPointer();
 
@@ -4164,7 +4164,7 @@ void      Strings(void)
     }
     break;
 
-    case STRIP :
+    case scSTRIP:
     {
       pSource1      =  (DATA8*)PrimParPointer();
       pDestination  =  (DATA8*)PrimParPointer();
@@ -4193,7 +4193,7 @@ void      Strings(void)
     }
     break;
 
-    case SUB :
+    case scSUB:
     {
       pSource1                    =  (DATA8*)PrimParPointer();
       pSource2                    =  (DATA8*)PrimParPointer();
@@ -4217,7 +4217,7 @@ void      Strings(void)
     }
     break;
 
-    case VALUE_FORMATTED :
+    case scVALUE_FORMATTED:
     {
       DataF         =  *(DATAF*)PrimParPointer();
       pSource1      =  (DATA8*)PrimParPointer();
@@ -4243,7 +4243,7 @@ void      Strings(void)
     }
     break;
 
-    case NUMBER_FORMATTED :
+    case scNUMBER_FORMATTED:
     {
       Data32        =  *(DATA32*)PrimParPointer();
       pSource1      =  (DATA8*)PrimParPointer();
@@ -5203,7 +5203,7 @@ void      Tst(void)
 
   Cmd  =  *(DATA8*)PrimParPointer();
 
-  if (Cmd == TST_OPEN)
+  if (Cmd == scTST_OPEN)
   { // Test open
 
     TstOpen(10000);
@@ -5217,7 +5217,7 @@ void      Tst(void)
       switch (Cmd)
       { // Function
 
-        case TST_READ_PINS :
+        case scTST_READ_PINS:
         { // Read pins
 
           Tstpin.Port     =  *(DATA8*)PrimParPointer();
@@ -5237,7 +5237,7 @@ void      Tst(void)
         }
         break;
 
-        case TST_WRITE_PINS :
+        case scTST_WRITE_PINS:
         { // Write to pins
 
           Tstpin.Port     =  *(DATA8*)PrimParPointer();
@@ -5258,7 +5258,7 @@ void      Tst(void)
         }
         break;
 
-        case TST_READ_ADC :
+        case scTST_READ_ADC:
         {
           Index       =  *(DATA8*)PrimParPointer();
           Value       =  DATA16_NAN;
@@ -5296,7 +5296,7 @@ void      Tst(void)
         }
         break;
 
-        case TST_ENABLE_UART :
+        case scTST_ENABLE_UART:
         {
           Tstuart.Bitrate   =  *(DATA32*)PrimParPointer();
           File              =  open(TEST_UART_DEVICE_NAME,O_RDWR | O_SYNC);
@@ -5308,7 +5308,7 @@ void      Tst(void)
         }
         break;
 
-        case TST_DISABLE_UART :
+        case scTST_DISABLE_UART:
         {
           File              =  open(TEST_UART_DEVICE_NAME,O_RDWR | O_SYNC);
           if (File >= MIN_HANDLE)
@@ -5319,7 +5319,7 @@ void      Tst(void)
         }
         break;
 
-        case TST_WRITE_UART :
+        case scTST_WRITE_UART:
         {
           Tstuart.Port      =  *(DATA8*)PrimParPointer();
           Tstuart.Length    =  *(DATA8*)PrimParPointer();
@@ -5341,7 +5341,7 @@ void      Tst(void)
         }
         break;
 
-        case TST_READ_UART :
+        case scTST_READ_UART:
         {
           Tstuart.Port      =  *(DATA8*)PrimParPointer();
           Tstuart.Length    =  *(DATA8*)PrimParPointer();
@@ -5367,7 +5367,7 @@ void      Tst(void)
         }
         break;
 
-        case TST_ACCU_SWITCH :
+        case scTST_ACCU_SWITCH:
         {
           // This isn't a true test because it only reflects the state when
           // the battery driver was loaded and not the current state of the
@@ -5379,27 +5379,27 @@ void      Tst(void)
         break;
 
 #ifndef Linux_X86
-        case TST_BOOT_MODE2:
+        case scTST_BOOT_MODE2:
         {
           I2cStart();
         }
         break;
 
-        case TST_POLL_MODE2:
+        case scTST_POLL_MODE2:
         {
           Data8 = I2cGetBootStatus();
           *(DATA8*)PrimParPointer() = Data8;
         }
         break;
 
-        case TST_CLOSE_MODE2:
+        case scTST_CLOSE_MODE2:
         {
           I2cStop();
         }
         break;
 #endif
 
-        case TST_RAM_CHECK:
+        case scTST_RAM_CHECK:
         {
           ULONG      RamCheckFile;
           UBYTE      RamStatus[2];

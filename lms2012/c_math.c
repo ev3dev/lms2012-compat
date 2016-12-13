@@ -940,14 +940,14 @@ void      cMath(void)
 
   switch (Cmd)
   {
-    case EXP :
+    case scEXP:
     {
       X  =  *(DATAF*)PrimParPointer();
       *(DATAF*)PrimParPointer()  =  expf(X);
     }
     break;
 
-    case POW :
+    case scPOW:
     {
       X  =  *(DATAF*)PrimParPointer();
       Y  =  *(DATAF*)PrimParPointer();
@@ -955,7 +955,7 @@ void      cMath(void)
     }
     break;
 
-    case MOD8 :
+    case scMOD8:
     {
       X8    =  *(DATA8*)PrimParPointer();
       Y8    =  *(DATA8*)PrimParPointer();
@@ -970,7 +970,7 @@ void      cMath(void)
     }
     break;
 
-    case MOD16 :
+    case scMOD16:
     {
       X16   =  *(DATA16*)PrimParPointer();
       Y16   =  *(DATA16*)PrimParPointer();
@@ -985,7 +985,7 @@ void      cMath(void)
     }
     break;
 
-    case MOD32 :
+    case scMOD32:
     {
       X32   =  *(DATA32*)PrimParPointer();
       Y32   =  *(DATA32*)PrimParPointer();
@@ -1000,7 +1000,7 @@ void      cMath(void)
     }
     break;
 
-    case MOD :
+    case scMOD:
     {
       X  =  *(DATAF*)PrimParPointer();
       Y  =  *(DATAF*)PrimParPointer();
@@ -1008,21 +1008,21 @@ void      cMath(void)
     }
     break;
 
-    case FLOOR :
+    case scFLOOR:
     {
       X  =  *(DATAF*)PrimParPointer();
       *(DATAF*)PrimParPointer()  =  floor(X);
     }
     break;
 
-    case CEIL :
+    case scCEIL:
     {
       X  =  *(DATAF*)PrimParPointer();
       *(DATAF*)PrimParPointer()  =  ceil(X);
     }
     break;
 
-    case ROUND :
+    case scROUND:
     {
       X  =  *(DATAF*)PrimParPointer();
       if (X < (DATAF)0)
@@ -1036,21 +1036,21 @@ void      cMath(void)
     }
     break;
 
-    case ABS :
+    case scABS:
     {
       X  =  *(DATAF*)PrimParPointer();
       *(DATAF*)PrimParPointer()  =  fabs(X);
     }
     break;
 
-    case NEGATE :
+    case scNEGATE:
     {
       X  =  *(DATAF*)PrimParPointer();
       *(DATAF*)PrimParPointer()  =  (DATAF)0 - X;
     }
     break;
 
-    case TRUNC :
+    case scTRUNC:
     {
       X   =  *(DATAF*)PrimParPointer();
       Y8  =  *(DATA8*)PrimParPointer();
@@ -1076,28 +1076,28 @@ void      cMath(void)
     }
     break;
 
-    case SQRT :
+    case scSQRT:
     {
       X  =  *(DATAF*)PrimParPointer();
       *(DATAF*)PrimParPointer()  =  sqrt(X);
     }
     break;
 
-    case LOG :
+    case scLOG:
     {
       X  =  *(DATAF*)PrimParPointer();
       *(DATAF*)PrimParPointer()  =  log10(X);
     }
     break;
 
-    case LN :
+    case scLN:
     {
       X  =  *(DATAF*)PrimParPointer();
       *(DATAF*)PrimParPointer()  =  log(X);
     }
     break;
 
-    case SIN :
+    case scSIN:
     {
       X  =  *(DATAF*)PrimParPointer();
       X  =  DegToRad(X);
@@ -1106,7 +1106,7 @@ void      cMath(void)
     }
     break;
 
-    case COS :
+    case scCOS:
     {
       X  =  *(DATAF*)PrimParPointer();
       X  =  DegToRad(X);
@@ -1115,7 +1115,7 @@ void      cMath(void)
     }
     break;
 
-    case TAN :
+    case scTAN:
     {
       X  =  *(DATAF*)PrimParPointer();
       X  =  DegToRad(X);
@@ -1124,7 +1124,7 @@ void      cMath(void)
     }
     break;
 
-    case ASIN :
+    case scASIN:
     {
       X  =  *(DATAF*)PrimParPointer();
       X  =  asinf(X);
@@ -1133,7 +1133,7 @@ void      cMath(void)
     }
     break;
 
-    case ACOS :
+    case scACOS:
     {
       X  =  *(DATAF*)PrimParPointer();
       X  =  acosf(X);
@@ -1142,7 +1142,7 @@ void      cMath(void)
     }
     break;
 
-    case ATAN :
+    case scATAN:
     {
       X  =  *(DATAF*)PrimParPointer();
       X  =  atanf(X);

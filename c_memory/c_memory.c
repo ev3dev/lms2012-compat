@@ -2357,7 +2357,7 @@ void      cMemoryFile(void)
   switch (Cmd)
   { // Function
 
-    case OPEN_APPEND :
+    case scOPEN_APPEND:
     {
       pFileName     =  (DATA8*)PrimParPointer();
 
@@ -2374,7 +2374,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case OPEN_READ :
+    case scOPEN_READ:
     {
       pFileName     =  (DATA8*)PrimParPointer();
 
@@ -2392,7 +2392,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case OPEN_WRITE :
+    case scOPEN_WRITE:
     {
       pFileName     =  (DATA8*)PrimParPointer();
 
@@ -2410,7 +2410,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case CLOSE :
+    case scCLOSE:
     {
       TmpHandle     =  *(DATA16*)PrimParPointer();
 
@@ -2418,7 +2418,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case WRITE_TEXT :
+    case scWRITE_TEXT:
     {
       TmpHandle     =  *(DATA16*)PrimParPointer();
       Del           =  *(DATA8*)PrimParPointer();
@@ -2428,7 +2428,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case READ_TEXT :
+    case scREAD_TEXT:
     {
       TmpHandle     =  *(DATA16*)PrimParPointer();
       Del           =  *(DATA8*)PrimParPointer();
@@ -2439,7 +2439,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case WRITE_VALUE :
+    case scWRITE_VALUE:
     {
       TmpHandle     =  *(DATA16*)PrimParPointer();
       Del           =  *(DATA8*)PrimParPointer();
@@ -2452,7 +2452,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case READ_VALUE :
+    case scREAD_VALUE:
     {
       TmpHandle     =  *(DATA16*)PrimParPointer();
       Del           =  *(DATA8*)PrimParPointer();
@@ -2468,7 +2468,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case WRITE_BYTES :
+    case scWRITE_BYTES:
     {
       TmpHandle     =  *(DATA16*)PrimParPointer();
       Bytes         =  *(DATA16*)PrimParPointer();
@@ -2478,7 +2478,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case READ_BYTES :
+    case scREAD_BYTES:
     {
       TmpHandle     =  *(DATA16*)PrimParPointer();
       Bytes         =  *(DATA16*)PrimParPointer();
@@ -2488,7 +2488,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case OPEN_LOG :
+    case scOPEN_LOG:
     {
       pFileName     =  (DATA8*)PrimParPointer();
 
@@ -2584,7 +2584,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case WRITE_LOG :
+    case scWRITE_LOG:
     {
       TmpHandle     =  *(DATA16*)PrimParPointer();
       Time          =  *(DATA32*)PrimParPointer();
@@ -2700,7 +2700,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case CLOSE_LOG :
+    case scCLOSE_LOG:
     {
       TmpHandle     =  *(DATA16*)PrimParPointer();
       pFileName     =  (DATA8*)PrimParPointer();
@@ -2854,7 +2854,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case GET_LOG_NAME :
+    case scGET_LOG_NAME:
     {
       Lng           = *(DATA8*)PrimParPointer();
       pFileName     =  (DATA8*)PrimParPointer();
@@ -2879,7 +2879,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case GET_HANDLE :
+    case scGET_HANDLE:
     {
       pFileName     =  (DATA8*)PrimParPointer();
 
@@ -2899,7 +2899,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case REMOVE :
+    case scREMOVE:
     {
       pFileName     =  (DATA8*)PrimParPointer();
 
@@ -2915,7 +2915,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case MAKE_FOLDER :
+    case scMAKE_FOLDER:
     {
       pDestination  =  (DATA8*)PrimParPointer();
 
@@ -2959,7 +2959,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case MOVE :
+    case scMOVE:
     {
       pSource         =  (DATA8*)PrimParPointer();
       pDestination    =  (DATA8*)PrimParPointer();
@@ -3006,7 +3006,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case LOAD_IMAGE :
+    case scLOAD_IMAGE:
     {
       PrgNo         =  *(DATA16*)PrimParPointer();
       pFileName     =   (DATA8*)PrimParPointer();
@@ -3080,7 +3080,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case GET_POOL :
+    case scGET_POOL:
     {
       ISize       =  *(DATA32*)PrimParPointer();
       DspStat     =  FAILBREAK;
@@ -3097,7 +3097,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case GET_FOLDERS :
+    case scGET_FOLDERS:
     {
       pFolderName  =  (DATA8*)PrimParPointer();
       *(DATA8*)PrimParPointer()  =  cMemoryFindSubFolders((char*)pFolderName);
@@ -3106,7 +3106,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case GET_SUBFOLDER_NAME :
+    case scGET_SUBFOLDER_NAME:
     {
       pFolderName   =  (DATA8*)PrimParPointer();
       Item          = *(DATA8*)PrimParPointer();
@@ -3119,7 +3119,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case DEL_SUBFOLDER :
+    case scDEL_SUBFOLDER:
     {
       pFolderName   =  (DATA8*)PrimParPointer();
       Item          = *(DATA8*)PrimParPointer();
@@ -3135,7 +3135,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case SET_LOG_SYNC_TIME :
+    case scSET_LOG_SYNC_TIME:
     {
       MemoryInstance.SyncTime   =  *(DATA32*)PrimParPointer();
       MemoryInstance.SyncTick   =  *(DATA32*)PrimParPointer();
@@ -3144,7 +3144,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case GET_LOG_SYNC_TIME :
+    case scGET_LOG_SYNC_TIME:
     {
       *(DATA32*)PrimParPointer()  =  MemoryInstance.SyncTime;
       *(DATA32*)PrimParPointer()  =  MemoryInstance.SyncTick;
@@ -3153,7 +3153,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case GET_ITEM :
+    case scGET_ITEM:
     {
       pFolderName   =  (DATA8*)PrimParPointer();
       pFileName     =  (DATA8*)PrimParPointer();
@@ -3184,7 +3184,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case GET_CACHE_FILES :
+    case scGET_CACHE_FILES:
     {
       Items  =  0;
       for (Tmp = 0;Tmp < CACHE_DEEPT;Tmp++)
@@ -3202,7 +3202,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case PUT_CACHE_FILE :
+    case scPUT_CACHE_FILE:
     {
       pFileName       =   (DATA8*)PrimParPointer();
 
@@ -3243,7 +3243,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case DEL_CACHE_FILE :
+    case scDEL_CACHE_FILE:
     {
       pFileName   =   (DATA8*)PrimParPointer();
 
@@ -3253,7 +3253,7 @@ void      cMemoryFile(void)
     }
     break;
 
-    case GET_CACHE_FILE :
+    case scGET_CACHE_FILE:
     {
       Item              = *(DATA8*)PrimParPointer();
       Lng               = *(DATA8*)PrimParPointer();
@@ -3455,7 +3455,7 @@ void      cMemoryArray(void)
   switch (Cmd)
   { // Function
 
-    case CREATE8 :
+    case scCREATE8:
     {
       Elements    =  *(DATA32*)PrimParPointer();
 
@@ -3490,7 +3490,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case CREATE16 :
+    case scCREATE16:
     {
       Elements    =  *(DATA32*)PrimParPointer();
       ElementSize =  sizeof(DATA16);
@@ -3519,7 +3519,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case CREATE32 :
+    case scCREATE32:
     {
       Elements    =  *(DATA32*)PrimParPointer();
       ElementSize =  sizeof(DATA32);
@@ -3548,7 +3548,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case CREATEF :
+    case scCREATEF:
     {
       Elements    =  *(DATA32*)PrimParPointer();
       ElementSize =  sizeof(DATAF);
@@ -3577,7 +3577,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case SET_SIZE :
+    case scSET_SIZE:
     {
       TmpHandle   =  *(HANDLER*)PrimParPointer();
       Elements    =  0;
@@ -3593,7 +3593,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case RESIZE :
+    case scRESIZE:
     {
       TmpHandle   =  *(HANDLER*)PrimParPointer();
       Elements    =  *(DATA32*)PrimParPointer();
@@ -3609,7 +3609,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case DESTROY :
+    case scDESTROY:
     {
       TmpHandle   =  *(HANDLER*)PrimParPointer();
       cMemoryFreeHandle(TmpPrgId,TmpHandle);
@@ -3617,7 +3617,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case FILL :
+    case scFILL:
     {
       TmpPrgId        =  CurrentProgramId();
       TmpHandle       =  *(HANDLER*)PrimParPointer();
@@ -3690,7 +3690,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case COPY :
+    case scCOPY:
     {
       hSource     =  *(HANDLER*)PrimParPointer();
       hDest       =  *(HANDLER*)PrimParPointer();
@@ -3757,7 +3757,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case INIT8 :
+    case scINIT8:
     {
       TmpHandle   =  *(HANDLER*)PrimParPointer();
       Index       =  *(DATA32*)PrimParPointer();
@@ -3784,7 +3784,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case INIT16 :
+    case scINIT16:
     {
       TmpHandle   =  *(HANDLER*)PrimParPointer();
       Index       =  *(DATA32*)PrimParPointer();
@@ -3811,7 +3811,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case INIT32 :
+    case scINIT32:
     {
       TmpHandle   =  *(HANDLER*)PrimParPointer();
       Index       =  *(DATA32*)PrimParPointer();
@@ -3838,7 +3838,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case INITF :
+    case scINITF:
     {
       TmpHandle   =  *(HANDLER*)PrimParPointer();
       Index       =  *(DATA32*)PrimParPointer();
@@ -3865,7 +3865,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case READ_CONTENT :
+    case scREAD_CONTENT:
     {
       PrgId           =  *(DATA16*)PrimParPointer();
       TmpHandle       =  *(DATA16*)PrimParPointer();
@@ -3913,7 +3913,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case WRITE_CONTENT :
+    case scWRITE_CONTENT:
     {
       PrgId           =  *(DATA16*)PrimParPointer();
       TmpHandle       =  *(DATA16*)PrimParPointer();
@@ -3962,7 +3962,7 @@ void      cMemoryArray(void)
     }
     break;
 
-    case READ_SIZE :
+    case scREAD_SIZE:
     {
       PrgId           =  *(DATA16*)PrimParPointer();
       TmpHandle       =  *(DATA16*)PrimParPointer();
@@ -4471,7 +4471,7 @@ void      cMemoryFileName(void)
   switch (Cmd)
   { // Function
 
-    case EXIST :
+    case scEXIST:
     {
       pFilename  =  (DATA8*)PrimParPointer();
       cMemoryFilename(TmpPrgId,(char*)pFilename,"",MAX_FILENAME_SIZE,Filename);
@@ -4488,7 +4488,7 @@ void      cMemoryFileName(void)
     }
     break;
 
-    case TOTALSIZE :
+    case scTOTALSIZE:
     {
       pFilename  =  (DATA8*)PrimParPointer();
       cMemoryFilename(TmpPrgId,(char*)pFilename,"",MAX_FILENAME_SIZE,Filename);
@@ -4499,7 +4499,7 @@ void      cMemoryFileName(void)
     }
     break;
 
-    case SPLIT :
+    case scSPLIT:
     {
       pFilename   =  (DATA8*)PrimParPointer();
       Length      =  *(DATA8*)PrimParPointer();
@@ -4557,7 +4557,7 @@ void      cMemoryFileName(void)
     }
     break;
 
-    case MERGE :
+    case scMERGE:
     {
       pFolder     =  (DATA8*)PrimParPointer();
       pName       =  (DATA8*)PrimParPointer();
@@ -4583,7 +4583,7 @@ void      cMemoryFileName(void)
     }
     break;
 
-    case CHECK :
+    case scCHECK:
     {
       Tmp         =  0;
       pFilename   =  (DATA8*)PrimParPointer();
@@ -4596,7 +4596,7 @@ void      cMemoryFileName(void)
     }
     break;
 
-    case PACK :
+    case scPACK:
     {
       pName       =  (DATA8*)PrimParPointer();
 
@@ -4609,7 +4609,7 @@ void      cMemoryFileName(void)
     }
     break;
 
-    case UNPACK :
+    case scUNPACK:
     {
       pName       =  (DATA8*)PrimParPointer();
 
@@ -4622,7 +4622,7 @@ void      cMemoryFileName(void)
     }
     break;
 
-    case GET_FOLDERNAME :
+    case scGET_FOLDERNAME:
     {
       Length      =  *(DATA8*)PrimParPointer();
       pFilename   =  (DATA8*)PrimParPointer();

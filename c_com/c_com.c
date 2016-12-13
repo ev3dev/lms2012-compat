@@ -3467,7 +3467,7 @@ void      cComRead(void)
   switch (Cmd)
   { // Function
 
-    case COMMAND :
+    case scCOMMAND:
     {
       // pImage used as temp var
       pImage                      = *(DATA32*)PrimParPointer();
@@ -3518,7 +3518,7 @@ void      cComWrite(void)
   switch (Cmd)
   { // Function
 
-    case REPLY :
+    case scREPLY:
     {
       ComInstance.VmReady   =  1;
       pImage                = *(DATA32*)PrimParPointer();
@@ -4281,7 +4281,7 @@ void      cComGet(void)
   switch (Cmd)
   { // Function
   
-    case GET_MODE2 :
+    case scGET_MODE2:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       Mode2       =  0;
@@ -4306,7 +4306,7 @@ void      cComGet(void)
     }
     break;
     
-    case GET_ON_OFF :
+    case scGET_ON_OFF:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       OnOff       =  0;
@@ -4344,7 +4344,7 @@ void      cComGet(void)
     }
     break;
 
-    case GET_VISIBLE :
+    case scGET_VISIBLE:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
 
@@ -4359,7 +4359,7 @@ void      cComGet(void)
     }
     break;
 
-    case GET_RESULT :
+    case scGET_RESULT:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       Item        =  *(DATA8*)PrimParPointer();
@@ -4400,7 +4400,7 @@ void      cComGet(void)
     }
     break;
 
-    case GET_PIN :
+    case scGET_PIN:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       pName       =   (DATA8*)PrimParPointer();
@@ -4415,7 +4415,7 @@ void      cComGet(void)
     }
     break;
 
-    case CONNEC_ITEMS:
+    case scCONNEC_ITEMS:
     {
       Hardware  =  *(DATA8*)PrimParPointer();
       Items     =  0;
@@ -4443,7 +4443,7 @@ void      cComGet(void)
     }
     break;
 
-    case CONNEC_ITEM:
+    case scCONNEC_ITEM:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       Item        =  *(DATA8*)PrimParPointer();
@@ -4485,7 +4485,7 @@ void      cComGet(void)
     }
     break;
 
-    case LIST_STATE:
+    case scLIST_STATE:
     {
       DATA16 state = 0;
 
@@ -4506,7 +4506,7 @@ void      cComGet(void)
     }
     break;
 
-    case SEARCH_ITEMS :
+    case scSEARCH_ITEMS :
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       Items       =  0;
@@ -4534,7 +4534,7 @@ void      cComGet(void)
     }
     break;
 
-    case SEARCH_ITEM :
+    case scSEARCH_ITEM:
     {
       UBYTE   Flags;
 
@@ -4614,7 +4614,7 @@ void      cComGet(void)
     }
     break;
 
-    case FAVOUR_ITEMS :
+    case scFAVOUR_ITEMS:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       Items       =  0;
@@ -4644,7 +4644,7 @@ void      cComGet(void)
     }
     break;
 
-    case FAVOUR_ITEM :
+    case scFAVOUR_ITEM:
     {
       UBYTE  Flags;
 
@@ -4721,7 +4721,7 @@ void      cComGet(void)
     }
     break;
 
-    case GET_ID:
+    case scGET_ID:
     {
       Hardware  =  *(DATA8*)PrimParPointer();
       Length    =  *(DATA8*)PrimParPointer();
@@ -4765,7 +4765,7 @@ void      cComGet(void)
     }
     break;
 
-    case GET_BRICKNAME :
+    case scGET_BRICKNAME:
     {
       Length =  *(DATA8*)PrimParPointer();
       pName  =  (DATA8*)PrimParPointer();
@@ -4788,7 +4788,7 @@ void      cComGet(void)
     }
     break;
 
-    case GET_NETWORK:
+    case scGET_NETWORK:
     {
       UBYTE   MaxStrLen;
 
@@ -4868,7 +4868,7 @@ void      cComGet(void)
     }
     break;
 
-    case GET_PRESENT:
+    case scGET_PRESENT:
     {
       Hardware  =  *(DATA8*)PrimParPointer();
       Status    =  0;
@@ -4900,7 +4900,7 @@ void      cComGet(void)
     }
     break;
 
-    case GET_ENCRYPT:
+    case scGET_ENCRYPT:
     {
 
       Hardware   =  *(DATA8*)PrimParPointer();
@@ -4929,7 +4929,7 @@ void      cComGet(void)
     }
     break;
 
-    case GET_INCOMING:
+    case scGET_INCOMING:
     {
       Hardware   =  *(DATA8*)PrimParPointer();
       Length     =  *(DATA8*)PrimParPointer();
@@ -5114,7 +5114,7 @@ void      cComSet(void)
 
   switch (Cmd)
   { // Function
-    case SET_MODE2 :
+    case scSET_MODE2:
     {
       Hardware   =  *(DATA8*)PrimParPointer();
       Mode2      =  *(DATA8*)PrimParPointer();
@@ -5137,7 +5137,7 @@ void      cComSet(void)
     }
     break;
     
-    case SET_ON_OFF :
+    case scSET_ON_OFF:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       OnOff       =  *(DATA8*)PrimParPointer();
@@ -5182,7 +5182,7 @@ void      cComSet(void)
     }
     break;
 
-    case SET_VISIBLE :
+    case scSET_VISIBLE:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       Visible     =  *(DATA8*)PrimParPointer();
@@ -5216,7 +5216,7 @@ void      cComSet(void)
     }
     break;
 
-    case SET_SEARCH :
+    case scSET_SEARCH:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       Search      =  *(DATA8*)PrimParPointer();
@@ -5266,7 +5266,7 @@ void      cComSet(void)
     }
     break;
 
-    case SET_PIN :
+    case scSET_PIN:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       pName       =   (DATA8*)PrimParPointer();
@@ -5309,7 +5309,7 @@ void      cComSet(void)
     }
     break;
 
-    case SET_PASSKEY:
+    case scSET_PASSKEY:
     {
       UBYTE  Accept;
 
@@ -5335,7 +5335,7 @@ void      cComSet(void)
     }
     break;
 
-    case SET_CONNECTION :
+    case scSET_CONNECTION:
     {
       Hardware    =  *(DATA8*)PrimParPointer();
       pName       =   (DATA8*)PrimParPointer();
@@ -5401,7 +5401,7 @@ void      cComSet(void)
     }
     break;
 
-    case SET_BRICKNAME:
+    case scSET_BRICKNAME:
     {
       UBYTE    Len;
       FILE     *File;
@@ -5432,7 +5432,7 @@ void      cComSet(void)
     }
     break;
 
-    case SET_MOVEUP:
+    case scSET_MOVEUP:
     {
       Hardware   =  *(DATA8*)PrimParPointer();
       Item       =  *(DATA8*)PrimParPointer();
@@ -5457,7 +5457,7 @@ void      cComSet(void)
     }
     break;
 
-    case SET_MOVEDOWN:
+    case scSET_MOVEDOWN:
     {
       Hardware   =  *(DATA8*)PrimParPointer();
       Item       =  *(DATA8*)PrimParPointer();
@@ -5482,7 +5482,7 @@ void      cComSet(void)
     }
     break;
 
-    case SET_ENCRYPT:
+    case scSET_ENCRYPT:
     {
       Hardware   =  *(DATA8*)PrimParPointer();
       pName      =   (DATA8*)PrimParPointer();
@@ -5525,7 +5525,7 @@ void      cComSet(void)
     }
     break;
 
-    case SET_SSID:
+    case scSET_SSID:
     {
       UBYTE   Index;
 

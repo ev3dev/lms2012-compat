@@ -47,7 +47,7 @@ typedef enum { {{$d := .}}{{range $ov, $on := opLookup $d compat}}{{$o := index 
 // Subcodes
 {{range $on, $o := .Ops}}{{if $o.Support.Check compat}}{{with len $o.Params}}{{with $p := index $o.Params 0}}{{with len $p.Commands}}
 typedef enum { {{range $cv, $cn := cmdLookup $p compat}}{{$c := index $p.Commands $cn}}
-    {{$cn}} = {{$cv}},{{with $c.Desc}}   // {{.}}{{end}}{{end}}
+    sc{{$cn}} = {{$cv}},{{with $c.Desc}}   // {{.}}{{end}}{{end}}
     {{$on}}_SUBCODES
 } {{$on}}_SUBCODE;
 {{end}}{{end}}{{end}}{{end}}{{end}}
