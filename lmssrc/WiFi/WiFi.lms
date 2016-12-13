@@ -414,7 +414,7 @@ NextEntry:                                                            //        
   // Draw star                                                        //
   JR_FALSE(Paired,NotPaired)                                          //            if (Paired)
                                                                       //            {
-  JR_EQ8(Type,LMS_ENCRYPT_NONE,NotEncrypted1)                             //              if (Type)
+  JR_EQ8(Type,ENCRYPT_NONE,NotEncrypted1)                             //              if (Type)
                                                                       //              {
   // Show paired and encrypted icon                                   //
   UI_DRAW(ICON,FG_COLOR,SEARCH_STAR_STARTX,Yipos,MENU_ICON,ICON_LOCKSTAR) //            UI_DRAW(ICON,FG_COLOR,SEARCH_STAR_STARTX,Yipos,MENU_ICON,ICON_LOCKSTAR)
@@ -431,7 +431,7 @@ EndEncrypted1:                                                        //        
   JR(EndPaired)                                                       //            }
                                                                       //            else
 NotPaired:                                                            //            {
-  JR_EQ8(Type,LMS_ENCRYPT_NONE,NotEncrypted2)                             //              if (Type)
+  JR_EQ8(Type,ENCRYPT_NONE,NotEncrypted2)                             //              if (Type)
                                                                       //              {
   // Show encrypted icon                                              //
   UI_DRAW(ICON,FG_COLOR,SEARCH_STAR_STARTX,Yipos,MENU_ICON,ICON_LOCK) //                UI_DRAW(ICON,FG_COLOR,SEARCH_STAR_STARTX,Yipos,MENU_ICON,ICON_LOCK)
@@ -617,7 +617,7 @@ subcall   HiddenScreen                                                //  void H
   MOVE8_8(0,Result)                                                   //    Result  =  0
                                                                       //
   COM_GET(GET_ENCRYPT,HARDWARE,Item,Encryption)                       //    EncrypScreen(Name,Result,Encryption)
-  JR_EQ8(Encryption,LMS_ENCRYPT_NONE,NotEncrypted)                    //      if (!LMS_ENCRYPT_NONE)
+  JR_EQ8(Encryption,ENCRYPT_NONE,NotEncrypted)                        //      if (!ENCRYPT_NONE)
                                                                       //      {
                                                                       //
   MOVE8_8(CHARSET_WIFIPASSKEY,State)                                  //        State  =  CHARSET_WIFIPASSKEY

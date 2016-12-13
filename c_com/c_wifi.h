@@ -96,7 +96,7 @@ RESULT cWiFiSetName(char *ApName, int Index);
 RESULT cWiFiGetIndexFromName(const char *Name, UBYTE *Index);
 void cWiFiSetEncryptToWpa2(int Index);
 void cWiFiSetEncryptToNone(int Index);
-LMS_ENCRYPT cWifiGetEncrypt(int Index);
+ENCRYPT cWifiGetEncrypt(int Index);
 void cWiFiDeleteAsKnown(int LocalIndex);
 WIFI_STATE_FLAGS cWiFiGetFlags(int Index);
 RESULT cWiFiConnectToAp(int Index);

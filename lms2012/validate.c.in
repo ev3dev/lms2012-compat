@@ -19,18 +19,90 @@
  */
 
 #include <stdio.h>
-
-#include "lmstypes.h"
-#include "bytecodes.h"
-#include "bytecodes.c"
-#include "validate.h"
-
 #include <stdlib.h>
 #include <unistd.h>
 
-//*****************************************************************************
-// Validate Global variables
-//*****************************************************************************
+#include "bytecodes.h"
+#include "lmstypes.h"
+#include "validate.h"
+
+#define MAX_SUBCODES        33                //!< Max number of sub codes
+#define OPCODE_NAMESIZE     20                //!< Opcode and sub code name length
+#define MAX_LABELS          32                //!< Max number of labels per program
+
+#define OC(OpCode,Par1,Par2,Par3,Par4,Par5,Par6,Par7,Par8)                     \
+                                                                               \
+    [OpCode] = {                                                               \
+      .Pars   = ((ULONG)Par1) +                                                \
+                ((ULONG)Par2 << 4) +                                           \
+                ((ULONG)Par3 << 8) +                                           \
+                ((ULONG)Par4 << 12) +                                          \
+                ((ULONG)Par5 << 16) +                                          \
+                ((ULONG)Par6 << 20) +                                          \
+                ((ULONG)Par7 << 24) +                                          \
+                ((ULONG)Par8 << 28),                                           \
+      .Name   = #OpCode,                                                       \
+    }
+
+#define SC(ParameterFormat,SubCode,Par1,Par2,Par3,Par4,Par5,Par6,Par7,Par8)    \
+                                                                               \
+    [ParameterFormat][SubCode] =                                               \
+        .Pars   = ((ULONG)Par1) +                                              \
+                  ((ULONG)Par2 << 4) +                                         \
+                  ((ULONG)Par3 << 8) +                                         \
+                  ((ULONG)Par4 << 12) +                                        \
+                  ((ULONG)Par5 << 16) +                                        \
+                  ((ULONG)Par6 << 20) +                                        \
+                  ((ULONG)Par7 << 24) +                                        \
+                  ((ULONG)Par8 << 28),                                         \
+        .Name   = #SubCode,                                                    \
+    }
+
+#define SUBP                0x01              //!< Next nibble is sub parameter table no
+#define PARNO               0x02              //!< Defines no of following parameters
+#define PARLAB              0x03              //!< Defines label no
+#define PARVALUES           0x04              //!< Last parameter defines number of values to follow
+
+#define PAR                 0x08              //!< Plain  parameter as below:
+#define PAR8                (PAR + DATA_8)    //!< DATA8  parameter
+#define PAR16               (PAR + DATA_16)   //!< DATA16 parameter
+#define PAR32               (PAR + DATA_32)   //!< DATA32 parameter
+#define PARF                (PAR + DATA_F)    //!< DATAF  parameter
+#define PARS                (PAR + DATA_S)    //!< DATAS  parameter
+#define PARV                (PAR + DATA_V)    //!< Parameter type variable
+
+typedef struct {
+    const ULONG Pars; //!< Contains parameter info nibbles (max 8)
+    const char *Name; //!< Opcode name
+} OPCODE;
+
+typedef struct {
+    const ULONG Pars; //!< Contains parameter info nibbles (max 8)
+    const char *Name; //!< Sub code name
+} SUBCODE;
+
+enum {
+    UI_READ_SUBP      = 0,
+    UI_WRITE_SUBP     = 1,
+    UI_DRAW_SUBP      = 2,
+    UI_BUTTON_SUBP    = 3,
+    FILE_SUBP         = 4,
+    PROGRAM_INFO_SUBP = 5,
+    INFO_SUBP         = 6,
+    STRINGS_SUBP      = 7,
+    COM_READ_SUBP     = 8,
+    COM_WRITE_SUBP    = 9,
+    SOUND_SUBP        = 10,
+    INPUT_DEVICE_SUBP = 11,
+    ARRAY_SUBP        = 12,
+    MATH_SUBP         = 13,
+    COM_GET_SUBP      = 14,
+    COM_SET_SUBP      = 15,
+    SUBPS
+};
+
+#define FILENAME_SUBP   ARRAY_SUBP
+#define TST_SUBP        INFO_SUBP
 
 typedef struct {
     int       Row;
@@ -38,6 +110,26 @@ typedef struct {
 } VALIDATE_GLOBALS;
 
 VALIDATE_GLOBALS ValidateInstance;
+
+static const OPCODE const OpCodes[256] = { {{range $k, $v := .Ops}}{{if $v.Support.Check compat}}
+    OC(op{{$k}}, {{if len $v.Params | eq 1}}{{with $p := index $v.Params 0}}{{if eq $p.Type "SUBP"}}PAR8, SUBP, {{$k}}_SUBP, 0, 0, 0, 0, 0{{else}}{{$p.Type}}, 0, 0, 0, 0, 0, 0, 0{{end}}{{end}}{{else}}{{with len $v.Params | le 1}}{{with $p := index $v.Params 0}}{{$p.Type}}{{end}}{{else}}0{{end}}, {{with len $v.Params | le 2}}{{with $p := index $v.Params 1}}{{$p.Type}}{{end}}{{else}}0{{end}}, {{with len $v.Params | le 3}}{{with $p := index $v.Params 2}}{{$p.Type}}{{end}}{{else}}0{{end}}, {{with len $v.Params | le 4}}{{with $p := index $v.Params 3}}{{$p.Type}}{{end}}{{else}}0{{end}}, {{with len $v.Params | le 5}}{{with $p := index $v.Params 4}}{{$p.Type}}{{end}}{{else}}0{{end}}, {{with len $v.Params | le 6}}{{with $p := index $v.Params 5}}{{$p.Type}}{{end}}{{else}}0{{end}}, {{with len $v.Params | le 7}}{{with $p := index $v.Params 6}}{{$p.Type}}{{end}}{{else}}0{{end}}, {{with len $v.Params | le 8}}{{with $p := index $v.Params 7}}{{$p.Type}}{{end}}{{else}}0{{end}}{{end}}),{{end}}{{end}}
+};
+
+static const SUBCODE const SubCodes[SUBPS][MAX_SUBCODES] = { {{range $k, $v := .Ops}}{{if $v.Support.Check compat}}{{with len $v.Params}}{{with $p := index $v.Params 0}}{{with len $p.Commands}}{{range $kp, $vp := $p.Commands}}{{if $vp.Support.Check compat}}
+    SC({{$k}}_SUBP, {{$kp}}, {{with len $vp.Params | le 1}}{{with $sp := index $vp.Params 0}}{{$sp.Type}}{{end}}{{else}}0{{end}}, {{with len $vp.Params | le 2}}{{with $sp := index $vp.Params 1}}{{$sp.Type}}{{end}}{{else}}0{{end}}, {{with len $vp.Params | le 3}}{{with $sp := index $vp.Params 2}}{{$sp.Type}}{{end}}{{else}}0{{end}}, {{with len $vp.Params | le 4}}{{with $sp := index $vp.Params 3}}{{$sp.Type}}{{end}}{{else}}0{{end}}, {{with len $vp.Params | le 5}}{{with $sp := index $vp.Params 4}}{{$sp.Type}}{{end}}{{else}}0{{end}}, {{with len $vp.Params | le 6}}{{with $sp := index $vp.Params 5}}{{$sp.Type}}{{end}}{{else}}0{{end}}, {{with len $vp.Params | le 7}}{{with $sp := index $vp.Params 6}}{{$sp.Type}}{{end}}{{else}}0{{end}}, {{with len $vp.Params | le 8}}{{with $sp := index $vp.Params 7}}{{$sp.Type}}{{end}}{{else}}0{{end}}),{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}
+};
+
+static const DATA32 const ParMin[] = {
+    [DATA_8]   = DATA8_MIN,
+    [DATA_16]  = DATA16_MIN,
+    [DATA_32]  = DATA32_MIN,
+};
+
+static const DATA32 const ParMax[] = {
+    [DATA_8]   = DATA8_MAX,
+    [DATA_16]  = DATA16_MAX,
+    [DATA_32]  = DATA32_MAX,
+};
 
 #ifdef DEBUG
 static const char * const ParTypeNames[] = {

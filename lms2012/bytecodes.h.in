@@ -1,0 +1,178 @@
+/*
+ * LEGO® MINDSTORMS EV3
+ *
+ * Copyright (C) 2010-2013 The LEGO Group
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * As a special exception, if other files instantiate templates or use macros or
+ * inline functions from this file, or you  compile this file and link it with
+ * other works to produce a work based on this file, this file does not by itself
+ * cause the resulting work to be covered by the GNU General Public License.
+ * However the source code for this file must still be made available in accordance
+ * with section (3) of the GNU General Public License.
+ */
+
+#ifndef   BYTECODES_H_
+#define   BYTECODES_H_
+
+#define   BYTECODE_VERSION              1.09
+
+// TODO: this can be dropped after next lmsasm release (>> 1.2.0)
+// Work around duplicate enum value in bytecodes
+#define DEVCMD_RESET DEVCMD_FIRE
+
+// Defines
+{{range $dn, $d := .Defines}}{{if $d.Support.Check compat}}
+#define vm{{$dn}} {{if isString $d.Value}}"{{$d.Value}}"{{else}}({{$d.Value}}){{end}}{{with $d.Desc}}  // {{.}}{{end}}{{end}}{{end}}
+
+// Opcodes
+
+typedef enum { {{$d := .}}{{range $ov, $on := opLookup $d compat}}{{$o := index $d.Ops $on}}
+    op{{$on}} = {{printf "0x%02X" $ov}},{{with $o.Desc}}  // {{.}}{{end}}{{end}}
+} OP;
+
+// Subcodes
+{{range $on, $o := .Ops}}{{if $o.Support.Check compat}}{{with len $o.Params}}{{with $p := index $o.Params 0}}{{with len $p.Commands}}
+typedef enum { {{range $cv, $cn := cmdLookup $p compat}}{{$c := index $p.Commands $cn}}
+    {{$cn}} = {{$cv}},{{with $c.Desc}}   // {{.}}{{end}}{{end}}
+    {{$on}}_SUBCODES
+} {{$on}}_SUBCODE;
+{{end}}{{end}}{{end}}{{end}}{{end}}
+
+// enums
+{{range $en, $e := .Enums}}{{if $e.Support.Check compat}}
+typedef enum { {{range $mv, $mn := enumLookup $e compat}}{{$m := index $e.Members $mn}}
+    {{$mn}} = {{$mv}},{{with $m.Desc}}  // {{.}}{{end}}{{end}}
+} {{$en}};
+{{end}}{{end}}
+
+// internal defines
+
+#define   DATA8_NAN     ((DATA8)(-128))
+#define   DATA16_NAN    ((DATA16)(-32768))
+#define   DATA32_NAN    ((DATA32)(0x80000000))
+#define   DATAF_NAN     ((float)0 / (float)0) //(0x7FC00000)
+
+#define   DATA8_MIN     vmDATA8_MIN
+#define   DATA8_MAX     vmDATA8_MAX
+#define   DATA16_MIN    vmDATA16_MIN
+#define   DATA16_MAX    vmDATA16_MAX
+#define   DATA32_MIN    vmDATA32_MIN
+#define   DATA32_MAX    vmDATA32_MAX
+#define   DATAF_MIN     vmDATAF_MIN
+#define   DATAF_MAX     vmDATAF_MAX
+
+#define   LONGToBytes(_x)               (UBYTE)((_x) & 0xFF),(UBYTE)(((_x) >> 8) & 0xFF),(UBYTE)(((_x) >> 16) & 0xFF),(UBYTE)(((_x) >> 24) & 0xFF)
+#define   WORDToBytes(_x)               (UBYTE)((_x) & 0xFF),(UBYTE)(((_x) >> 8) & 0xFF)
+#define   BYTEToBytes(_x)               (UBYTE)((_x) & 0xFF)
+
+#define   PROGRAMHeader(VersionInfo,NumberOfObjects,GlobalBytes)\
+                                        'L','E','G','O',LONGToBytes(0),WORDToBytes((UWORD)(BYTECODE_VERSION * 100.0)),WORDToBytes(NumberOfObjects),LONGToBytes(GlobalBytes)
+
+#define   VMTHREADHeader(OffsetToInstructions,LocalBytes)\
+                                        LONGToBytes(OffsetToInstructions),0,0,0,0,LONGToBytes(LocalBytes)
+
+#define   SUBCALLHeader(OffsetToInstructions,LocalBytes)\
+                                        LONGToBytes(OffsetToInstructions),0,0,1,0,LONGToBytes(LocalBytes)
+
+#define   BLOCKHeader(OffsetToInstructions,OwnerObjectId,TriggerCount)\
+                                        LONGToBytes(OffsetToInstructions),WORDToBytes(OwnerObjectId),WORDToBytes(TriggerCount),LONGToBytes(0)
+
+//        MACROS FOR PRIMITIVES AND SYSTEM CALLS
+
+#define   PRIMPAR_SHORT                 0x00
+#define   PRIMPAR_LONG                  0x80
+
+#define   PRIMPAR_CONST                 0x00
+#define   PRIMPAR_VARIABLE              0x40
+#define   PRIMPAR_LOCAL                 0x00
+#define   PRIMPAR_GLOBAL                0x20
+#define   PRIMPAR_HANDLE                0x10
+#define   PRIMPAR_ADDR                  0x08
+
+#define   PRIMPAR_INDEX                 0x1F
+#define   PRIMPAR_CONST_SIGN            0x20
+#define   PRIMPAR_VALUE                 0x3F
+
+#define   PRIMPAR_BYTES                 0x07
+
+#define   PRIMPAR_STRING_OLD            0
+#define   PRIMPAR_1_BYTE                1
+#define   PRIMPAR_2_BYTES               2
+#define   PRIMPAR_4_BYTES               3
+#define   PRIMPAR_STRING                4
+
+#define   PRIMPAR_LABEL                 0x20
+
+#define   HND(x)                        (PRIMPAR_HANDLE | (x))
+#define   ADR(x)                        (PRIMPAR_ADDR | (x))
+
+#define   LCS                           (PRIMPAR_LONG | PRIMPAR_STRING)
+
+#define   LAB1(v)                       (PRIMPAR_LONG | PRIMPAR_LABEL),((v) & 0xFF)
+
+#define   LC0(v)                        (((v) & PRIMPAR_VALUE) | PRIMPAR_SHORT | PRIMPAR_CONST)
+#define   LC1(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_1_BYTE),((v) & 0xFF)
+#define   LC2(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_2_BYTES),((v) & 0xFF),(((v) >> 8) & 0xFF)
+#define   LC4(v)                        (PRIMPAR_LONG  | PRIMPAR_CONST | PRIMPAR_4_BYTES),((ULONG)(v) & 0xFF),(((ULONG)(v) >> (ULONG)8) & 0xFF),(((ULONG)(v) >> (ULONG)16) & 0xFF),(((ULONG)(v) >> (ULONG)24) & 0xFF)
+
+#define   LV0(i)                        (((i) & PRIMPAR_INDEX) | PRIMPAR_SHORT | PRIMPAR_VARIABLE | PRIMPAR_LOCAL)
+#define   LV1(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_LOCAL | PRIMPAR_1_BYTE),((i) & 0xFF)
+#define   LV2(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_LOCAL | PRIMPAR_2_BYTES),((i) & 0xFF),(((i) >> 8) & 0xFF)
+#define   LV4(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_LOCAL | PRIMPAR_4_BYTES),((i) & 0xFF),(((i) >> 8) & 0xFF),(((i) >> 16) & 0xFF),(((i) >> 24) & 0xFF)
+
+#define   GV0(i)                        (((i) & PRIMPAR_INDEX) | PRIMPAR_SHORT | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL)
+#define   GV1(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL | PRIMPAR_1_BYTE),((i) & 0xFF)
+#define   GV2(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL | PRIMPAR_2_BYTES),((i) & 0xFF),(((i) >> 8) & 0xFF)
+#define   GV4(i)                        (PRIMPAR_LONG  | PRIMPAR_VARIABLE | PRIMPAR_GLOBAL | PRIMPAR_4_BYTES),((i) & 0xFF),(((i) >> 8) & 0xFF),(((i) >> 16) & 0xFF),(((i) >> 24) & 0xFF)
+
+//        MACROS FOR SUB CALLS
+
+
+#define   CALLPAR_IN                    0x80
+#define   CALLPAR_OUT                   0x40
+
+#define   CALLPAR_TYPE                  0x07
+#define   CALLPAR_DATA8                 DATA_8
+#define   CALLPAR_DATA16                DATA_16
+#define   CALLPAR_DATA32                DATA_32
+#define   CALLPAR_DATAF                 DATA_F
+#define   CALLPAR_STRING                DATA_S
+
+#define   IN_8                          (CALLPAR_IN  | CALLPAR_DATA8)
+#define   IN_16                         (CALLPAR_IN  | CALLPAR_DATA16)
+#define   IN_32                         (CALLPAR_IN  | CALLPAR_DATA32)
+#define   IN_F                          (CALLPAR_IN  | CALLPAR_DATAF)
+#define   IN_S                          (CALLPAR_IN  | CALLPAR_STRING)
+#define   OUT_8                         (CALLPAR_OUT | CALLPAR_DATA8)
+#define   OUT_16                        (CALLPAR_OUT | CALLPAR_DATA16)
+#define   OUT_32                        (CALLPAR_OUT | CALLPAR_DATA32)
+#define   OUT_F                         (CALLPAR_OUT | CALLPAR_DATAF)
+#define   OUT_S                         (CALLPAR_OUT | CALLPAR_STRING)
+
+#define   IO_8                          (IN_8  | OUT_8)
+#define   IO_16                         (IN_16 | OUT_16)
+#define   IO_32                         (IN_32 | OUT_32)
+#define   IO_F                          (IN_F  | OUT_F)
+#define   IO_S                          (IN_S  | OUT_S)
+
+#define   IN_OUT_8                      IO_8
+#define   IN_OUT_16                     IO_16
+#define   IN_OUT_32                     IO_32
+#define   IN_OUT_F                      IO_F
+#define   IN_OUT_S                      IO_S
+
+#endif /* BYTECODES_H_ */

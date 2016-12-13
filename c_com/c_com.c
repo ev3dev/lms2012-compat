@@ -4906,7 +4906,7 @@ void      cComGet(void)
       Hardware   =  *(DATA8*)PrimParPointer();
       Item       =  *(DATA8*)PrimParPointer();
 
-      Type       =  LMS_ENCRYPT_NONE;
+      Type       =  ENCRYPT_NONE;
       switch(Hardware)
       {
         case HW_USB:

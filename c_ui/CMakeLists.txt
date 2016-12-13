@@ -17,12 +17,14 @@ set (SOURCE_FILES
 add_library (c_ui OBJECT ${SOURCE_FILES})
 target_include_directories (c_ui PUBLIC
     ${CMAKE_SOURCE_DIR}/lms2012
+    ${CMAKE_BINARY_DIR}/lms2012
     ${CMAKE_SOURCE_DIR}/c_com
     ${CMAKE_SOURCE_DIR}/c_input
     ${CMAKE_SOURCE_DIR}/c_memory
     ${CMAKE_CURRENT_BINARY_DIR}
     ${LMS2012_DEPS_INCLUDE_DIRS}
 )
+add_dependencies (c_ui bytecodes.h)
 
 set (C_UI_ICONS
     small_icons

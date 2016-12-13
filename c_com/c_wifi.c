@@ -174,7 +174,7 @@ void cWiFiSetEncryptToNone(int Index)
  *
  * @return          The encryption type.
  */
-LMS_ENCRYPT cWifiGetEncrypt(int Index)
+ENCRYPT cWifiGetEncrypt(int Index)
 {
     ConnmanService *service = g_list_nth_data(service_list, Index);
 
@@ -183,12 +183,12 @@ LMS_ENCRYPT cWifiGetEncrypt(int Index)
         security = connman_service_get_security (service);
         for (; *security; security++) {
             if (g_strcmp0(*security, "psk") == 0) {
-                return LMS_ENCRYPT_WPA2;
+                return ENCRYPT_WPA2;
             }
         }
     }
 
-    return LMS_ENCRYPT_NONE;
+    return ENCRYPT_NONE;
 }
 
 /**
