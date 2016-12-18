@@ -3855,7 +3855,7 @@ void      cComReadMailBox(void)
         case DATA_A:
         {
           HANDLER   TmpHandle;
-          DATA8     *pData;
+          DATA8     *pData = NULL;
           DATA32    Data32;
 
           TmpHandle  =  *(HANDLER*)PrimParPointer();
