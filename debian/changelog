@@ -1,3 +1,12 @@
+lms2012-compat (1.99.2) stable; urgency=medium
+
+  * Generate bytecodes code using lmsgen tool
+  * Swap black and white colors
+  * Fix possible use of unintialized pointer
+  * systemd: lsm2012 usb service conflicts with ev3dev usb service on EV3
+
+ -- David Lechner <david@lechnology.com>  Wed, 28 Dec 2016 13:00:46 -0600
+
 lms2012-compat (1.99.1) stable; urgency=medium
 
   * c_com: Fix usb hid gadget service name
