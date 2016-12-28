@@ -29,7 +29,7 @@ scp ${arm_target}:~/pbuilder-ev3dev/debian/jessie-armel/${source}_${version}_arm
 ssh -t ${arm_target} "OS=debian DIST=jessie ARCH=armhf PBUILDER_OPTIONS=\"--binary-arch\" pbuilder-ev3dev dsc-build \
     ~/pbuilder-ev3dev/source/${source}_${version}.dsc"
 mkdir -p ~/pbuilder-ev3dev/debian/jessie-armhf
-scp ${arm_target}:~/pbuilder-ev3dev/debian/jessie-armhf/${source}_${version}.dsc \
+scp ${arm_target}:~/pbuilder-ev3dev/debian/jessie-armhf/lms2012-compat_${version}_armhf.deb \
     ~/pbuilder-ev3dev/debian/jessie-armhf/
 scp ${arm_target}:~/pbuilder-ev3dev/debian/jessie-armhf/${source}_${version}_armhf.changes \
     ~/pbuilder-ev3dev/debian/jessie-armhf/
