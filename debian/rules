@@ -4,6 +4,9 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+# -D_FORTIFY_SOURCE=2 breaks things in unexpected ways, so disable it
+export DEB_BUILD_MAINT_OPTIONS = hardening=-fortify
+
 %:
 	dh $@ --with systemd
 
