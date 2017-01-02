@@ -1,3 +1,9 @@
+lms2012-compat (1.99.3) stable; urgency=medium
+
+  * debian: disable forify hardening option
+
+ -- David Lechner <david@lechnology.com>  Mon, 02 Jan 2017 14:48:25 -0600
+
 lms2012-compat (1.99.2) stable; urgency=medium
 
   * Generate bytecodes code using lmsgen tool
