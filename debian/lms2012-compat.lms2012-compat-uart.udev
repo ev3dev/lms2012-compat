@@ -1,0 +1,11 @@
+# This file is part of the lms2012-compat package
+
+# KERNEL=="lms_uart" waits for the lms_uart device to finish loading (needed
+# by the line discipline) and KERNELS=="d_uart" matches the parent device,
+# which is needed to get the in?_tty attributes.
+
+KERNEL=="lms_uart", KERNELS=="d_uart", ACTION=="add", TAG+="systemd", \
+    ENV{SYSTEMD_WANTS}+="lms2012-compat-uart@$attr{in1_tty}.service", \
+    ENV{SYSTEMD_WANTS}+="lms2012-compat-uart@$attr{in2_tty}.service", \
+    ENV{SYSTEMD_WANTS}+="lms2012-compat-uart@$attr{in3_tty}.service", \
+    ENV{SYSTEMD_WANTS}+="lms2012-compat-uart@$attr{in4_tty}.service"

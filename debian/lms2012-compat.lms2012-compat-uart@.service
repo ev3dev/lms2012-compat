@@ -1,0 +1,9 @@
+# This file is part of the lms2012-compat package
+
+[Unit]
+Description=lsm2012-compat UART Sensors
+BindsTo=dev-%i
+
+[Service]
+Type=forking
+ExecStart=/usr/sbin/ldattach 27 /dev/%I

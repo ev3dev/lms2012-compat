@@ -11,9 +11,11 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=-fortify reproducible=-timeless
 	dh $@ --with systemd
 
 override_dh_installudev:
+	dh_installudev --name=lms2012-compat-uart
 	dh_installudev --name=lms2012-compat-usb-hid-gadget
 
 override_dh_systemd_enable:
+	dh_systemd_enable --name=lms2012-compat-uart@
 	dh_systemd_enable --name=lms2012-compat-usb-hid-gadget@
 
 override_dh_systemd_start:
