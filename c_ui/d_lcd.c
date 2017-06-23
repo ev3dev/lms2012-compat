@@ -72,9 +72,9 @@ static void update_to_fb(void)
 			}
 
 			if (vmem[x / 3 + y * 60] & mask) {
-				grx_fast_draw_pixel(x, y, grx_color_info_get_black());
+				grx_fast_draw_pixel(x, y, GRX_COLOR_BLACK);
 			} else {
-				grx_fast_draw_pixel(x, y, grx_color_info_get_white());
+				grx_fast_draw_pixel(x, y, GRX_COLOR_WHITE);
 			}
 		}
 	}
