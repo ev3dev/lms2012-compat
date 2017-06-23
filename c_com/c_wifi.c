@@ -403,7 +403,7 @@ RESULT cWiFiConnectToAp(int Index)
     pr_dbg("cWiFiConnectToAp(int Index = %d)\n", Index);
 
     proxy = g_list_nth_data(service_list, Index);
-    g_return_if_fail(proxy != NULL);
+    g_return_val_if_fail(proxy != NULL, FAIL);
 
     Result = GPOINTER_TO_INT(g_object_get_qdata(G_OBJECT(proxy),
                              C_WIFI_SERVICE_CONNECT_RESULT_QUARK));
