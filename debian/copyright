@@ -9,7 +9,7 @@ Files: debian/*
 Copyright: 2016 David Lechner <david@lechnology.com>
 License: GPL-2+
 
-Files: lms2012/bytecodes.h lms2012/lms2012.h lms2012/lmstypes.h
+Files: lms2012/lms2012.h lms2012/lmstypes.h
 Copyright: 2010-2013 The LEGO Group
 License: GPL-2+ with LMS exception
  As a special exception, if other files instantiate templates or use macros or
