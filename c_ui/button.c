@@ -150,7 +150,7 @@ void cUiUpdateButtons(DATA16 Time)
         for (Button = 0; Button < BUTTONS; Button++) {
             int key = Button2KeyMap[Button];
 
-            if (state[key / 8] == 1 << (key % 8)) {
+            if (state[key / 8] & (1 << (key % 8))) {
                 // button is pressed
                 if (UiInstance.ButtonDebounceTimer[Button] == 0) {
                     UiInstance.ButtonState[Button] = BUTTON_STATE_ACTIVE;
