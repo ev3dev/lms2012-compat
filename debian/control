@@ -5,7 +5,7 @@ Build-Depends: debhelper (>= 9.0.0), dh-systemd, cmake, pkg-config,
     lmsasm (>= 1.2.0), sox, imagemagick, pandoc,
     libasound2-dev, libdbus-1-dev, libglib2.0-dev,
     libgrx-3.0-dev, libudev-dev, libusb-1.0-0-dev
-Standards-Version: 3.9.5
+Standards-Version: 3.9.8
 Section: embedded
 Homepage: https://github.com/ev3dev/lms2012-compat
 Vcs-Git: git://github.com/ev3dev/lms2012-compat.git
