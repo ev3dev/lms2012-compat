@@ -1,3 +1,13 @@
+lms2012-compat (1.99.4) testing; urgency=medium
+
+  * Fix return with no value
+  * Disable timeless check
+  * Use GRX_COLOR_* macros to fix build
+  * Add uart sensor udev rules/systemd serivice
+  * Fix buttons possibly not working when two buttons pressed
+
+ -- David Lechner <david@lechnology.com>  Mon, 26 Jun 2017 19:28:11 -0500
+
 lms2012-compat (1.99.3) stable; urgency=medium
 
   * debian: disable forify hardening option
