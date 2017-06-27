@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 9.0.0), dh-systemd, cmake, pkg-config,
 Standards-Version: 3.9.8
 Section: embedded
 Homepage: https://github.com/ev3dev/lms2012-compat
-Vcs-Git: git://github.com/ev3dev/lms2012-compat.git
+Vcs-Git: https://github.com/ev3dev/lms2012-compat.git
 Vcs-Browser: https://github.com/ev3dev/lms2012-compat
 
 Package: lms2012-compat
