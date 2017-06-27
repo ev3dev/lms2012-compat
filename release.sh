@@ -25,7 +25,11 @@ scp ${arm_target}:~/pbuilder-ev3dev/debian/${codename}-armel/${source}_${version
     ~/pbuilder-ev3dev/debian/${codename}-armel/
 scp ${arm_target}:~/pbuilder-ev3dev/debian/${codename}-armel/lms2012-compat_${version}_armel.deb \
     ~/pbuilder-ev3dev/debian/${codename}-armel/
+scp ${arm_target}:~/pbuilder-ev3dev/debian/${codename}-armel/lms2012-compat-dbgsym_${version}_armel.deb \
+    ~/pbuilder-ev3dev/debian/${codename}-armel/
 scp ${arm_target}:~/pbuilder-ev3dev/debian/${codename}-armel/${source}_${version}_armel.changes \
+    ~/pbuilder-ev3dev/debian/${codename}-armel/
+scp ${arm_target}:~/pbuilder-ev3dev/debian/${codename}-armel/${source}_${version}_armel.buildinfo \
     ~/pbuilder-ev3dev/debian/${codename}-armel/
 
 ssh -t ${arm_target} "OS=debian DIST=${codename} ARCH=armhf PBUILDER_OPTIONS=\"--binary-arch\" pbuilder-ev3dev dsc-build \
@@ -33,7 +37,11 @@ ssh -t ${arm_target} "OS=debian DIST=${codename} ARCH=armhf PBUILDER_OPTIONS=\"-
 mkdir -p ~/pbuilder-ev3dev/debian/${codename}-armhf
 scp ${arm_target}:~/pbuilder-ev3dev/debian/${codename}-armhf/lms2012-compat_${version}_armhf.deb \
     ~/pbuilder-ev3dev/debian/${codename}-armhf/
+scp ${arm_target}:~/pbuilder-ev3dev/debian/${codename}-armhf/lms2012-compat-dbgsym_${version}_armhf.deb \
+    ~/pbuilder-ev3dev/debian/${codename}-armhf/
 scp ${arm_target}:~/pbuilder-ev3dev/debian/${codename}-armhf/${source}_${version}_armhf.changes \
+    ~/pbuilder-ev3dev/debian/${codename}-armhf/
+scp ${arm_target}:~/pbuilder-ev3dev/debian/${codename}-armhf/${source}_${version}_armhf.buildinfo \
     ~/pbuilder-ev3dev/debian/${codename}-armhf/
 
 debsign ~/pbuilder-ev3dev/debian/${codename}-armel/${source}_${version}_armel.changes
