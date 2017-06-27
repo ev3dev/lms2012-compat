@@ -2,11 +2,11 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Files: *
 Copyright: 2010-2013 The LEGO Group
-           2016 David Lechner <david@lechnology.com>
+           2016-2017 David Lechner <david@lechnology.com>
 License: GPL-2+
 
 Files: debian/*
-Copyright: 2016 David Lechner <david@lechnology.com>
+Copyright: 2016-2017 David Lechner <david@lechnology.com>
 License: GPL-2+
 
 Files: lms2012/lms2012.h lms2012/lmstypes.h
