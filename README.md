@@ -22,6 +22,30 @@ and sensors][issue28] that are needed for general use.
 [issue28]: https://github.com/ev3dev/lms2012-compat/issues/28
 
 
+Usage
+-----
+
+*   Grab the latest ev3dev-stretch image from [here][snapshot].
+
+*   For FatcatLab EVB and Quest Institute QuestCape, Edit `uEnv.txt` and
+    uncomment the appropriate `cape=...` line in the `EV3DEV_BOOT` partition
+    before booting the first time.
+
+*   For LEGO MINDSTORMS EV3 boot and run...
+
+        sudo FK_MACHINE="LEGO MINDSTORMS EV3 + lms2012-compat" flash-kernel
+        sudo reboot
+        # to revert to standard ev3dev kernel...
+        sudo FK_MACHINE="LEGO MINDSTORMS EV3" flash-kernel
+        sudo reboot
+
+*   After (re)boot, open a remote terminal and run...
+
+        sudo lms2012
+
+[snapshot]: https://oss.jfrog.org/list/oss-snapshot-local/org/ev3dev/brickstrap/
+
+
 Hacking
 -------
 
