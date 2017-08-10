@@ -141,6 +141,8 @@
  *
  */
 
+#include <glib-unix.h>
+
 #include "lms2012.h"
 #include "button.h"
 #include "graph.h"
@@ -207,6 +209,14 @@ void      cUiAlive(void)
   UiInstance.SleepTimer  =  0;
 }
 
+/* shutdown on SIGTERM/SIGINT/SIGHUP */
+static gboolean cUiHandleUnixSignal(gpointer user_data)
+{
+  UiInstance.ShutDown = 1;
+
+  return G_SOURCE_CONTINUE;
+} 
+
 RESULT    cUiInit(void)
 {
   RESULT  Result = OK;
@@ -261,6 +271,10 @@ RESULT    cUiInit(void)
   UiInstance.Iintegrated        =  0.0;
 
   Result          =  dTerminalInit();
+
+  g_unix_signal_add(SIGINT, cUiHandleUnixSignal, NULL);
+  g_unix_signal_add(SIGTERM, cUiHandleUnixSignal, NULL);
+  g_unix_signal_add(SIGHUP, cUiHandleUnixSignal, NULL);
 
   UiInstance.ButtonFile =  cUiButtonOpenFile();
   UiInstance.LedRightRedTriggerFile   = cUiLedOpenTriggerFile("ev3:right", "red");
