@@ -303,7 +303,6 @@ typedef enum {
 #define   DEFAULT_UI            "ui"                  //!< Default user interface
 
 #define   DEFAULT_VOLUME        vmDEFAULT_VOLUME
-#define   DEFAULT_SLEEPMINUTES  vmDEFAULT_SLEEPMINUTES
 
 /*! \endverbatim
  *

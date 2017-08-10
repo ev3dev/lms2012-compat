@@ -2204,8 +2204,8 @@ RESULT    mSchedInit(int argc,char *argv[])
     File  =  open(PrgNameBuf,O_CREAT | O_WRONLY | O_TRUNC,SYSPERMISSIONS);
     if (File >= MIN_HANDLE)
     {
-      SetSleepMinutes((DATA8)DEFAULT_SLEEPMINUTES);
-      sprintf(ParBuf,"%dmin\t",DEFAULT_SLEEPMINUTES);
+      SetSleepMinutes((DATA8)0);
+      sprintf(ParBuf,"never\t");
       write(File,ParBuf,strlen(ParBuf));
       close (File);
     }
