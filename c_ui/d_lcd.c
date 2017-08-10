@@ -201,6 +201,8 @@ void dLcdInit(void)
       // this aborts the program
       g_error("Could not start graphics");
     }
+
+    grx_clear_screen(GRX_COLOR_WHITE);
 }
 
 void dLcdExit(void)
