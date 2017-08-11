@@ -347,6 +347,11 @@ typedef   struct
   int       BatteryVoltageNowFile;
   int       BatteryCurrentNowFile;
 
+  unsigned int ULedRightRedSourceId;
+  unsigned int ULedLeftRedSourceId;
+  unsigned int ULedRightGreenSourceId;
+  unsigned int ULedLeftGreenSourceId;
+
   ULONG     SleepTimer;
 
   ULONG     MilliSeconds;

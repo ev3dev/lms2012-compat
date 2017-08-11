@@ -19,6 +19,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <glib-unix.h>
+#include <grx-3.0.h>
+
 #include "lms2012.h"
 #include "c_ui.h"
 #include "led.h"
@@ -29,12 +32,22 @@
 #include <string.h>
 #include <unistd.h>
 
-#define LED_NAME_MAX_SIZE   50
 #define LED_TRIGGER_ON      "default-on"
 #define LED_TRIGGER_OFF     "none"
 #define LED_TRIGGER_FLASH   "heartbeat"
 #define LED_TRIGGER_PULSE   "heartbeat"
 // TODO: need a different trigger for flash/pulse
+
+// TODO: this #define and struct is in a kernel header starting with v4.10,
+// but we need to run on 4.9 for now.
+ #define LED_MAX_NAME_SIZE 64
+
+struct uleds_user_dev {
+    char name[LED_MAX_NAME_SIZE];
+    int max_brightness;
+};
+
+static cUiLedFlags led_state;
 
 /**
  * @brief Tries to open the trigger attribute of a Linux leds subsystem device
@@ -43,25 +56,20 @@
  * the 4 LEDs used on the EV3 platform.
  *
  * @param name  The name of the leds class device
- * @param color The color of the leds class device ("red" or "green")
  * @return      The file descriptor or -1 on error.
  */
-int cUiLedOpenTriggerFile(const char *name, const char *color)
+int cUiLedOpenTriggerFile(const char *name)
 {
     struct udev_enumerate *enumerate;
     struct udev_list_entry *list;
-    char full_name[LED_NAME_MAX_SIZE];
     int fd = -1;
 
     enumerate = udev_enumerate_new(VMInstance.udev);
     udev_enumerate_add_match_subsystem(enumerate, "leds");
-    snprintf(full_name, LED_NAME_MAX_SIZE, "%s:%s:ev3dev", name, color);
-    udev_enumerate_add_match_sysname(enumerate, full_name);
+    udev_enumerate_add_match_sysname(enumerate, name);
     udev_enumerate_scan_devices(enumerate);
     list = udev_enumerate_get_list_entry(enumerate);
-    if (!list) {
-        fprintf(stderr, "Failed to find LED '%s'\n", full_name);
-    } else {
+    if (list) {
         // just taking the first match in the list
         const char *path = udev_list_entry_get_name(list);
         char trigger_path[255];
@@ -76,6 +84,87 @@ int cUiLedOpenTriggerFile(const char *name, const char *color)
     udev_enumerate_unref(enumerate);
 
     return fd;
+}
+
+typedef struct {
+    int fd;
+    cUiLedFlags flags;
+} UserLed;
+
+static gboolean cUILedUpdateUserLed(gint fd, GIOCondition condition,
+                                    gpointer user_data)
+{
+    UserLed *user_led = user_data;
+    GrxColor color;
+    int brightness;
+
+    read(fd, &brightness, sizeof(brightness));
+
+    if (brightness) {
+        led_state |= user_led->flags;
+    }
+    else {
+        led_state &= ~user_led->flags;
+    }
+
+    // just using one of the LEDs since both are always the same
+    if (user_led->flags & USER_LED_LEFT) {
+        switch (led_state & (USER_LED_RED | USER_LED_GREEN)) {
+        case USER_LED_RED:
+            color = grx_color_alloc(255, 0, 0);
+            break;
+        case USER_LED_GREEN:
+            color = grx_color_alloc(0, 192, 0);
+            break;
+        case USER_LED_RED | USER_LED_GREEN:
+            color = grx_color_alloc(255, 192, 0);
+            break;
+        default:
+            color = GRX_COLOR_BLACK;
+            break;
+        }
+        grx_draw_filled_box(10, 138, grx_get_max_x() - 10, grx_get_max_y() - 10, color);
+    }
+
+    return G_SOURCE_CONTINUE;
+}
+
+static void cUiLedFreeUserLed(gpointer user_data)
+{
+    UserLed *user_led = user_data;
+
+    close(user_led->fd);
+    g_free(user_led);
+}
+
+/**
+ * @brief Tries to create a user-defined LED and returns the file handle
+ *
+ * @param name  The name of the leds class device
+ * @param mask  The color of the LED (red or green)
+ * @return      The GSource id. It should be removed with g_source_remove()
+ *              when no longer needed.
+ */
+guint cUiLedCreateUserLed(const char *name, cUiLedFlags flags)
+{
+    struct uleds_user_dev uled_dev;
+    UserLed *user_led;
+    int fd;
+
+    fd = open("/dev/uleds", O_RDWR);
+    if (fd == -1) {
+        g_debug("Failed to open /dev/uleds: %s", strerror(errno));
+        return 0;
+    }
+    strncpy(uled_dev.name, name, LED_MAX_NAME_SIZE);
+    uled_dev.max_brightness = 255;
+    write(fd, &uled_dev, sizeof(uled_dev));
+
+    user_led = g_malloc(sizeof(*user_led));
+    user_led->fd = fd;
+    user_led->flags = flags;
+    return g_unix_fd_add_full(G_PRIORITY_DEFAULT, fd, G_IO_IN,
+        cUILedUpdateUserLed, user_led, cUiLedFreeUserLed);
 }
 
 /**

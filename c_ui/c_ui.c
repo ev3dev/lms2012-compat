@@ -184,6 +184,11 @@
 #define   DEBUG
 #endif
 
+#define LED_NAME_LEFT_RED "led0:red:brick-status"
+#define LED_NAME_RIGHT_RED "led1:red:brick-status"
+#define LED_NAME_LEFT_GREEN "led0:green:brick-status"
+#define LED_NAME_RIGHT_GREEN "led1:green:brick-status"
+
 // from <time.h>
 // supposed to #define _XOPEN_SOURCE, but doing so messes up other stuff
 extern char *strptime(const char *s, const char *format, struct tm *tm);
@@ -277,10 +282,38 @@ RESULT    cUiInit(void)
   g_unix_signal_add(SIGHUP, cUiHandleUnixSignal, NULL);
 
   UiInstance.ButtonFile =  cUiButtonOpenFile();
-  UiInstance.LedRightRedTriggerFile   = cUiLedOpenTriggerFile("ev3:right", "red");
-  UiInstance.LedLeftRedTriggerFile    = cUiLedOpenTriggerFile("ev3:left",  "red");
-  UiInstance.LedRightGreenTriggerFile = cUiLedOpenTriggerFile("ev3:right", "green");
-  UiInstance.LedLeftGreenTriggerFile  = cUiLedOpenTriggerFile("ev3:left",  "green");
+  UiInstance.LedLeftRedTriggerFile = cUiLedOpenTriggerFile(LED_NAME_LEFT_RED);
+  if (UiInstance.LedLeftRedTriggerFile == -1) {
+    UiInstance.ULedLeftRedSourceId = cUiLedCreateUserLed(LED_NAME_LEFT_RED, USER_LED_LEFT | USER_LED_RED);
+    UiInstance.LedLeftRedTriggerFile = cUiLedOpenTriggerFile(LED_NAME_LEFT_RED);
+  }
+  if (UiInstance.LedLeftRedTriggerFile == -1) {
+    g_warning("Failed to get left red LED");
+  }
+  UiInstance.LedRightRedTriggerFile = cUiLedOpenTriggerFile(LED_NAME_RIGHT_RED);
+  if (UiInstance.LedRightRedTriggerFile == -1) {
+    UiInstance.ULedRightRedSourceId = cUiLedCreateUserLed(LED_NAME_RIGHT_RED, USER_LED_RIGHT | USER_LED_RED);
+    UiInstance.LedRightRedTriggerFile = cUiLedOpenTriggerFile(LED_NAME_RIGHT_RED);
+  }
+  if (UiInstance.LedRightRedTriggerFile == -1) {
+    g_warning("Failed to get right red LED");
+  }
+  UiInstance.LedLeftGreenTriggerFile = cUiLedOpenTriggerFile(LED_NAME_LEFT_GREEN);
+  if (UiInstance.LedLeftGreenTriggerFile == -1) {
+    UiInstance.ULedLeftGreenSourceId = cUiLedCreateUserLed(LED_NAME_LEFT_GREEN, USER_LED_LEFT | USER_LED_GREEN);
+    UiInstance.LedLeftGreenTriggerFile = cUiLedOpenTriggerFile(LED_NAME_LEFT_GREEN);
+  }
+  if (UiInstance.LedLeftGreenTriggerFile == -1) {
+    g_warning("Failed to get left green LED");
+  }
+  UiInstance.LedRightGreenTriggerFile = cUiLedOpenTriggerFile(LED_NAME_RIGHT_GREEN);
+  if (UiInstance.LedRightGreenTriggerFile == -1) {
+    UiInstance.ULedRightGreenSourceId = cUiLedCreateUserLed(LED_NAME_RIGHT_GREEN, USER_LED_RIGHT | USER_LED_GREEN);
+    UiInstance.LedRightGreenTriggerFile = cUiLedOpenTriggerFile(LED_NAME_RIGHT_GREEN);
+  }
+  if (UiInstance.LedRightGreenTriggerFile == -1) {
+    g_warning("Failed to get right green LED");
+  }
   cUiPowerOpenBatteryFiles();
 
   dLcdInit();
@@ -440,6 +473,18 @@ RESULT    cUiExit(void)
   }
   if (UiInstance.LedLeftGreenTriggerFile >= MIN_HANDLE) {
     close(UiInstance.LedLeftGreenTriggerFile);
+  }
+  if (UiInstance.ULedRightRedSourceId > 0) {
+    g_source_remove(UiInstance.ULedRightRedSourceId);
+  }
+  if (UiInstance.ULedLeftRedSourceId > 0) {
+    g_source_remove(UiInstance.ULedLeftRedSourceId);
+  }
+  if (UiInstance.ULedRightGreenSourceId > 0) {
+    g_source_remove(UiInstance.ULedRightGreenSourceId);
+  }
+  if (UiInstance.ULedLeftGreenSourceId > 0) {
+    g_source_remove(UiInstance.ULedLeftGreenSourceId);
   }
   if (UiInstance.BatteryVoltageNowFile >= MIN_HANDLE) {
     close(UiInstance.BatteryVoltageNowFile);

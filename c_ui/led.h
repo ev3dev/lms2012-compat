@@ -24,7 +24,15 @@
 
 #include "lms2012.h"
 
-int cUiLedOpenTriggerFile(const char *name, const char *color);
+typedef enum {
+    USER_LED_LEFT   = 0x01,
+    USER_LED_RIGHT  = 0x02,
+    USER_LED_RED    = 0x04,
+    USER_LED_GREEN  = 0x08,
+} cUiLedFlags;
+
+int cUiLedOpenTriggerFile(const char *name);
+unsigned int cUiLedCreateUserLed(const char *name, cUiLedFlags flags);
 void cUiLedSetState(LEDPATTERN State);
 
 #endif /* LED_H_ */
