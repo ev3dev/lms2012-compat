@@ -1,3 +1,13 @@
+lms2012-compat (1.99.5) testing; urgency=medium
+
+  * Shutdown on SIGINT/TERM/HUP
+  * Change default sleep to never
+  * clear screen with white
+  * Implement virtual LEDs
+  * Fix USB not working on EV3
+
+ -- David Lechner <david@lechnology.com>  Thu, 10 Aug 2017 19:53:03 -0500
+
 lms2012-compat (1.99.4) testing; urgency=medium
 
   * Fix return with no value
