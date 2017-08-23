@@ -2508,7 +2508,7 @@ void      cMemoryFile(void)
 #ifdef DEBUG_TRACE_FILENAME
         printf("c_memory  cMemoryFile: OPEN_LOG    [%s]\n",FilenameBuf);
 #endif
-        Bytes         =  snprintf(Buffer,LOGBUFFER_SIZE,"Sync data\t%d\t%d\t%d\t%d\t%d\n%s",STime,STick,NTick,SIIM,DIM,pSData);
+        Bytes         =  snprintf(Buffer,LOGBUFFER_SIZE,"Sync data\t%d\t%d\t%d\t%d\t%d\r\n%s",STime,STick,NTick,SIIM,DIM,pSData);
 
         DspStat       =  NOBREAK;
 
@@ -2620,7 +2620,7 @@ void      cMemoryFile(void)
           }
           else
           {
-            Bytes +=  snprintf(&Buffer[Bytes],LOGBUFFER_SIZE - Bytes,"%.1f\n",pValue[Item]);
+            Bytes +=  snprintf(&Buffer[Bytes],LOGBUFFER_SIZE - Bytes,"%.1f\r\n",pValue[Item]);
           }
         }
 #endif

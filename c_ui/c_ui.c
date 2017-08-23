@@ -2145,7 +2145,7 @@ void      cUiWrite(void)
     { // write time, prgid, objid, ip
 
       pSource  =  (DATA8*)PrimParPointer();
-      snprintf((char*)Buffer,50,"####[ %09u %01u %03u %06u %s]####\n",GetTime(),CurrentProgramId(),CallingObjectId(),CurrentObjectIp(),pSource);
+      snprintf((char*)Buffer,50,"####[ %09u %01u %03u %06u %s]####\r\n",GetTime(),CurrentProgramId(),CallingObjectId(),CurrentObjectIp(),pSource);
       cUiWriteString(Buffer);
       cUiFlush();
       DspStat  =  NOBREAK;
