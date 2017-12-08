@@ -49,7 +49,11 @@ below with `armhf`.
         docker exec --tty lms2012_armel make
         docker exec --tty lms2012_armel make install
 
-6.  When you are done building, you can stop the container.
+6.  To get an interactive shell into the running container:
+
+        docker exec -it lms2012_armel bash
+        
+7.  When you are done building, you can stop the container.
 
         docker stop --time 0 lms2012_armel
 
