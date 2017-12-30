@@ -111,13 +111,13 @@ static gboolean cUILedUpdateUserLed(gint fd, GIOCondition condition,
     if (user_led->flags & USER_LED_LEFT) {
         switch (led_state & (USER_LED_RED | USER_LED_GREEN)) {
         case USER_LED_RED:
-            color = grx_color_alloc(255, 0, 0);
+            color = grx_color_get(255, 0, 0);
             break;
         case USER_LED_GREEN:
-            color = grx_color_alloc(0, 192, 0);
+            color = grx_color_get(0, 192, 0);
             break;
         case USER_LED_RED | USER_LED_GREEN:
-            color = grx_color_alloc(255, 192, 0);
+            color = grx_color_get(255, 192, 0);
             break;
         default:
             color = GRX_COLOR_BLACK;
