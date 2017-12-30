@@ -6,54 +6,22 @@ the git repository and that the current working directory is the `lms2012-compat
 source code directory. To build for BeagleBone, replace all instances of `armel`
 below with `armhf`.
 
-1. Create the docker image.
+1. Create the docker image and a docker container.
 
-        docker build --tag lms2012-armel --file docker/armel.dockerfile docker/
+        ./docker/setup.sh armel
 
-2. Create an empty build directory. (This can actually be anywhere you like.)
+2.  Then build the code.
 
-        mkdir $HOME/lms2012-armel
+        docker exec -t lms2012_armel make
+        docker exec -t lms2012_armel make install
 
-3.  Create a docker container with the source and build directories mounted.
+### Tips
 
-        docker run \
-        --volume $HOME/lms2012-armel/:/build \
-        --volume $(pwd):/src \
-        --workdir /build \
-        --name lms2012_armel \
-        --env "TERM=$TERM" \
-        --env "DESTDIR=/build/dist" \
-        --tty \
-        --detach \
-        lms2012-armel tail
-
-    Some notes:
-
-    *   If you are using something other than `$HOME/lms2012-armel`, be sure to
-        use the absolute path.
-    *   `--env "TERM=$TERM"` is used so we can get ansi color output later.
-    *   `--env "DESTDIR=/build/dist" is the staging directory where `make install`
-        will install the program.
-    *   `--tty`, `--detach` and `tail` are a trick to keep the container running.
-        `--tty` causes `docker` to use a tty to provide STDIN and `tail` waits
-        for input from STDIN. `--detach` causes the container to detach from our
-        terminal so we can do other things.
-
-4.  Run `cmake` in the build directory to get things setup.
-
-        docker exec lms2012_armel cmake /src -DCMAKE_BUILD_TYPE=Debug \
-        -DCMAKE_TOOLCHAIN_FILE=/home/compiler/toolchain-armel.cmake
-
-5.  Then actually build the code.
-
-        docker exec --tty lms2012_armel make
-        docker exec --tty lms2012_armel make install
-
-6.  To get an interactive shell into the running container:
+* To get an interactive shell to the container, run 
 
         docker exec -it lms2012_armel bash
-        
-7.  When you are done building, you can stop the container.
+
+* When you are done building, you can stop the container.
 
         docker stop --time 0 lms2012_armel
 
