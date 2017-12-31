@@ -1545,7 +1545,7 @@ static ConnmanManager *cWiFiGetConnmanManagerProxy(void)
             g_variant_unref(technologies);
         } else {
             g_printerr("Error getting technologies: %s\n", error->message);
-            g_error_free(error);
+            g_clear_error(&error);
         }
 
         // We also want to monitor services
@@ -1558,8 +1558,8 @@ static ConnmanManager *cWiFiGetConnmanManagerProxy(void)
             connman_manager_emit_services_changed(proxy, services, &removed);
             g_variant_unref(services);
         } else {
-            g_printerr("Error getting technologies: %s\n", error->message);
-            g_error_free(error);
+            g_printerr("Error getting services: %s\n", error->message);
+            g_clear_error(&error);
         }
     } else {
         g_printerr("Error creating connman manager proxy: %s\n", error->message);
