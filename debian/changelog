@@ -1,3 +1,10 @@
+lms2012-compat (1.99.7) stable; urgency=medium
+
+  * Update for breaking changes in GRX API
+  * Fix crash when ConnMan is not running
+
+ -- David Lechner <david@lechnology.com>  Sat, 30 Dec 2017 18:08:00 -0600
+
 lms2012-compat (1.99.6) testing; urgency=medium
 
   * Fix corrupt datalog data
